@@ -41,6 +41,7 @@ type App struct {
 
 	entries      map[string]workspace.Entry
 	children     map[string][]string
+	ignored      ignoreMarks
 	tree         ui.OutlineState[string]
 	treeRow      int
 	sidebarWidth float32
@@ -135,6 +136,7 @@ func (a *App) loadFolder(root string) error {
 	a.stopSearch()
 	a.stopChanges()
 	a.stopDefinitions()
+	a.stopIgnoreMarks()
 	a.find = findInFiles{chosen: noRow}
 	a.files = fileTreeState{input: a.files.input}
 	a.sidebarWidth = initialSidebarWidth
@@ -177,6 +179,7 @@ func (a *App) childPaths(dir string) []string {
 		paths = append(paths, entry.Path)
 	}
 	a.children[dir] = paths
+	a.askIgnored(dir)
 	return paths
 }
 

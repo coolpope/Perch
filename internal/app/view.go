@@ -192,13 +192,21 @@ func (a *App) fileTreeView(c *ui.Context) {
 func (a *App) treeRowView(c *ui.Context, item string) {
 	entry := a.entries[item]
 	colors := a.look.palette
+	ignored := a.treeRowIgnored(item)
+	quiet := colors.muted.Alpha(ignoredRowAlpha)
 	ui.Row(c).Grow(1).FillWidth().Gap(7).AlignItems(ui.Center).Children(func() {
+		icon, tint := iconFile, fileTint(entry.Name, colors)
 		if entry.IsDir {
-			ui.Icon(c, iconFolder).FontSize(iconFontSize).TextColor(colors.muted)
-		} else {
-			ui.Icon(c, iconFile).FontSize(iconFontSize).TextColor(fileTint(entry.Name, colors))
+			icon, tint = iconFolder, colors.muted
 		}
-		ui.Text(c, entry.Name).MaxLines(1)
+		if ignored {
+			tint = quiet
+		}
+		ui.Icon(c, icon).FontSize(iconFontSize).TextColor(tint)
+		name := ui.Text(c, entry.Name).MaxLines(1)
+		if ignored {
+			name.TextColor(quiet)
+		}
 	}).ContextMenu(func(m *ui.Menu) {
 		a.fileMenu(m, item)
 	})
