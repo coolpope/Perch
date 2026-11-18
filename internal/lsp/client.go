@@ -161,7 +161,7 @@ func Start(ctx context.Context, server Server, root string) (*Client, error) {
 		pending: map[int]chan reply{}, opened: map[string]uint64{},
 	}
 	go client.readLoop(stdout)
-	if err := client.initialize(ctx, root); err != nil {
+	if err := client.initialize(ctx, root, server.InitializationOptions); err != nil {
 		client.Close()
 		return nil, fmt.Errorf("start %s: %w", server.Name, err)
 	}
@@ -178,9 +178,9 @@ func (c *Client) Alive() bool {
 	}
 }
 
-func (c *Client) initialize(ctx context.Context, root string) error {
+func (c *Client) initialize(ctx context.Context, root string, options json.RawMessage) error {
 	uri := pathToURI(root)
-	params, err := json.Marshal(map[string]json.RawMessage{
+	fields := map[string]json.RawMessage{
 		"processId":        mustRaw(os.Getpid()),
 		"rootUri":          mustRaw(uri),
 		"clientInfo":       json.RawMessage(`{"name":"perch"}`),
@@ -190,7 +190,11 @@ func (c *Client) initialize(ctx context.Context, root string) error {
 			"textDocument": {"synchronization": {}, "definition": {"linkSupport": true}},
 			"workspace": {"configuration": true, "workspaceFolders": true}
 		}`),
-	})
+	}
+	if len(options) > 0 {
+		fields["initializationOptions"] = options
+	}
+	params, err := json.Marshal(fields)
 	if err != nil {
 		return err
 	}

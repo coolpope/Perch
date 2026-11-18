@@ -22,6 +22,7 @@ const (
 
 // showSettings opens the settings over the window.
 func (a *App) showSettings() {
+	a.languages = languagesPage{}
 	a.settingsOpen = true
 }
 
@@ -70,6 +71,10 @@ func (a *App) settingsView(c *ui.Context) {
 }
 
 func (a *App) settingsContent(c *ui.Context) {
+	if a.languages.open {
+		a.languagesContent(c)
+		return
+	}
 	colors := a.look.palette
 	ui.Column(c).FillWidth().Padding(6, 20, 16, 20).Children(func() {
 		ui.Row(c).FillWidth().Height(48).AlignItems(ui.Center).Children(func() {
@@ -96,6 +101,13 @@ func (a *App) settingsContent(c *ui.Context) {
 		a.settingsSection(c, locales.SectionReading(), func() {
 			a.settingRow(c, locales.SettingMarkdown(), func() { a.markdownViewControl(c) })
 			a.settingRow(c, locales.SettingDiff(), func() { a.diffLayoutControl(c) })
+		})
+		a.settingsSection(c, locales.SectionNavigation(), func() {
+			a.settingRow(c, locales.SettingLanguageServers(), func() {
+				if ui.Button(c, locales.ManageLanguages()).Clicked() {
+					a.showLanguages()
+				}
+			})
 		})
 	})
 }

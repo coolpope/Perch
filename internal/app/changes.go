@@ -67,6 +67,10 @@ type changesPanel struct {
 	list         ui.ListState
 	// reopen is where the last finished review stood, to undo finishing it.
 	reopen *review.Checkpoint
+	// readGeneration counts the changes to what has been read, and baselineKey
+	// names the text the shown document is compared with.
+	readGeneration uint64
+	baselineKey    lineBaselineKey
 }
 
 // showChanges turns the sidebar to the review and brings it up to date.
@@ -416,6 +420,7 @@ func (a *App) runReviewAction(action func(context.Context, *review.Store) error)
 			if err != nil {
 				a.notice = toast{title: locales.ReviewUpdateFailed(), detail: err.Error()}
 			}
+			a.review.readGeneration++
 			a.refreshChanges()
 		})
 	}()

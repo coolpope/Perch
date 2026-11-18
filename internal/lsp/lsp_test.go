@@ -74,6 +74,65 @@ func goProject(t *testing.T) (string, Document, Position) {
 	return root, document, Position{Line: 3, Character: strings.Index("\t_ = Helper()", "Helper") + 1}
 }
 
+func TestConfigurationRefusesWhatItCannotRunSafely(t *testing.T) {
+	cases := map[string]string{
+		"project file":     `{"languageServers":{"x":{"command":"./server","extensions":[".x"]}}}`,
+		"nested path":      `{"languageServers":{"x":{"command":"bin/server","extensions":[".x"]}}}`,
+		"no command":       `{"languageServers":{"x":{"extensions":[".x"]}}}`,
+		"no extensions":    `{"languageServers":{"x":{"command":"server"}}}`,
+		"bad extension":    `{"languageServers":{"x":{"command":"server","extensions":["x"]}}}`,
+		"unknown field":    `{"languageServers":{"x":{"command":"server","extensions":[".x"],"comand":"y"}}}`,
+		"shared extension": `{"languageServers":{"x":{"command":"a","extensions":[".x"]},"y":{"command":"b","extensions":[".X"]}}}`,
+	}
+	for name, text := range cases {
+		file := filepath.Join(t.TempDir(), "language-servers.json")
+		if err := os.WriteFile(file, []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := LoadCustom(file); !errors.Is(err, ErrInvalidConfig) {
+			t.Errorf("%s: loaded with %v", name, err)
+		}
+	}
+}
+
+func TestCustomLanguageTakesOverItsExtensions(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "language-servers.json")
+	text := `{"languageServers":{"mine":{"name":"Mine","command":"mine-ls","extensions":[".GO",".mine"],"languageId":"minelang"}}}`
+	if err := os.WriteFile(file, []byte(text), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	custom, err := LoadCustom(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry := NewRegistry(custom, []string{"mine"})
+	language, identifier, found := registry.Match("/project/main.go")
+	if !found || language.ID != "mine" || identifier != "minelang" || language.Server.Program != "mine-ls" {
+		t.Errorf("matched %+v as %q", language, identifier)
+	}
+	if registry.Enabled("mine") || !registry.Enabled("go") {
+		t.Error("the wrong language is turned off")
+	}
+}
+
+func TestServerWorksFromTheNearestMarker(t *testing.T) {
+	nested, document, position := goProject(t)
+	project := filepath.Dir(nested)
+	server := goServer
+	server.RootMarkers = []string{"go.mod"}
+	if got := serverRoot(project, document.Path, server.RootMarkers); got != nested {
+		t.Fatalf("root %q, want %q", got, nested)
+	}
+	pool := NewPool(project)
+	defer pool.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+	found, err := pool.Definition(ctx, server, document, position)
+	if err != nil || len(found) == 0 || filepath.Base(found[0].Path) != "util.go" {
+		t.Errorf("found %+v, %v", found, err)
+	}
+}
+
 func TestDefinitionThroughARealServer(t *testing.T) {
 	root, document, position := goProject(t)
 	pool := NewPool(root)

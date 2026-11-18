@@ -2,6 +2,7 @@ package lsp
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 )
@@ -28,29 +29,35 @@ func NewPool(root string) *Pool {
 // Definition asks the file's server where a symbol is defined, starting the
 // server when it is not running.
 func (p *Pool) Definition(ctx context.Context, server Server, document Document, position Position) ([]Location, error) {
-	client, err := p.client(ctx, server)
+	client, err := p.client(ctx, server, serverRoot(p.root, document.Path, server.RootMarkers))
 	if err != nil {
 		return nil, err
 	}
 	return client.Definition(ctx, document, position)
 }
 
+// clientKey tells apart servers by what runs and where it works from.
+func clientKey(server Server, root string) string {
+	return strings.Join(append([]string{root, server.Program}, server.Args...), "\x00")
+}
+
 // client returns a running server. Asking for one that is starting waits for it.
-func (p *Pool) client(ctx context.Context, server Server) (*Client, error) {
+func (p *Pool) client(ctx context.Context, server Server, root string) (*Client, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.closed {
 		return nil, ErrServerStopped
 	}
-	if entry := p.clients[server.Name]; entry != nil && entry.client.Alive() {
+	key := clientKey(server, root)
+	if entry := p.clients[key]; entry != nil && entry.client.Alive() {
 		entry.lastUsed = time.Now()
 		return entry.client, nil
 	}
-	client, err := Start(ctx, server, p.root)
+	client, err := Start(ctx, server, root)
 	if err != nil {
 		return nil, err
 	}
-	p.clients[server.Name] = &poolEntry{client: client, lastUsed: time.Now()}
+	p.clients[key] = &poolEntry{client: client, lastUsed: time.Now()}
 	return client, nil
 }
 

@@ -1702,6 +1702,188 @@ func (msgs Messages) TrashFailed(name string) string {
 	return Catalog.Format(msgs.locale, "trashFailed", map[string]any{"name": name})
 }
 
+// SectionNavigation says "Code Navigation"
+// in the language the app shows.
+func SectionNavigation() string { return In(i18n.Locale()).SectionNavigation() }
+
+// SectionNavigation says "Code Navigation"
+// in the language of msgs.
+func (msgs Messages) SectionNavigation() string {
+	return Catalog.Format(msgs.locale, "sectionNavigation", nil)
+}
+
+// SettingLanguageServers says "Language servers"
+// in the language the app shows.
+func SettingLanguageServers() string { return In(i18n.Locale()).SettingLanguageServers() }
+
+// SettingLanguageServers says "Language servers"
+// in the language of msgs.
+func (msgs Messages) SettingLanguageServers() string {
+	return Catalog.Format(msgs.locale, "settingLanguageServers", nil)
+}
+
+// ManageLanguages says "Manage"
+// in the language the app shows.
+func ManageLanguages() string { return In(i18n.Locale()).ManageLanguages() }
+
+// ManageLanguages says "Manage"
+// in the language of msgs.
+func (msgs Messages) ManageLanguages() string {
+	return Catalog.Format(msgs.locale, "manageLanguages", nil)
+}
+
+// LanguageServersTitle says "Language Servers"
+// in the language the app shows.
+func LanguageServersTitle() string { return In(i18n.Locale()).LanguageServersTitle() }
+
+// LanguageServersTitle says "Language Servers"
+// in the language of msgs.
+func (msgs Messages) LanguageServersTitle() string {
+	return Catalog.Format(msgs.locale, "languageServersTitle", nil)
+}
+
+// LanguagesBack says "Back to Settings"
+// in the language the app shows.
+func LanguagesBack() string { return In(i18n.Locale()).LanguagesBack() }
+
+// LanguagesBack says "Back to Settings"
+// in the language of msgs.
+func (msgs Messages) LanguagesBack() string {
+	return Catalog.Format(msgs.locale, "languagesBack", nil)
+}
+
+// LanguageInstalled says "Installed"
+// in the language the app shows.
+func LanguageInstalled() string { return In(i18n.Locale()).LanguageInstalled() }
+
+// LanguageInstalled says "Installed"
+// in the language of msgs.
+func (msgs Messages) LanguageInstalled() string {
+	return Catalog.Format(msgs.locale, "languageInstalled", nil)
+}
+
+// LanguageNotInstalled says "Not installed"
+// in the language the app shows.
+func LanguageNotInstalled() string { return In(i18n.Locale()).LanguageNotInstalled() }
+
+// LanguageNotInstalled says "Not installed"
+// in the language of msgs.
+func (msgs Messages) LanguageNotInstalled() string {
+	return Catalog.Format(msgs.locale, "languageNotInstalled", nil)
+}
+
+// LanguageChecking says "Checking…"
+// in the language the app shows.
+func LanguageChecking() string { return In(i18n.Locale()).LanguageChecking() }
+
+// LanguageChecking says "Checking…"
+// in the language of msgs.
+func (msgs Messages) LanguageChecking() string {
+	return Catalog.Format(msgs.locale, "languageChecking", nil)
+}
+
+// LanguageCustom says "Custom"
+// in the language the app shows.
+func LanguageCustom() string { return In(i18n.Locale()).LanguageCustom() }
+
+// LanguageCustom says "Custom"
+// in the language of msgs.
+func (msgs Messages) LanguageCustom() string {
+	return Catalog.Format(msgs.locale, "languageCustom", nil)
+}
+
+// CopyInstallCommand says "Copy Install Command"
+// in the language the app shows.
+func CopyInstallCommand() string { return In(i18n.Locale()).CopyInstallCommand() }
+
+// CopyInstallCommand says "Copy Install Command"
+// in the language of msgs.
+func (msgs Messages) CopyInstallCommand() string {
+	return Catalog.Format(msgs.locale, "copyInstallCommand", nil)
+}
+
+// CopiedToClipboard says "Copied"
+// in the language the app shows.
+func CopiedToClipboard() string { return In(i18n.Locale()).CopiedToClipboard() }
+
+// CopiedToClipboard says "Copied"
+// in the language of msgs.
+func (msgs Messages) CopiedToClipboard() string {
+	return Catalog.Format(msgs.locale, "copiedToClipboard", nil)
+}
+
+// CopyExample says "Copy Example"
+// in the language the app shows.
+func CopyExample() string { return In(i18n.Locale()).CopyExample() }
+
+// CopyExample says "Copy Example"
+// in the language of msgs.
+func (msgs Messages) CopyExample() string {
+	return Catalog.Format(msgs.locale, "copyExample", nil)
+}
+
+// OpenLanguageConfig says "Open Configuration File"
+// in the language the app shows.
+func OpenLanguageConfig() string { return In(i18n.Locale()).OpenLanguageConfig() }
+
+// OpenLanguageConfig says "Open Configuration File"
+// in the language of msgs.
+func (msgs Messages) OpenLanguageConfig() string {
+	return Catalog.Format(msgs.locale, "openLanguageConfig", nil)
+}
+
+// LanguageConfigHint says "Add other languages in the configuration file. Perch reads only this file, never settings inside a project."
+// in the language the app shows.
+func LanguageConfigHint() string { return In(i18n.Locale()).LanguageConfigHint() }
+
+// LanguageConfigHint says "Add other languages in the configuration file. Perch reads only this file, never settings inside a project."
+// in the language of msgs.
+func (msgs Messages) LanguageConfigHint() string {
+	return Catalog.Format(msgs.locale, "languageConfigHint", nil)
+}
+
+// LanguageConfigInvalid says "The language server configuration has a problem"
+// in the language the app shows.
+func LanguageConfigInvalid() string { return In(i18n.Locale()).LanguageConfigInvalid() }
+
+// LanguageConfigInvalid says "The language server configuration has a problem"
+// in the language of msgs.
+func (msgs Messages) LanguageConfigInvalid() string {
+	return Catalog.Format(msgs.locale, "languageConfigInvalid", nil)
+}
+
+// LanguageConfigWriteFailed says "Could not create the configuration file"
+// in the language the app shows.
+func LanguageConfigWriteFailed() string { return In(i18n.Locale()).LanguageConfigWriteFailed() }
+
+// LanguageConfigWriteFailed says "Could not create the configuration file"
+// in the language of msgs.
+func (msgs Messages) LanguageConfigWriteFailed() string {
+	return Catalog.Format(msgs.locale, "languageConfigWriteFailed", nil)
+}
+
+// DefinitionTurnedOff says "Go to definition is turned off for {language}"
+// in the language the app shows.
+func DefinitionTurnedOff(language string) string {
+	return In(i18n.Locale()).DefinitionTurnedOff(language)
+}
+
+// DefinitionTurnedOff says "Go to definition is turned off for {language}"
+// in the language of msgs.
+func (msgs Messages) DefinitionTurnedOff(language string) string {
+	return Catalog.Format(msgs.locale, "definitionTurnedOff", map[string]any{"language": language})
+}
+
+// DefinitionTurnOnHint says "Turn it on in Settings, under Language servers."
+// in the language the app shows.
+func DefinitionTurnOnHint() string { return In(i18n.Locale()).DefinitionTurnOnHint() }
+
+// DefinitionTurnOnHint says "Turn it on in Settings, under Language servers."
+// in the language of msgs.
+func (msgs Messages) DefinitionTurnOnHint() string {
+	return Catalog.Format(msgs.locale, "definitionTurnOnHint", nil)
+}
+
 // ReadOnly says "Read only"
 // in the language the app shows.
 func ReadOnly() string { return In(i18n.Locale()).ReadOnly() }

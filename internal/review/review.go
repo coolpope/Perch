@@ -30,6 +30,10 @@ const (
 	MaxSnapshotFileBytes int64 = 5 << 20
 
 	refKeyBytes = 12
+
+	// gitCheckIgnoreNoMatch is the exit code of git check-ignore for a path
+	// that no rule ignores.
+	gitCheckIgnoreNoMatch = 1
 )
 
 // ErrNotRepository reports a folder outside any Git work tree.
@@ -72,6 +76,13 @@ type Sides struct {
 	New string
 	// Unreadable reports a side that is binary or too large to show.
 	Unreadable bool
+}
+
+// Baseline is the text of a file as far as it has been read.
+type Baseline struct {
+	Text string
+	// Known reports a file the review follows, whose text can be compared.
+	Known bool
 }
 
 // Checkpoint is where a review stood before it was finished.
@@ -174,6 +185,42 @@ func (s *Store) Sides(ctx context.Context, version string, change Change) (Sides
 		from = base
 	}
 	return s.readSides(ctx, from, version, change.Path)
+}
+
+// Baseline returns a file's text as far as it has been read. A file the review
+// does not record, as one Git ignores or one too large, is not Known.
+func (s *Store) Baseline(ctx context.Context, path string) (Baseline, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !belongsInSnapshot(s.root, path) {
+		return Baseline{}, nil
+	}
+	ignored, err := s.ignoredByGit(ctx, path)
+	if err != nil || ignored {
+		return Baseline{}, err
+	}
+	_, seen, err := s.marks(ctx)
+	if err != nil {
+		return Baseline{}, err
+	}
+	text, readable, err := s.readBlob(ctx, seen, path)
+	if err != nil {
+		return Baseline{}, err
+	}
+	return Baseline{Text: text, Known: readable}, nil
+}
+
+// ignoredByGit reports whether Git ignores a file of the opened folder.
+func (s *Store) ignoredByGit(ctx context.Context, path string) (bool, error) {
+	_, err := git(ctx, s.root, nil, "check-ignore", "--quiet", "--", path)
+	var exit *exec.ExitError
+	if errors.As(err, &exit) && exit.ExitCode() == gitCheckIgnoreNoMatch {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("check whether Git ignores %q: %w", path, err)
+	}
+	return true, nil
 }
 
 // MarkReviewed records the given files as read in a version, so that an edit

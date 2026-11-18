@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"image"
@@ -1048,6 +1049,41 @@ func TestReviewFollowsAgentWorkToTheEnd(t *testing.T) {
 	})
 }
 
+func TestEditorMarksTheLinesLeftToRead(t *testing.T) {
+	root := reviewedRepository(t)
+	writeFile(t, root, ".gitignore", "secret.txt\n")
+	writeFile(t, root, "secret.txt", "private\n")
+	writeFile(t, root, "a.go", "package a\n\nfunc Agent() {}\n")
+	a, tester, posted := openWithPosts(t, root)
+	t.Cleanup(a.stopChanges)
+	tester.Frame()
+	a.showChanges()
+	settleChanges(t, a, tester, posted)
+
+	a.openFile("a.go")
+	tester.Frame()
+	d := a.activeDocument()
+	followPosts(t, posted, tester, func() bool { return d.editor.DiffBase != nil })
+	if got := d.editor.DiffBase.String(); got != "package a\n" {
+		t.Errorf("compared with %q", got)
+	}
+
+	a.setReviewed("a.go", true)
+	followPosts(t, posted, tester, func() bool {
+		return d.editor.DiffBase != nil && d.editor.DiffBase.String() == d.editor.Buffer.String()
+	})
+
+	a.openFile("b.go")
+	tester.Frame()
+	if d.editor.DiffBase != nil {
+		t.Error("a tab out of sight kept its comparison text")
+	}
+	ignored, err := a.review.store.Baseline(context.Background(), "secret.txt")
+	if err != nil || ignored.Known {
+		t.Errorf("an ignored file has baseline %+v, %v", ignored, err)
+	}
+}
+
 func TestMarkdownChangeRendersAndOpensTheFile(t *testing.T) {
 	root := reviewedRepository(t)
 	writeFile(t, root, "plan.md", "# Plan\n\nFirst step\n\nSecond step changed\n")
@@ -1270,6 +1306,69 @@ func TestDefinitionExplainsAFileWithoutAServer(t *testing.T) {
 	a.goToDefinition(a.activeDocument(), 1)
 	if want := "Go to definition is not available for notes.txt"; a.brief.title != want {
 		t.Errorf("message %+v", a.brief)
+	}
+}
+
+func TestTurnedOffLanguageSaysWhereToTurnItOn(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "main.go", "package main\n")
+	a, tester := openWorkspace(t, root)
+	clickFile(t, tester, "main.go")
+	a.setLanguageEnabled("go", false)
+	a.goToDefinition(a.activeDocument(), 1)
+	if want := "Go to definition is turned off for Go"; a.brief.title != want {
+		t.Errorf("message %+v", a.brief)
+	}
+	if a.definition.pool != nil {
+		t.Error("a server was prepared for a language turned off")
+	}
+}
+
+func TestCustomLanguageNamesItsInstallCommand(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "main.perchlang", "hello\n")
+	config := filepath.Join(t.TempDir(), "language-servers.json")
+	text := `{"languageServers":{"perchlang":{"name":"Perch Lang","command":"perch-no-such-server","extensions":[".perchlang"],"install":"brew install perch-lang"}}}`
+	if err := os.WriteFile(config, []byte(text), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a, tester, posted := openWithPosts(t, root)
+	t.Cleanup(a.stopDefinitions)
+	a.languageFile = config
+	clickFile(t, tester, "main.perchlang")
+	a.goToDefinition(a.activeDocument(), 1)
+	followPosts(t, posted, tester, func() bool { return !a.definition.pending })
+	if a.brief.detail != "Install it with: brew install perch-lang" {
+		t.Errorf("message %+v", a.brief)
+	}
+}
+
+func TestBrokenLanguageConfigurationKeepsBuiltInLanguages(t *testing.T) {
+	root := t.TempDir()
+	config := filepath.Join(t.TempDir(), "language-servers.json")
+	if err := os.WriteFile(config, []byte(`{"languageServers":{"x":{"command":"./evil","extensions":[".go"]}}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a, _ := openWorkspace(t, root)
+	a.languageFile = config
+	language, _, found := a.languageRegistry().Match("main.go")
+	if !found || language.Server.Program != "gopls" || a.notice.title != "The language server configuration has a problem" {
+		t.Errorf("matched %+v; message %+v", language, a.notice)
+	}
+}
+
+func TestLanguageSettingsListEveryServer(t *testing.T) {
+	root := t.TempDir()
+	a, tester, posted := openWithPosts(t, root)
+	a.showSettings()
+	tester.Frame()
+	if err := tester.Click("Manage"); err != nil {
+		t.Fatalf("%v; texts %q", err, tester.Texts())
+	}
+	followPosts(t, posted, tester, func() bool { return a.languages.checked })
+	tester.Frame()
+	if !tester.HasText("Language Servers") || !tester.HasText("Zig") {
+		t.Errorf("texts %q", tester.Texts())
 	}
 }
 

@@ -178,5 +178,6 @@ var (
 	iconSettings = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M21 7h-9"/><path d="M14 17H3"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>`))
 	iconAlert    = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`))
 	iconClose    = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`))
+	iconBack     = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="m15 18-6-6 6-6"/></svg>`))
 	iconPerch    = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M3 20h18"/><path d="M11 20v-3"/><path d="M5 12a7 7 0 0 1 12.5-4.3L21 7l-2.6 3.1A7 7 0 0 1 12 17H9a4 4 0 0 1-4-4Z"/><path d="M15 9h.01"/></svg>`))
 )
