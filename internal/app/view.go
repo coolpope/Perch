@@ -26,9 +26,14 @@ const (
 	projectNameHeight  float32 = 30
 	minSidebarWidth    float32 = 232
 
-	tabHeight    float32 = 30
-	panelMargin  float32 = 8
+	tabHeight   float32 = 30
+	panelMargin float32 = 8
+	// panelGap is the space each panel keeps from the divider between them.
+	panelGap     float32 = 4
 	treeRowInset float32 = 8
+	// tabTextLift raises a tab's name, whose lowercase letters sit below the
+	// middle of its line, to the middle of the tab.
+	tabTextLift float32 = 2
 )
 
 // view builds the window.
@@ -78,17 +83,31 @@ func (a *App) sidebarView(c *ui.Context) {
 	colors := a.look.palette
 	ui.Column(c).Fill().Background(colors.sidebar).Children(func() {
 		a.sidebarHeaderView(c)
-		a.projectNameView(c)
-		switch a.sidebarTab {
-		case sidebarSearch:
-			a.findInFilesView(c)
-			return
-		case sidebarChanges:
-			a.changesPanelView(c)
-			return
-		}
-		a.fileTreeView(c)
+		ui.Column(c).Grow(1).FillWidth().Padding(0, panelGap, panelMargin, panelMargin).Children(func() {
+			a.panelView(c, func() {
+				a.projectNameView(c)
+				a.sidebarContentView(c)
+			})
+		})
 	})
+}
+
+// sidebarContentView shows the sidebar's chosen view.
+func (a *App) sidebarContentView(c *ui.Context) {
+	switch a.sidebarTab {
+	case sidebarSearch:
+		a.findInFilesView(c)
+	case sidebarChanges:
+		a.changesPanelView(c)
+	default:
+		a.fileTreeView(c)
+	}
+}
+
+// panelView builds one of the window's rounded panels.
+func (a *App) panelView(c *ui.Context, content func()) {
+	colors := a.look.palette
+	ui.Column(c).Fill().Clip().Radius(radiusCard).Background(colors.background).Border(1, colors.border).Children(content)
 }
 
 // sidebarHeaderView puts the sidebar's views beside the window's controls.
@@ -218,13 +237,12 @@ func (a *App) chooseTab(index int) {
 
 // mainView floats the open file on a rounded panel below its tabs.
 func (a *App) mainView(c *ui.Context) {
+	a.tabShortcuts(c)
 	colors := a.look.palette
 	ui.Column(c).Fill().Background(colors.sidebar).Children(func() {
 		a.tabsView(c)
-		ui.Column(c).Grow(1).FillWidth().Padding(0, panelMargin, panelMargin, 0).Children(func() {
-			ui.Column(c).Fill().Clip().Radius(radiusCard).Background(colors.background).Border(1, colors.border).Children(func() {
-				a.panelContentView(c)
-			})
+		ui.Column(c).Grow(1).FillWidth().Padding(0, panelMargin, panelMargin, panelGap).Children(func() {
+			a.panelView(c, func() { a.panelContentView(c) })
 		})
 	})
 }
@@ -252,7 +270,7 @@ func (a *App) panelContentView(c *ui.Context) {
 func (a *App) tabsView(c *ui.Context) {
 	colors := a.look.palette
 	var closing *document
-	ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).PaddingEnd(panelMargin).Background(colors.sidebar).DragWindow().Children(func() {
+	ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).PaddingStart(panelGap).PaddingEnd(panelMargin).Background(colors.sidebar).DragWindow().Children(func() {
 		ui.ScrollHorizontal(c).Shrink(1).FillHeight().Children(func() {
 			ui.Row(c).FillHeight().Gap(4).AlignItems(ui.Center).Children(func() {
 				for i, d := range a.documents {
@@ -284,7 +302,7 @@ func (a *App) tabView(c *ui.Context, d *document, active bool, index int) bool {
 	}
 	hovered := tab.Hovered()
 	tab.Children(func() {
-		name := ui.Text(c, d.name()).MaxLines(1)
+		name := ui.Text(c, d.name()).MaxLines(1).Padding(0, 0, tabTextLift, 0)
 		if !active {
 			name.TextColor(colors.muted)
 		}
