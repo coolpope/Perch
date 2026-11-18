@@ -74,6 +74,12 @@ type Sides struct {
 	Unreadable bool
 }
 
+// Checkpoint is where a review stood before it was finished.
+type Checkpoint struct {
+	base string
+	seen string
+}
+
 // Store is the review of one work tree. Its methods are safe to call from any
 // goroutine, one at a time.
 type Store struct {
@@ -193,14 +199,33 @@ func (s *Store) MarkUnreviewed(ctx context.Context, paths []string) error {
 	return s.copyEntries(ctx, base, seen, paths)
 }
 
-// Finish starts a new review from a version.
-func (s *Store) Finish(ctx context.Context, version string) error {
+// Finish starts a new review from a version, and returns the checkpoint that
+// Reopen goes back to.
+func (s *Store) Finish(ctx context.Context, version string) (Checkpoint, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if err := s.setRef(ctx, s.refBase, version); err != nil {
+	base, seen, err := s.marks(ctx)
+	if err != nil {
+		return Checkpoint{}, err
+	}
+	if err := s.setMarks(ctx, version, version); err != nil {
+		return Checkpoint{}, err
+	}
+	return Checkpoint{base: base, seen: seen}, nil
+}
+
+// Reopen returns the review to where it stood before it was finished.
+func (s *Store) Reopen(ctx context.Context, checkpoint Checkpoint) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.setMarks(ctx, checkpoint.base, checkpoint.seen)
+}
+
+func (s *Store) setMarks(ctx context.Context, base string, seen string) error {
+	if err := s.setRef(ctx, s.refBase, base); err != nil {
 		return err
 	}
-	return s.setRef(ctx, s.refSeen, version)
+	return s.setRef(ctx, s.refSeen, seen)
 }
 
 // marks returns the trees of the last finished review and of what was read

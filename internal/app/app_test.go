@@ -544,7 +544,16 @@ func TestReviewFollowsAgentWorkToTheEnd(t *testing.T) {
 	if err := tester.Click("Finish Review"); err != nil {
 		t.Fatalf("%v; texts %q", err, tester.Texts())
 	}
-	followPosts(t, posted, tester, func() bool { return tester.HasText("No changes since your last review.") })
+	followPosts(t, posted, tester, func() bool {
+		return tester.HasText("No changes since your last review.") && tester.HasText("Undo Finish Review")
+	})
+
+	if err := tester.Click("Undo Finish Review"); err != nil {
+		t.Fatalf("%v; texts %q", err, tester.Texts())
+	}
+	followPosts(t, posted, tester, func() bool {
+		return tester.HasText("2 of 2 files reviewed") && !tester.HasText("Undo Finish Review")
+	})
 }
 
 func TestMarkdownChangeRendersAndOpensTheFile(t *testing.T) {
