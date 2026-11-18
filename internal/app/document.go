@@ -57,6 +57,11 @@ type document struct {
 	// disk is the version on disk during a conflictChanged.
 	disk workspace.TextFile
 
+	// restoredScroll is where a restored tab scrolls once its editor has
+	// laid out, which SetScrollY needs before it can clamp the position.
+	restoredScroll float64
+	scrollPending  bool
+
 	// markdownView is the Preview/Source choice that Markdown and SVG
 	// documents share.
 	markdownView    int

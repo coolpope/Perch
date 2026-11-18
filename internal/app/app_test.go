@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"image"
 	"image/png"
 	"io/fs"
@@ -20,6 +21,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
+	"perch/internal/session"
 	"perch/internal/settings"
 	"perch/internal/workspace"
 )
@@ -80,6 +82,26 @@ func openWorkspace(t *testing.T, root string) (*App, *ui.Tester) {
 		t.Fatal(err)
 	}
 	return a, ui.NewTester(a.view, testWidth, testHeight)
+}
+
+func openSessionProject(t *testing.T, root string, sessionDir string) (*App, *ui.Tester, <-chan func()) {
+	t.Helper()
+	a := New()
+	a.session.dir = sessionDir
+	posted := make(chan func(), 128)
+	a.post = func(action func()) { posted <- action }
+	if err := a.loadFolder(root); err != nil {
+		t.Fatal(err)
+	}
+	return a, ui.NewTester(a.view, testWidth, testHeight), posted
+}
+
+func waitForSession(t *testing.T, a *App, tester *ui.Tester, posted <-chan func(), tabs int) {
+	t.Helper()
+	followPosts(t, posted, tester, func() bool {
+		return !a.session.restoring && len(a.documents) == tabs
+	})
+	tester.Frame()
 }
 
 func clickFile(t *testing.T, tester *ui.Tester, name string) {
@@ -1244,6 +1266,298 @@ func TestSidebarTooltipStaysClearOfTheWindowControls(t *testing.T) {
 	}
 	if tip.Bounds.Y < buttonBottom {
 		t.Errorf("tooltip at y %v covers the window controls above y %v", tip.Bounds.Y, buttonBottom)
+	}
+}
+
+func TestSessionSurvivesClosingAndReopening(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "a.md", "# Title\n\nBody\n")
+	writeFile(t, root, "b.go", "package main\n"+strings.Repeat("// line\n", 100))
+	writeFile(t, root, "c.txt", "c\n")
+	writeFile(t, root, "dir/keep.txt", "keep\n")
+	sessions := t.TempDir()
+
+	a, tester, _ := openSessionProject(t, root, sessions)
+	tester.Frame()
+	a.openFile("a.md")
+	a.openFile("b.go")
+	a.openFile("c.txt")
+	tester.Frame()
+	a.documents[0].markdownView = markdownSource
+	b := a.documents[1]
+	b.editor.GoTo(editor.Pos{Line: 2, Col: 1})
+	appendText(b, "// unsaved\n")
+	a.chooseTab(1)
+	a.sidebarWidth = 300
+	a.sidebarTab = sidebarSearch
+	a.tree.Open.Add("dir")
+	tester.Frame()
+	b.editor.SetScrollY(200)
+	tester.Frame()
+	a.release()
+
+	a2, tester2, posted := openSessionProject(t, root, sessions)
+	waitForSession(t, a2, tester2, posted, 3)
+
+	var paths []string
+	for _, d := range a2.documents {
+		paths = append(paths, d.path)
+	}
+	if want := []string{"a.md", "b.go", "c.txt"}; !slices.Equal(paths, want) {
+		t.Fatalf("tabs %q, want %q", paths, want)
+	}
+	if a2.active != 1 || a2.activeDocument().path != "b.go" {
+		t.Errorf("active %d, %+v", a2.active, a2.activeDocument())
+	}
+	if a2.documents[0].markdownView != markdownSource {
+		t.Error("Markdown came back on its preview")
+	}
+	b2 := a2.documents[1]
+	if b2.modified() {
+		t.Error("the restored tab is modified")
+	}
+	if strings.Contains(b2.editor.Buffer.String(), "// unsaved") {
+		t.Error("unsaved edits were restored")
+	}
+	if got := b2.editor.CursorPos(); got.Line != 2 || got.Col != 1 {
+		t.Errorf("caret at %+v", got)
+	}
+	if got := b2.editor.ScrollY(); got <= 0 || got > 500 {
+		t.Errorf("scroll at %v", got)
+	}
+	if a2.sidebarWidth != 300 {
+		t.Errorf("sidebar width %v", a2.sidebarWidth)
+	}
+	if a2.sidebarTab != sidebarSearch {
+		t.Errorf("sidebar tab %d", a2.sidebarTab)
+	}
+	if !a2.tree.Open.Has("dir") {
+		t.Errorf("open folders %q", a2.openTreePaths())
+	}
+}
+
+func TestSessionSkipsDeletedAndCorruptEntries(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "a.go", "package a\n")
+	writeFile(t, root, "gone.md", "# Gone\n")
+	sessions := t.TempDir()
+
+	a, tester, _ := openSessionProject(t, root, sessions)
+	a.openFile("a.go")
+	a.openFile("gone.md")
+	tester.Frame()
+	a.release()
+	if err := os.Remove(filepath.Join(root, "gone.md")); err != nil {
+		t.Fatal(err)
+	}
+
+	a2, tester2, posted := openSessionProject(t, root, sessions)
+	waitForSession(t, a2, tester2, posted, 1)
+	if len(a2.documents) != 1 || a2.documents[0].path != "a.go" {
+		t.Fatalf("restored %+v", a2.documents)
+	}
+	if a2.notice != (toast{}) || a2.brief != (toast{}) {
+		t.Errorf("messages %+v, %+v", a2.notice, a2.brief)
+	}
+	a2.release()
+
+	if err := os.WriteFile(session.Path(sessions, root), []byte("{"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a3, tester3, _ := openSessionProject(t, root, sessions)
+	tester3.Frame()
+	if len(a3.documents) != 0 || a3.session.restoring {
+		t.Errorf("corrupt session restored %+v", a3.documents)
+	}
+	if a3.notice != (toast{}) || a3.brief != (toast{}) {
+		t.Errorf("messages %+v, %+v", a3.notice, a3.brief)
+	}
+}
+
+func TestSessionClampsCaretAndScroll(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "short.txt", strings.Repeat("line\n", 100))
+	sessions := t.TempDir()
+
+	a, tester, _ := openSessionProject(t, root, sessions)
+	a.openFile("short.txt")
+	tester.Frame()
+	d := a.activeDocument()
+	d.editor.GoTo(editor.Pos{Line: 80, Col: 3})
+	d.editor.SetScrollY(500)
+	tester.Frame()
+	a.release()
+
+	writeFile(t, root, "short.txt", "one")
+	a2, tester2, posted := openSessionProject(t, root, sessions)
+	waitForSession(t, a2, tester2, posted, 1)
+	if len(a2.documents) != 1 {
+		t.Fatalf("restored %+v", a2.documents)
+	}
+	d2 := a2.documents[0]
+	if got := d2.editor.CursorPos(); got.Line != 0 || got.Col > 3 {
+		t.Errorf("caret at %+v in a one-line file", got)
+	}
+	if got := d2.editor.ScrollY(); got != 0 {
+		t.Errorf("scroll at %v in a one-line file", got)
+	}
+}
+
+func TestSessionRestoresAtMostTwelveTextTabs(t *testing.T) {
+	root := t.TempDir()
+	for i := range 15 {
+		writeFile(t, root, fmt.Sprintf("f%02d.txt", i), fmt.Sprintf("%d\n", i))
+	}
+	sessions := t.TempDir()
+
+	a, tester, _ := openSessionProject(t, root, sessions)
+	for i := range 15 {
+		a.openFile(fmt.Sprintf("f%02d.txt", i))
+	}
+	a.chooseTab(0)
+	tester.Frame()
+	a.release()
+
+	a2, tester2, posted := openSessionProject(t, root, sessions)
+	waitForSession(t, a2, tester2, posted, maxRestoredTextTabs)
+	if len(a2.documents) != maxRestoredTextTabs {
+		t.Fatalf("restored %d tabs", len(a2.documents))
+	}
+	var paths []string
+	for _, d := range a2.documents {
+		paths = append(paths, d.path)
+	}
+	if a2.activeDocument() == nil || a2.activeDocument().path != "f00.txt" {
+		t.Errorf("active %+v, tabs %q", a2.activeDocument(), paths)
+	}
+	if paths[0] != "f00.txt" {
+		t.Errorf("tabs start at %q", paths[0])
+	}
+	if !slices.Contains(paths, "f14.txt") {
+		t.Errorf("the newest tab is missing from %q", paths)
+	}
+	if slices.Contains(paths, "f02.txt") {
+		t.Errorf("an old tab came back in %q", paths)
+	}
+}
+
+func TestSessionPlanRestoresOnlyTheActiveRaster(t *testing.T) {
+	tabs := make([]session.Tab, 0, 15)
+	for i := range 14 {
+		tabs = append(tabs, session.Tab{Path: fmt.Sprintf("f%02d.txt", i)})
+	}
+	tabs = append(tabs, session.Tab{Path: "image.png"})
+
+	plan := restorePlan(session.Session{Tabs: tabs, Active: 14})
+	if len(plan.tabs) != 13 || plan.active != 12 || plan.tabs[12].Path != "image.png" {
+		t.Errorf("active raster plan %+v", plan)
+	}
+	plan = restorePlan(session.Session{Tabs: tabs, Active: 0})
+	if slices.ContainsFunc(plan.tabs, func(tab session.Tab) bool { return tab.Path == "image.png" }) {
+		t.Errorf("an inactive raster came back in %+v", plan)
+	}
+	if len(plan.tabs) != maxRestoredTextTabs || plan.active != 0 {
+		t.Errorf("text plan %+v", plan)
+	}
+}
+
+func TestSessionSavesAfterChangesSettle(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "a.go", "package a\n")
+	sessions := t.TempDir()
+	a, tester, _ := openSessionProject(t, root, sessions)
+
+	var scheduled func()
+	var delay time.Duration
+	a.after = func(d time.Duration, action func()) {
+		delay, scheduled = d, action
+	}
+	a.openFile("a.go")
+	tester.Frame()
+	if scheduled == nil {
+		t.Fatal("no session save was scheduled")
+	}
+	if delay != sessionSaveDelay {
+		t.Errorf("session saved after %v, want %v", delay, sessionSaveDelay)
+	}
+	scheduled()
+	a.session.wg.Wait()
+
+	s, err := session.Load(session.Path(sessions, root))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Tabs) != 1 || s.Tabs[0].Path != "a.go" || s.Active != 0 {
+		t.Errorf("saved session %+v", s)
+	}
+}
+
+func TestRecentProjectsKeepOrderAndLimit(t *testing.T) {
+	var list []string
+	for i := range 12 {
+		list = addRecent(list, filepath.Join("/projects", fmt.Sprintf("p%02d", i)))
+	}
+	if len(list) != maxRecentProjects {
+		t.Fatalf("recent list has %d entries", len(list))
+	}
+	if list[0] != "/projects/p11" || list[len(list)-1] != "/projects/p02" {
+		t.Errorf("recent list %q", list)
+	}
+	list = addRecent(list, "/projects/p05")
+	if len(list) != maxRecentProjects || list[0] != "/projects/p05" {
+		t.Fatalf("after reopening p05: %q", list)
+	}
+	count := 0
+	for _, path := range list {
+		if path == "/projects/p05" {
+			count++
+		}
+	}
+	if count != 1 {
+		t.Errorf("p05 appears %d times", count)
+	}
+
+	if got, want := cleanRecent([]string{"/b", "/a", "/b", "relative"}), []string{"/b", "/a"}; !slices.Equal(got, want) {
+		t.Errorf("cleanRecent %q, want %q", got, want)
+	}
+
+	dirA, dirB := t.TempDir(), t.TempDir()
+	missing := filepath.Join(dirA, "missing")
+	d := &Desktop{recent: []string{dirA, missing, dirB}}
+	if got, want := d.recentExisting(), []string{dirA, dirB}; !slices.Equal(got, want) {
+		t.Errorf("existing recent %q, want %q", got, want)
+	}
+
+	file := filepath.Join(t.TempDir(), "recent.json")
+	if err := saveRecent(file, []string{dirA, dirB}); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := loadRecent(file), []string{dirA, dirB}; !slices.Equal(got, want) {
+		t.Errorf("loaded recent %q, want %q", got, want)
+	}
+}
+
+func TestWelcomeShowsOnlyExistingRecentProjects(t *testing.T) {
+	root := t.TempDir()
+	missing := filepath.Join(root, "missing-project")
+	d := &Desktop{recent: []string{root, missing}}
+	a := New()
+	a.desktop = d
+	posted := make(chan func(), 1)
+	a.post = func(action func()) { posted <- action }
+	tester := ui.NewTester(a.view, testWidth, testHeight)
+	tester.Frame()
+	followPosts(t, posted, tester, func() bool { return len(a.recentRoots) > 0 })
+	tester.Frame()
+
+	if !tester.HasText("Recent Projects") || !tester.HasText(filepath.Base(root)) {
+		t.Errorf("texts %q", tester.Texts())
+	}
+	if tester.HasText(filepath.Base(missing)) {
+		t.Errorf("a missing project shows; texts %q", tester.Texts())
+	}
+	if !tester.HasText(shortenProjectPath(root)) {
+		t.Errorf("the shortened path is missing; texts %q", tester.Texts())
 	}
 }
 

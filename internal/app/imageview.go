@@ -83,6 +83,9 @@ type imageView struct {
 	request uint64
 	// decoded marks a raster picture ready to show.
 	decoded bool
+	// silent leaves out the toast of an initial decode that a restored tab
+	// fails.
+	silent bool
 }
 
 // release drops the decoded picture so that a closed tab can be collected.
@@ -304,7 +307,17 @@ func (a *App) openRasterImage(relPath string) {
 		a.tell(imageFailure(relPath, err))
 		return
 	}
-	d := &document{
+	d := a.newRasterDocument(relPath, file)
+	a.brief = toast{}
+	a.documents = append(a.documents, d)
+	a.active = len(a.documents) - 1
+	a.startImageDecode(d, file)
+}
+
+// newRasterDocument makes a picture's document without appending it or
+// starting its decode.
+func (a *App) newRasterDocument(relPath string, file rasterFile) *document {
+	return &document{
 		path:   relPath,
 		digest: file.digest,
 		image: &imageView{
@@ -315,10 +328,6 @@ func (a *App) openRasterImage(relPath string) {
 			stamp:  file.stamp,
 		},
 	}
-	a.brief = toast{}
-	a.documents = append(a.documents, d)
-	a.active = len(a.documents) - 1
-	a.startImageDecode(d, file)
 }
 
 // openSVGFile opens an SVG on its preview, or on its source when it cannot be
@@ -329,15 +338,22 @@ func (a *App) openSVGFile(relPath string) {
 		a.tell(openFailure(relPath, err))
 		return
 	}
+	d := a.newSVGDocument(relPath, file)
+	a.attachDefinitions(d)
+	a.brief = toast{}
+	a.documents = append(a.documents, d)
+	a.active = len(a.documents) - 1
+}
+
+// newSVGDocument makes an SVG's document, on its preview or its source when it
+// cannot be drawn, without appending it.
+func (a *App) newSVGDocument(relPath string, file workspace.TextFile) *document {
 	d := newDocument(a.root, relPath, file)
 	d.image = &imageView{kind: imageKindSVG, size: int64(len(file.Text))}
 	if _, err := d.svgPicture(); err != nil {
 		d.markdownView = markdownSource
 	}
-	a.attachDefinitions(d)
-	a.brief = toast{}
-	a.documents = append(a.documents, d)
-	a.active = len(a.documents) - 1
+	return d
 }
 
 // startImageDecode decodes the pixels of an image off the main thread. The
@@ -369,7 +385,11 @@ func (a *App) imageDecoded(d *document, request uint64, decoded decodedRaster, e
 	}
 	if err != nil {
 		if !view.decoded {
+			if !view.silent {
+				a.tell(imageFailure(d.path, err))
+			}
 			a.closeTab(d)
+			return
 		}
 		a.tell(imageFailure(d.path, err))
 		return

@@ -110,6 +110,9 @@ func (a *App) reviewBegun(ctx context.Context, store *review.Store) {
 		return
 	}
 	a.review.store = store
+	if a.sidebarTab == sidebarChanges {
+		a.refreshChanges()
+	}
 }
 
 // stopChanges ends the review's background work and lets go of its store.

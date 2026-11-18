@@ -24,6 +24,7 @@ const (
 
 	settingsFileName = "settings.json"
 	languageFileName = "language-servers.json"
+	sessionsDirName  = "sessions"
 )
 
 // Desktop owns Perch's windows, one project each, and the menu they share. Its
@@ -33,6 +34,9 @@ type Desktop struct {
 	settings     settings.Settings
 	settingsFile string
 	languageFile string
+	recentFile   string
+	recent       []string
+	sessionDir   string
 }
 
 // NewDesktop returns a desktop with no windows.
@@ -70,6 +74,9 @@ func (d *Desktop) loadSettings() error {
 	}
 	d.settingsFile = filepath.Join(dir, settingsFileName)
 	d.languageFile = filepath.Join(dir, languageFileName)
+	d.recentFile = filepath.Join(dir, recentFileName)
+	d.recent = loadRecent(d.recentFile)
+	d.sessionDir = filepath.Join(dir, sessionsDirName)
 	loaded, err := settings.Load(d.settingsFile)
 	d.settings = loaded
 	applyAppearance(loaded.Appearance)
@@ -144,6 +151,7 @@ func (d *Desktop) openWindow(root string) {
 	a.desktop = d
 	a.settings = d.settings
 	a.languageFile = d.languageFile
+	a.session.dir = d.sessionDir
 	a.chosenLanguage = mygo.App.ChosenLocale
 	a.setLanguage = mygo.App.SetLocale
 	a.show(root, d.placementFor(root))
@@ -213,6 +221,7 @@ func (d *Desktop) openFolder(from *App, folder string) {
 	destination := chooseDestination(d.windows, from, root)
 	switch {
 	case destination.existing != nil:
+		d.recordRecent(root)
 		destination.existing.window.Focus()
 	case destination.empty != nil:
 		destination.empty.openFolder(root)
@@ -280,6 +289,7 @@ func (d *Desktop) menu() *mygo.Menu {
 		{Label: locales.MenuFile(), Submenu: []*mygo.MenuItem{
 			{Label: locales.MenuNewWindow(), Accelerator: "CmdOrCtrl+Shift+N", Click: func(*mygo.MenuItem, *mygo.Window) { d.newWindow() }},
 			d.menuItem(locales.MenuOpenFolder(), "CmdOrCtrl+O", (*App).chooseFolder),
+			{Label: locales.MenuOpenRecent(), Submenu: d.recentMenuItems()},
 			d.menuItem(locales.MenuGoToFile(), "CmdOrCtrl+P", (*App).showQuickOpen),
 			mygo.Separator(),
 			d.menuItem(locales.Save(), "CmdOrCtrl+S", (*App).saveActive),

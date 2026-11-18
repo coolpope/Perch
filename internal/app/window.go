@@ -40,6 +40,7 @@ func (a *App) show(root string, placement windowPlacement) {
 
 // release stops the work that belongs to the window once it has closed.
 func (a *App) release() {
+	a.closeSession()
 	if a.stopWatch != nil {
 		a.stopWatch()
 	}
@@ -98,6 +99,9 @@ func (a *App) openFolder(root string) {
 	if err := a.loadFolder(root); err != nil {
 		a.notice = toast{title: locales.FolderOpenFailed(), detail: err.Error()}
 		return
+	}
+	if a.desktop != nil {
+		a.desktop.recordRecent(a.root)
 	}
 	a.window.SetTitle(filepath.Base(a.root))
 	ctx, cancel := context.WithCancel(context.Background())

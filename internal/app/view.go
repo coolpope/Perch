@@ -44,6 +44,7 @@ func (a *App) view(c *ui.Context) {
 	a.quickOpenView(c)
 	a.settingsView(c)
 	a.fileDialogView(c)
+	a.trackSession()
 }
 
 func (a *App) welcomeView(c *ui.Context) {
@@ -59,6 +60,7 @@ func (a *App) welcomeView(c *ui.Context) {
 				a.chooseFolder()
 			}
 			ui.Text(c, "⌘O").FontSize(smallFontSize).TextColor(colors.muted)
+			a.recentProjectsView(c)
 		})
 	})
 }
@@ -383,7 +385,14 @@ func (a *App) documentView(c *ui.Context, d *document) {
 	}
 	d.editor.Theme = a.look.code
 	a.applyEditorSettings(d.editor)
+	if d.scrollPending && d.editor.ViewportHeight() > 0 {
+		d.editor.SetScrollY(d.restoredScroll)
+		d.scrollPending = false
+	}
 	editor.View(c, d.editor).Bind(&d.focus).Grow(1).FillWidth()
+	if d.scrollPending {
+		c.After(0)
+	}
 }
 
 func (a *App) statusView(c *ui.Context, d *document) {

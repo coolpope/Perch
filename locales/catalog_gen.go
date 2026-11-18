@@ -54,6 +54,16 @@ func (msgs Messages) OpenFolder() string {
 	return Catalog.Format(msgs.locale, "openFolder", nil)
 }
 
+// RecentProjects says "Recent Projects"
+// in the language the app shows.
+func RecentProjects() string { return In(i18n.Locale()).RecentProjects() }
+
+// RecentProjects says "Recent Projects"
+// in the language of msgs.
+func (msgs Messages) RecentProjects() string {
+	return Catalog.Format(msgs.locale, "recentProjects", nil)
+}
+
 // MenuOpenFolder says "Open Folder…"
 // in the language the app shows.
 func MenuOpenFolder() string { return In(i18n.Locale()).MenuOpenFolder() }
@@ -62,6 +72,26 @@ func MenuOpenFolder() string { return In(i18n.Locale()).MenuOpenFolder() }
 // in the language of msgs.
 func (msgs Messages) MenuOpenFolder() string {
 	return Catalog.Format(msgs.locale, "menuOpenFolder", nil)
+}
+
+// MenuOpenRecent says "Open Recent"
+// in the language the app shows.
+func MenuOpenRecent() string { return In(i18n.Locale()).MenuOpenRecent() }
+
+// MenuOpenRecent says "Open Recent"
+// in the language of msgs.
+func (msgs Messages) MenuOpenRecent() string {
+	return Catalog.Format(msgs.locale, "menuOpenRecent", nil)
+}
+
+// NoRecentProjects says "No Recent Projects"
+// in the language the app shows.
+func NoRecentProjects() string { return In(i18n.Locale()).NoRecentProjects() }
+
+// NoRecentProjects says "No Recent Projects"
+// in the language of msgs.
+func (msgs Messages) NoRecentProjects() string {
+	return Catalog.Format(msgs.locale, "noRecentProjects", nil)
 }
 
 // TabFiles says "Files"

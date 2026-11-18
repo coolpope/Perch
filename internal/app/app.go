@@ -46,11 +46,16 @@ type App struct {
 	sidebarWidth float32
 	sidebarTab   int
 
-	quick      quickOpen
-	find       findInFiles
-	files      fileTreeState
-	review     changesPanel
-	definition definitionState
+	quick   quickOpen
+	find    findInFiles
+	files   fileTreeState
+	session sessionState
+	// recentRoots are the recent projects the welcome screen lists, known once
+	// recentChecked has been answered.
+	recentRoots   []string
+	recentChecked bool
+	review        changesPanel
+	definition    definitionState
 
 	settings     settings.Settings
 	settingsOpen bool
@@ -104,6 +109,7 @@ func New() *App {
 	}
 	a.post = func(action func()) { a.window.Update(action) }
 	a.after = func(time.Duration, func()) {}
+	a.session.init()
 	language := ""
 	a.chosenLanguage = func() string { return language }
 	a.setLanguage = func(tag string) { language = tag }
@@ -119,22 +125,29 @@ func (a *App) loadFolder(root string) error {
 	if _, err := workspace.ListDir(absolute, "."); err != nil {
 		return fmt.Errorf("open folder %q: %w", absolute, err)
 	}
+	a.prepareSessionForFolder()
 	a.hideQuickOpen()
 	a.stopSearch()
 	a.stopChanges()
 	a.stopDefinitions()
 	a.find = findInFiles{chosen: noRow}
 	a.files = fileTreeState{input: a.files.input}
+	a.sidebarWidth = initialSidebarWidth
 	a.sidebarTab = sidebarFiles
 	a.root = absolute
 	a.entries = map[string]workspace.Entry{}
 	a.children = map[string][]string{}
 	a.tree = ui.OutlineState[string]{}
 	a.treeRow = noRow
+	a.closingDocument = nil
+	a.askCloseTab = false
+	a.askCloseWindow = false
+	a.closeConfirmed = false
 	a.documents = nil
 	a.active = noDocument
 	a.notice = toast{}
 	a.brief = toast{}
+	a.restoreSession()
 	return nil
 }
 
