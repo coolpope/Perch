@@ -48,6 +48,7 @@ type App struct {
 
 	quick      quickOpen
 	find       findInFiles
+	files      fileTreeState
 	review     changesPanel
 	definition definitionState
 
@@ -78,6 +79,8 @@ type App struct {
 
 	stopWatch context.CancelFunc
 
+	// trashItem moves a path to the system Trash. Tests replace it.
+	trashItem func(string) error
 	// post runs a function on the main thread and redraws.
 	post func(func())
 	// after runs a function on the main thread once a delay has passed.
@@ -93,6 +96,7 @@ func New() *App {
 		sidebarWidth: initialSidebarWidth,
 		active:       noDocument,
 		settings:     settings.Default(),
+		trashItem:    mygo.Shell.TrashItem,
 	}
 	a.post = func(action func()) { a.window.Update(action) }
 	a.after = func(time.Duration, func()) {}
@@ -116,6 +120,7 @@ func (a *App) loadFolder(root string) error {
 	a.stopChanges()
 	a.stopDefinitions()
 	a.find = findInFiles{chosen: noRow}
+	a.files = fileTreeState{input: a.files.input}
 	a.sidebarTab = sidebarFiles
 	a.root = absolute
 	a.entries = map[string]workspace.Entry{}

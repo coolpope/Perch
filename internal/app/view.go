@@ -43,6 +43,7 @@ func (a *App) view(c *ui.Context) {
 	a.closeWindowAlert(c)
 	a.quickOpenView(c)
 	a.settingsView(c)
+	a.fileDialogView(c)
 }
 
 func (a *App) welcomeView(c *ui.Context) {
@@ -145,7 +146,9 @@ func (a *App) fileTreeView(c *ui.Context) {
 		a.tree.List.Selected = &a.treeRow
 		tree := ui.Outline(c, &a.tree, a.childPaths("."), a.childPaths, func(item string) {
 			a.treeRowView(c, item)
-		}).Grow(1).FillWidth().Label(locales.TabFiles())
+		}).Grow(1).FillWidth().Label(locales.TabFiles()).ContextMenu(func(m *ui.Menu) {
+			a.fileMenu(m, ".")
+		})
 		if tree.Changed() {
 			a.chooseTreeRow()
 		}
@@ -162,6 +165,8 @@ func (a *App) treeRowView(c *ui.Context, item string) {
 			ui.Icon(c, iconFile).FontSize(iconFontSize).TextColor(fileTint(entry.Name, colors))
 		}
 		ui.Text(c, entry.Name).MaxLines(1)
+	}).ContextMenu(func(m *ui.Menu) {
+		a.fileMenu(m, item)
 	})
 }
 

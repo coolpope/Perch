@@ -1432,6 +1432,276 @@ func (msgs Messages) SvgPreviewFailed() string {
 	return Catalog.Format(msgs.locale, "svgPreviewFailed", nil)
 }
 
+// FileMenuNewFile says "New File…"
+// in the language the app shows.
+func FileMenuNewFile() string { return In(i18n.Locale()).FileMenuNewFile() }
+
+// FileMenuNewFile says "New File…"
+// in the language of msgs.
+func (msgs Messages) FileMenuNewFile() string {
+	return Catalog.Format(msgs.locale, "fileMenuNewFile", nil)
+}
+
+// FileMenuNewFolder says "New Folder…"
+// in the language the app shows.
+func FileMenuNewFolder() string { return In(i18n.Locale()).FileMenuNewFolder() }
+
+// FileMenuNewFolder says "New Folder…"
+// in the language of msgs.
+func (msgs Messages) FileMenuNewFolder() string {
+	return Catalog.Format(msgs.locale, "fileMenuNewFolder", nil)
+}
+
+// FileMenuRename says "Rename…"
+// in the language the app shows.
+func FileMenuRename() string { return In(i18n.Locale()).FileMenuRename() }
+
+// FileMenuRename says "Rename…"
+// in the language of msgs.
+func (msgs Messages) FileMenuRename() string {
+	return Catalog.Format(msgs.locale, "fileMenuRename", nil)
+}
+
+// FileMenuTrash says "Move to Trash…"
+// in the language the app shows.
+func FileMenuTrash() string { return In(i18n.Locale()).FileMenuTrash() }
+
+// FileMenuTrash says "Move to Trash…"
+// in the language of msgs.
+func (msgs Messages) FileMenuTrash() string {
+	return Catalog.Format(msgs.locale, "fileMenuTrash", nil)
+}
+
+// FileMenuCopyPath says "Copy Path"
+// in the language the app shows.
+func FileMenuCopyPath() string { return In(i18n.Locale()).FileMenuCopyPath() }
+
+// FileMenuCopyPath says "Copy Path"
+// in the language of msgs.
+func (msgs Messages) FileMenuCopyPath() string {
+	return Catalog.Format(msgs.locale, "fileMenuCopyPath", nil)
+}
+
+// FileMenuCopyRelativePath says "Copy Relative Path"
+// in the language the app shows.
+func FileMenuCopyRelativePath() string { return In(i18n.Locale()).FileMenuCopyRelativePath() }
+
+// FileMenuCopyRelativePath says "Copy Relative Path"
+// in the language of msgs.
+func (msgs Messages) FileMenuCopyRelativePath() string {
+	return Catalog.Format(msgs.locale, "fileMenuCopyRelativePath", nil)
+}
+
+// FileMenuReveal says "Reveal in Finder"
+// in the language the app shows.
+func FileMenuReveal() string { return In(i18n.Locale()).FileMenuReveal() }
+
+// FileMenuReveal says "Reveal in Finder"
+// in the language of msgs.
+func (msgs Messages) FileMenuReveal() string {
+	return Catalog.Format(msgs.locale, "fileMenuReveal", nil)
+}
+
+// NewFileTitle says "New File"
+// in the language the app shows.
+func NewFileTitle() string { return In(i18n.Locale()).NewFileTitle() }
+
+// NewFileTitle says "New File"
+// in the language of msgs.
+func (msgs Messages) NewFileTitle() string {
+	return Catalog.Format(msgs.locale, "newFileTitle", nil)
+}
+
+// NewFolderTitle says "New Folder"
+// in the language the app shows.
+func NewFolderTitle() string { return In(i18n.Locale()).NewFolderTitle() }
+
+// NewFolderTitle says "New Folder"
+// in the language of msgs.
+func (msgs Messages) NewFolderTitle() string {
+	return Catalog.Format(msgs.locale, "newFolderTitle", nil)
+}
+
+// RenameTitle says "Rename {name}"
+// in the language the app shows.
+func RenameTitle(name string) string { return In(i18n.Locale()).RenameTitle(name) }
+
+// RenameTitle says "Rename {name}"
+// in the language of msgs.
+func (msgs Messages) RenameTitle(name string) string {
+	return Catalog.Format(msgs.locale, "renameTitle", map[string]any{"name": name})
+}
+
+// FileNameLabel says "Name"
+// in the language the app shows.
+func FileNameLabel() string { return In(i18n.Locale()).FileNameLabel() }
+
+// FileNameLabel says "Name"
+// in the language of msgs.
+func (msgs Messages) FileNameLabel() string {
+	return Catalog.Format(msgs.locale, "fileNameLabel", nil)
+}
+
+// CreateAction says "Create"
+// in the language the app shows.
+func CreateAction() string { return In(i18n.Locale()).CreateAction() }
+
+// CreateAction says "Create"
+// in the language of msgs.
+func (msgs Messages) CreateAction() string {
+	return Catalog.Format(msgs.locale, "createAction", nil)
+}
+
+// RenameAction says "Rename"
+// in the language the app shows.
+func RenameAction() string { return In(i18n.Locale()).RenameAction() }
+
+// RenameAction says "Rename"
+// in the language of msgs.
+func (msgs Messages) RenameAction() string {
+	return Catalog.Format(msgs.locale, "renameAction", nil)
+}
+
+// NameEmpty says "Enter a name."
+// in the language the app shows.
+func NameEmpty() string { return In(i18n.Locale()).NameEmpty() }
+
+// NameEmpty says "Enter a name."
+// in the language of msgs.
+func (msgs Messages) NameEmpty() string {
+	return Catalog.Format(msgs.locale, "nameEmpty", nil)
+}
+
+// NameInvalid says "Names cannot contain / or a NUL byte."
+// in the language the app shows.
+func NameInvalid() string { return In(i18n.Locale()).NameInvalid() }
+
+// NameInvalid says "Names cannot contain / or a NUL byte."
+// in the language of msgs.
+func (msgs Messages) NameInvalid() string {
+	return Catalog.Format(msgs.locale, "nameInvalid", nil)
+}
+
+// NameDot says "Names cannot be . or .."
+// in the language the app shows.
+func NameDot() string { return In(i18n.Locale()).NameDot() }
+
+// NameDot says "Names cannot be . or .."
+// in the language of msgs.
+func (msgs Messages) NameDot() string {
+	return Catalog.Format(msgs.locale, "nameDot", nil)
+}
+
+// NameExists says "Something with this name already exists."
+// in the language the app shows.
+func NameExists() string { return In(i18n.Locale()).NameExists() }
+
+// NameExists says "Something with this name already exists."
+// in the language of msgs.
+func (msgs Messages) NameExists() string {
+	return Catalog.Format(msgs.locale, "nameExists", nil)
+}
+
+// FileAlreadyOpen says "This file is already open in a tab."
+// in the language the app shows.
+func FileAlreadyOpen() string { return In(i18n.Locale()).FileAlreadyOpen() }
+
+// FileAlreadyOpen says "This file is already open in a tab."
+// in the language of msgs.
+func (msgs Messages) FileAlreadyOpen() string {
+	return Catalog.Format(msgs.locale, "fileAlreadyOpen", nil)
+}
+
+// CreateFailed says "Could not create {name}"
+// in the language the app shows.
+func CreateFailed(name string) string { return In(i18n.Locale()).CreateFailed(name) }
+
+// CreateFailed says "Could not create {name}"
+// in the language of msgs.
+func (msgs Messages) CreateFailed(name string) string {
+	return Catalog.Format(msgs.locale, "createFailed", map[string]any{"name": name})
+}
+
+// RenameFailed says "Could not rename {name}"
+// in the language the app shows.
+func RenameFailed(name string) string { return In(i18n.Locale()).RenameFailed(name) }
+
+// RenameFailed says "Could not rename {name}"
+// in the language of msgs.
+func (msgs Messages) RenameFailed(name string) string {
+	return Catalog.Format(msgs.locale, "renameFailed", map[string]any{"name": name})
+}
+
+// TargetChanged says "{name} changed on disk"
+// in the language the app shows.
+func TargetChanged(name string) string { return In(i18n.Locale()).TargetChanged(name) }
+
+// TargetChanged says "{name} changed on disk"
+// in the language of msgs.
+func (msgs Messages) TargetChanged(name string) string {
+	return Catalog.Format(msgs.locale, "targetChanged", map[string]any{"name": name})
+}
+
+// TargetChangedDetail says "Choose it again."
+// in the language the app shows.
+func TargetChangedDetail() string { return In(i18n.Locale()).TargetChangedDetail() }
+
+// TargetChangedDetail says "Choose it again."
+// in the language of msgs.
+func (msgs Messages) TargetChangedDetail() string {
+	return Catalog.Format(msgs.locale, "targetChangedDetail", nil)
+}
+
+// TrashConfirmTitle says "Move {name} to Trash?"
+// in the language the app shows.
+func TrashConfirmTitle(name string) string { return In(i18n.Locale()).TrashConfirmTitle(name) }
+
+// TrashConfirmTitle says "Move {name} to Trash?"
+// in the language of msgs.
+func (msgs Messages) TrashConfirmTitle(name string) string {
+	return Catalog.Format(msgs.locale, "trashConfirmTitle", map[string]any{"name": name})
+}
+
+// TrashConfirmDetail says "You can restore it from the Trash."
+// in the language the app shows.
+func TrashConfirmDetail() string { return In(i18n.Locale()).TrashConfirmDetail() }
+
+// TrashConfirmDetail says "You can restore it from the Trash."
+// in the language of msgs.
+func (msgs Messages) TrashConfirmDetail() string {
+	return Catalog.Format(msgs.locale, "trashConfirmDetail", nil)
+}
+
+// TrashUnsaved says "{count, plural, one {# open tab has unsaved edits.} other {# open tabs have unsaved edits.}}"
+// in the language the app shows.
+func TrashUnsaved(count int) string { return In(i18n.Locale()).TrashUnsaved(count) }
+
+// TrashUnsaved says "{count, plural, one {# open tab has unsaved edits.} other {# open tabs have unsaved edits.}}"
+// in the language of msgs.
+func (msgs Messages) TrashUnsaved(count int) string {
+	return Catalog.Format(msgs.locale, "trashUnsaved", map[string]any{"count": count})
+}
+
+// TrashAction says "Move to Trash"
+// in the language the app shows.
+func TrashAction() string { return In(i18n.Locale()).TrashAction() }
+
+// TrashAction says "Move to Trash"
+// in the language of msgs.
+func (msgs Messages) TrashAction() string {
+	return Catalog.Format(msgs.locale, "trashAction", nil)
+}
+
+// TrashFailed says "Could not move {name} to Trash"
+// in the language the app shows.
+func TrashFailed(name string) string { return In(i18n.Locale()).TrashFailed(name) }
+
+// TrashFailed says "Could not move {name} to Trash"
+// in the language of msgs.
+func (msgs Messages) TrashFailed(name string) string {
+	return Catalog.Format(msgs.locale, "trashFailed", map[string]any{"name": name})
+}
+
 // ReadOnly says "Read only"
 // in the language the app shows.
 func ReadOnly() string { return In(i18n.Locale()).ReadOnly() }

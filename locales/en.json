@@ -203,5 +203,39 @@
     }
   },
   "svgPreviewFailed": "This SVG cannot be shown. Fix the source to see it.",
+  "fileMenuNewFile": "New File…",
+  "fileMenuNewFolder": "New Folder…",
+  "fileMenuRename": "Rename…",
+  "fileMenuTrash": "Move to Trash…",
+  "fileMenuCopyPath": "Copy Path",
+  "fileMenuCopyRelativePath": "Copy Relative Path",
+  "fileMenuReveal": "Reveal in Finder",
+  "newFileTitle": "New File",
+  "newFolderTitle": "New Folder",
+  "renameTitle": "Rename {name}",
+  "fileNameLabel": "Name",
+  "createAction": "Create",
+  "renameAction": "Rename",
+  "nameEmpty": "Enter a name.",
+  "nameInvalid": "Names cannot contain / or a NUL byte.",
+  "nameDot": "Names cannot be . or ..",
+  "nameExists": "Something with this name already exists.",
+  "fileAlreadyOpen": "This file is already open in a tab.",
+  "createFailed": "Could not create {name}",
+  "renameFailed": "Could not rename {name}",
+  "targetChanged": "{name} changed on disk",
+  "targetChangedDetail": "Choose it again.",
+  "trashConfirmTitle": "Move {name} to Trash?",
+  "trashConfirmDetail": "You can restore it from the Trash.",
+  "trashUnsaved": "{count, plural, one {# open tab has unsaved edits.} other {# open tabs have unsaved edits.}}",
+  "@trashUnsaved": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "trashAction": "Move to Trash",
+  "trashFailed": "Could not move {name} to Trash",
   "readOnly": "Read only"
 }

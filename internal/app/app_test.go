@@ -5,6 +5,7 @@ import (
 	"errors"
 	"image"
 	"image/png"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -420,6 +421,327 @@ func TestImageFollowsTheDisk(t *testing.T) {
 	tester.Frame()
 	if !tester.HasText("4 × 3") {
 		t.Errorf("status line did not follow the disk; texts %q", tester.Texts())
+	}
+}
+
+func TestRootMenuCreatesAtTheWorkspaceRoot(t *testing.T) {
+	root := t.TempDir()
+	a, tester := openWorkspace(t, root)
+	tester.Frame()
+
+	tree, ok := tester.AccessByRole(ui.RoleTree, "Files")
+	if !ok {
+		t.Fatalf("no tree; texts %q", tester.Texts())
+	}
+	tester.RightClickAt(tree.Bounds.X+20, tree.Bounds.Y+tree.Bounds.H-10)
+	if menu := tester.Menu(); !slices.Contains(menu, "New File…") || slices.Contains(menu, "Rename…") {
+		t.Fatalf("root menu %q", menu)
+	}
+	if err := tester.ChooseMenuItem("New File…"); err != nil {
+		t.Fatalf("%v; menu %q", err, tester.Menu())
+	}
+	tester.Frame()
+	tester.Type("root.txt")
+	tester.Key(0, ui.KeyEnter)
+	tester.Frame()
+
+	if d := a.activeDocument(); d == nil || d.path != "root.txt" {
+		t.Errorf("opened %+v; texts %q", d, tester.Texts())
+	}
+}
+
+func TestNewFolderUsesTheClickedFolder(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "docs/keep.txt", "keep\n")
+	a, tester := openWorkspace(t, root)
+	tester.Frame()
+
+	if err := tester.RightClick("docs"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tester.ChooseMenuItem("New Folder…"); err != nil {
+		t.Fatalf("%v; menu %q", err, tester.Menu())
+	}
+	tester.Frame()
+	tester.Type("notes")
+	tester.Key(0, ui.KeyEnter)
+	tester.Frame()
+
+	info, err := os.Stat(filepath.Join(root, "docs", "notes"))
+	if err != nil || !info.IsDir() {
+		t.Fatalf("new folder: %v, %+v", err, info)
+	}
+	if _, listed := a.entries["docs/notes"]; !listed {
+		t.Errorf("the tree did not refresh; entries %+v", a.entries)
+	}
+}
+
+func TestNewFileOpensAndAnExistingNameIsRefused(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "notes.txt", "keep\n")
+	a, tester := openWorkspace(t, root)
+	tester.Frame()
+
+	if err := tester.RightClick("notes.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if menu := tester.Menu(); !slices.Contains(menu, "Rename…") || !slices.Contains(menu, "Move to Trash…") {
+		t.Fatalf("row menu %q", menu)
+	}
+	if err := tester.ChooseMenuItem("New File…"); err != nil {
+		t.Fatalf("%v; menu %q", err, tester.Menu())
+	}
+	tester.Frame()
+	tester.Type("hello.go")
+	tester.Key(0, ui.KeyEnter)
+	tester.Frame()
+
+	d := a.activeDocument()
+	if d == nil || d.path != "hello.go" {
+		t.Fatalf("opened %+v; texts %q", d, tester.Texts())
+	}
+	if info, err := os.Stat(filepath.Join(root, "hello.go")); err != nil || info.Size() != 0 {
+		t.Fatalf("new file: %v, size %v", err, info)
+	}
+	if entry, listed := a.entries["hello.go"]; !listed || entry.IsDir {
+		t.Errorf("the tree did not refresh: entry %+v, listed %v", entry, listed)
+	}
+	a.applyFileEvents(writeEvent)
+	if d.conflict != conflictNone {
+		t.Errorf("the watcher reported a conflict %d after the create", d.conflict)
+	}
+
+	if err := tester.RightClick("notes.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tester.ChooseMenuItem("New File…"); err != nil {
+		t.Fatalf("%v; menu %q", err, tester.Menu())
+	}
+	tester.Frame()
+	tester.Type("notes.txt")
+	tester.Key(0, ui.KeyEnter)
+	tester.Frame()
+	if got := readFile(t, root, "notes.txt"); got != "keep\n" {
+		t.Errorf("existing file became %q", got)
+	}
+	if !tester.HasText("Something with this name already exists.") {
+		t.Errorf("texts %q", tester.Texts())
+	}
+	if got := a.activeDocument(); got == nil || got.path != "hello.go" {
+		t.Errorf("refused name opened %+v", got)
+	}
+}
+
+func TestRenameKeepsUnsavedEditsAndSavesToTheNewPath(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "main.go", "package main\n")
+	a, tester := openWorkspace(t, root)
+	a.openFile("main.go")
+	d := a.activeDocument()
+	appendText(d, "// mine\n")
+	tester.Frame()
+
+	a.startRename("main.go")
+	tester.Frame()
+	tester.Type("renamed.go")
+	tester.Key(0, ui.KeyEnter)
+	tester.Frame()
+
+	if d.path != "renamed.go" || d.editor.Label != "renamed.go" {
+		t.Fatalf("document path %q, label %q", d.path, d.editor.Label)
+	}
+	if got, want := d.editor.Buffer.String(), "package main\n// mine\n"; got != want {
+		t.Errorf("buffer %q, want %q", got, want)
+	}
+	if _, err := os.Stat(filepath.Join(root, "main.go")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("old path still there: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "renamed.go")); err != nil {
+		t.Fatal(err)
+	}
+	a.applyFileEvents(writeEvent)
+	if d.conflict != conflictNone {
+		t.Errorf("the watcher reported a conflict %d after the rename", d.conflict)
+	}
+	if err := a.save(d); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := readFile(t, root, "renamed.go"), "package main\n// mine\n"; got != want {
+		t.Errorf("saved %q, want %q", got, want)
+	}
+}
+
+func TestRenameFolderMovesItsTabs(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "src/main.go", "package main\n")
+	writeFile(t, root, "src/util.go", "package main\n")
+	a, tester := openWorkspace(t, root)
+	a.openFile("src/main.go")
+	a.openFile("src/util.go")
+	tester.Frame()
+	clickFile(t, tester, "src")
+	if !a.tree.Open.Has("src") {
+		t.Fatal("the folder did not open in the tree")
+	}
+
+	a.startRename("src")
+	tester.Frame()
+	tester.Type("lib")
+	tester.Key(0, ui.KeyEnter)
+	tester.Frame()
+
+	var paths []string
+	for _, d := range a.documents {
+		paths = append(paths, d.path)
+		if d.editor.Label != d.path {
+			t.Errorf("%s is labeled %s", d.path, d.editor.Label)
+		}
+	}
+	if want := []string{"lib/main.go", "lib/util.go"}; !slices.Equal(paths, want) {
+		t.Errorf("tabs %q, want %q", paths, want)
+	}
+	for _, name := range []string{"lib/main.go", "lib/util.go"} {
+		if _, err := os.Stat(filepath.Join(root, filepath.FromSlash(name))); err != nil {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(root, "src")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("old folder still there: %v", err)
+	}
+	if !a.tree.Open.Has("lib") || a.tree.Open.Has("src") {
+		t.Errorf("the tree's open folders are %q", a.openTreePaths())
+	}
+}
+
+func TestRenameChangesOnlyTheCaseOfAName(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "notes.txt", "kept\n")
+	a, tester := openWorkspace(t, root)
+	clickFile(t, tester, "notes.txt")
+	a.startRename("notes.txt")
+	a.renameTarget("NOTES.txt")
+	names, err := os.ReadDir(root)
+	if err != nil || len(names) != 1 || names[0].Name() != "NOTES.txt" {
+		t.Fatalf("folder holds %v, %v; failure %q", names, err, a.files.failure)
+	}
+	if d := a.activeDocument(); d.path != "NOTES.txt" {
+		t.Errorf("tab shows %s", d.path)
+	}
+}
+
+func TestRenameShowsTheFileAsItsNewKind(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "notes.txt", "# Title\n")
+	writePNG(t, root, "photo.png", 2, 2)
+	a, tester, posted := openWithPosts(t, root)
+	a.openFile("notes.txt")
+	tester.Frame()
+	a.startRename("notes.txt")
+	a.renameTarget("notes.md")
+	if d := a.activeDocument(); !d.isMarkdown() {
+		t.Error("a file renamed to Markdown is not shown as Markdown")
+	}
+
+	a.openFile("photo.png")
+	followPosts(t, posted, tester, func() bool { return a.activeDocument().image.decoded })
+	a.startRename("photo.png")
+	a.renameTarget("photo.bin")
+	if d := a.activeDocument(); d != nil && d.path == "photo.bin" && d.isRasterImage() {
+		t.Error("a file no longer named as a picture still shows as one")
+	}
+}
+
+func TestRenameNeverOverwrites(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "a.txt", "a\n")
+	writeFile(t, root, "b.txt", "b\n")
+	a, tester := openWorkspace(t, root)
+	a.openFile("a.txt")
+	tester.Frame()
+
+	a.startRename("a.txt")
+	tester.Frame()
+	tester.Type("b.txt")
+	tester.Key(0, ui.KeyEnter)
+	tester.Frame()
+
+	if !tester.HasText("Something with this name already exists.") {
+		t.Errorf("texts %q", tester.Texts())
+	}
+	if got := readFile(t, root, "a.txt"); got != "a\n" {
+		t.Errorf("a.txt became %q", got)
+	}
+	if got := readFile(t, root, "b.txt"); got != "b\n" {
+		t.Errorf("b.txt became %q", got)
+	}
+}
+
+func TestRenameRefusesANameOutsideTheWorkspace(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "main.go", "package main\n")
+	a, tester := openWorkspace(t, root)
+	a.openFile("main.go")
+	tester.Frame()
+
+	a.startRename("main.go")
+	tester.Frame()
+	outside := "escape-" + filepath.Base(root) + ".go"
+	tester.Type("../" + outside)
+	tester.Key(0, ui.KeyEnter)
+	tester.Frame()
+
+	if !tester.HasText("Names cannot contain / or a NUL byte.") {
+		t.Errorf("texts %q", tester.Texts())
+	}
+	if _, err := os.Stat(filepath.Join(filepath.Dir(root), outside)); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("a name outside the workspace was created: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "main.go")); err != nil {
+		t.Errorf("the original file is gone: %v", err)
+	}
+	if got := a.activeDocument(); got == nil || got.path != "main.go" {
+		t.Errorf("document moved to %+v", got)
+	}
+}
+
+func TestTrashConfirmsAndClosesUnsavedTabs(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "gone.txt", "bye\n")
+	writeFile(t, root, "keep.txt", "keep\n")
+	a, tester := openWorkspace(t, root)
+	a.openFile("gone.txt")
+	d := a.activeDocument()
+	appendText(d, "// mine\n")
+	tester.Frame()
+
+	var trashed string
+	a.trashItem = func(file string) error {
+		trashed = file
+		return os.Remove(file)
+	}
+	a.askTrash("gone.txt")
+	tester.Frame()
+	if !tester.HasText("Move gone.txt to Trash?") || !tester.HasText("1 open tab has unsaved edits.") {
+		t.Fatalf("texts %q", tester.Texts())
+	}
+	if err := tester.Click("Move to Trash"); err != nil {
+		t.Fatalf("%v; texts %q", err, tester.Texts())
+	}
+	tester.Frame()
+	if want := filepath.Join(root, "gone.txt"); trashed != want {
+		t.Errorf("trashed %q, want %q", trashed, want)
+	}
+	if len(a.documents) != 0 {
+		t.Errorf("tabs left after the trash: %+v", a.documents)
+	}
+	if _, err := os.Stat(filepath.Join(root, "gone.txt")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("gone.txt was not removed: %v", err)
+	}
+	if _, listed := a.entries["gone.txt"]; listed {
+		t.Error("the tree still lists gone.txt")
+	}
+	if _, err := os.Stat(filepath.Join(root, "keep.txt")); err != nil {
+		t.Errorf("keep.txt: %v", err)
 	}
 }
 
