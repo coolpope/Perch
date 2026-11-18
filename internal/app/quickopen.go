@@ -141,7 +141,7 @@ func (a *App) quickOpenView(c *ui.Context) {
 	colors := a.look.palette
 	ui.DialogBase(c, &a.quick.open, func(backdrop ui.Element, panel ui.Element) {
 		backdrop.Background(ui.RGBA(0, 0, 0, 0.16)).Justify(ui.Start).Padding(quickOpenTopSpace, 0, 0, 0)
-		panel.Width(quickOpenWidth).Background(colors.background).Radius(10).Border(1, colors.border).
+		panel.Width(quickOpenWidth).Background(colors.background).Radius(radiusDialog).Border(1, colors.border).
 			Shadow(0, 12, 36, 0, ui.RGBA(0, 0, 0, 0.22))
 		a.quickOpenContent(c)
 	})
@@ -228,7 +228,7 @@ func (a *App) quickOpenRow(c *ui.Context, index int) bool {
 	match := a.quick.matches[index]
 	name := path.Base(match.Path)
 	dir := path.Dir(match.Path)
-	row := ui.Row(c).FillWidth().Height(quickOpenRowHeight).Gap(9).Padding(0, 10).Radius(6).AlignItems(ui.Center)
+	row := ui.Row(c).FillWidth().Height(quickOpenRowHeight).Gap(9).Padding(0, 10).Radius(radiusControl).AlignItems(ui.Center)
 	if index == a.quick.chosen {
 		row.Background(colors.hover)
 	}

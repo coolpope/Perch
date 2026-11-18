@@ -196,7 +196,7 @@ func (a *App) htmlImageView(c *ui.Context, d *document, item htmlblock.Item) {
 // showImage draws an image at the size the HTML gives it, keeping its shape.
 func showImage(c *ui.Context, source ui.ImageSource, image htmlblock.Image) {
 	width, height := ui.ImageSize(source)
-	element := ui.Image(c, source).Radius(6).MaxWidthPercent(100)
+	element := ui.Image(c, source).Radius(radiusControl).MaxWidthPercent(100)
 	if width > 0 && height > 0 {
 		element.AspectRatio(width / height)
 	}

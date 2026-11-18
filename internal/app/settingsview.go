@@ -64,7 +64,7 @@ func (a *App) settingsView(c *ui.Context) {
 	colors := a.look.palette
 	ui.DialogBase(c, &a.settingsOpen, func(backdrop ui.Element, panel ui.Element) {
 		backdrop.Background(ui.RGBA(0, 0, 0, 0.22))
-		panel.Width(settingsWidth).Background(colors.background).Radius(12).Border(1, colors.border).
+		panel.Width(settingsWidth).Background(colors.background).Radius(radiusDialog).Border(1, colors.border).
 			Shadow(0, 14, 40, 0, ui.RGBA(0, 0, 0, 0.25)).Label(locales.SettingsTitle())
 		a.settingsContent(c)
 	})
@@ -80,7 +80,7 @@ func (a *App) settingsContent(c *ui.Context) {
 		ui.Row(c).FillWidth().Height(48).AlignItems(ui.Center).Children(func() {
 			ui.Text(c, locales.SettingsTitle()).FontSize(16).FontWeight(600)
 			ui.Spacer(c)
-			button := ui.Box(c).Size(24, 24).Center().Radius(6).Label(locales.CloseSettings())
+			button := ui.Box(c).Size(24, 24).Center().Radius(radiusSmall).Label(locales.CloseSettings())
 			if button.Hovered() {
 				button.Background(colors.hover)
 			}

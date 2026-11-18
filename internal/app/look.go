@@ -8,6 +8,14 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 )
 
+// The corner radii of the interface, from its smallest parts to its panels.
+const (
+	radiusSmall   float32 = 6
+	radiusControl float32 = 9
+	radiusCard    float32 = 14
+	radiusDialog  float32 = 18
+)
+
 // palette is the color scheme of one appearance: warm paper or graphite with
 // a single blue accent taken from the app icon.
 type palette struct {
@@ -79,7 +87,10 @@ type look struct {
 	// tree marks the chosen file with a quiet fill, which keeps the colors
 	// of its icon readable.
 	tree *ui.Theme
-	code *editor.Theme
+	// shell draws the divider beside the sidebar in the sidebar's color, so
+	// that the main panel stands on its own.
+	shell *ui.Theme
+	code  *editor.Theme
 }
 
 func newLook(base *ui.Theme, colors palette) *look {
@@ -93,7 +104,7 @@ func newLook(base *ui.Theme, colors palette) *look {
 	theme.TextMuted = colors.muted
 	theme.Warning = colors.warning
 	theme.Danger = colors.danger
-	theme.Radius = 6
+	theme.Radius = radiusControl
 	theme.FontSize = 13
 	tree := theme
 	tree.Accent = colors.hover
@@ -101,7 +112,9 @@ func newLook(base *ui.Theme, colors palette) *look {
 	tree.AccentPressed = colors.hover
 	tree.AccentText = colors.text
 	tree.InactiveAccent = colors.hover
-	return &look{palette: colors, theme: &theme, tree: &tree, code: newCodeTheme(&theme, colors)}
+	shell := theme
+	shell.Border = colors.sidebar
+	return &look{palette: colors, theme: &theme, tree: &tree, shell: &shell, code: newCodeTheme(&theme, colors)}
 }
 
 func newCodeTheme(theme *ui.Theme, colors palette) *editor.Theme {

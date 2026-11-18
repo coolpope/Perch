@@ -111,7 +111,7 @@ func (a *App) languagesContent(c *ui.Context) {
 	colors := a.look.palette
 	ui.Column(c).FillWidth().Padding(6, 20, 16, 20).Children(func() {
 		ui.Row(c).FillWidth().Height(48).Gap(6).AlignItems(ui.Center).Children(func() {
-			back := ui.Box(c).Size(24, 24).Center().Radius(6).Label(locales.LanguagesBack())
+			back := ui.Box(c).Size(24, 24).Center().Radius(radiusSmall).Label(locales.LanguagesBack())
 			if back.Hovered() {
 				back.Background(colors.hover)
 			}
