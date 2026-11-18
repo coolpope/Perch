@@ -44,6 +44,7 @@ func (a *App) view(c *ui.Context) {
 	a.toastsView(c)
 	if a.root == "" {
 		a.welcomeView(c)
+		a.outlineView(c)
 		a.settingsView(c)
 		return
 	}
@@ -58,6 +59,7 @@ func (a *App) view(c *ui.Context) {
 	a.closeTabAlert(c)
 	a.closeWindowAlert(c)
 	a.quickOpenView(c)
+	a.outlineView(c)
 	a.settingsView(c)
 	a.fileDialogView(c)
 	a.trackSession()
@@ -226,6 +228,7 @@ func toggleOpen(open *ui.Selection[string], item string) {
 
 // chooseTab shows a tab and marks its file in the tree when the row shows.
 func (a *App) chooseTab(index int) {
+	a.closeOutline()
 	a.closeChange()
 	a.active = index
 	a.treeRow = noRow
@@ -412,7 +415,7 @@ func (a *App) documentView(c *ui.Context, d *document) {
 		return
 	}
 	if d.showsPreview() {
-		ui.Scroll(c).Grow(1).FillWidth().Padding(28, 32).AlignItems(ui.Center).Children(func() {
+		ui.Scroll(c).TrackScroll(&d.previewScroll).Grow(1).FillWidth().Padding(28, 32).AlignItems(ui.Center).Children(func() {
 			markdown.View(c, d.markdownText(), d.markdownOptions).MaxWidth(markdownMaxWidth).FillWidth()
 		})
 		return

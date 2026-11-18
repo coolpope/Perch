@@ -36,6 +36,16 @@ func (p *Pool) Definition(ctx context.Context, server Server, document Document,
 	return client.Definition(ctx, document, position)
 }
 
+// DocumentSymbols asks the file's server for its symbols, starting the server
+// when it is not running.
+func (p *Pool) DocumentSymbols(ctx context.Context, server Server, document Document) ([]Symbol, error) {
+	client, err := p.client(ctx, server, serverRoot(p.root, document.Path, server.RootMarkers))
+	if err != nil {
+		return nil, err
+	}
+	return client.DocumentSymbols(ctx, document)
+}
+
 // clientKey tells apart servers by what runs and where it works from.
 func clientKey(server Server, root string) string {
 	return strings.Join(append([]string{root, server.Program}, server.Args...), "\x00")

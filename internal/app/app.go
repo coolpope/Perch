@@ -47,9 +47,13 @@ type App struct {
 	sidebarTab   int
 
 	quick   quickOpen
-	find    findInFiles
-	files   fileTreeState
-	session sessionState
+	outline outlineState
+	// outlineRequest invalidates answers of a closed finder or an older
+	// request.
+	outlineRequest uint64
+	find           findInFiles
+	files          fileTreeState
+	session        sessionState
 	// recentRoots are the recent projects the welcome screen lists, known once
 	// recentChecked has been answered.
 	recentRoots   []string
@@ -127,6 +131,7 @@ func (a *App) loadFolder(root string) error {
 	}
 	a.prepareSessionForFolder()
 	a.hideQuickOpen()
+	a.closeOutline()
 	a.stopSearch()
 	a.stopChanges()
 	a.stopDefinitions()
@@ -177,6 +182,7 @@ func (a *App) childPaths(dir string) []string {
 
 // openFile shows a file in a tab, reusing the tab it already has.
 func (a *App) openFile(relPath string) {
+	a.closeOutline()
 	a.closeChange()
 	index := slices.IndexFunc(a.documents, func(d *document) bool { return d.path == relPath })
 	if index != noDocument {
@@ -304,6 +310,7 @@ func (a *App) closeActiveTab() {
 }
 
 func (a *App) closeTab(d *document) {
+	a.closeOutline()
 	index := slices.Index(a.documents, d)
 	if index == noDocument {
 		return

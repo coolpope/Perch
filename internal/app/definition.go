@@ -58,6 +58,25 @@ func (a *App) stopDefinitions() {
 	a.definition = definitionState{}
 }
 
+// languagePool returns the project's language servers, which go to definition
+// and the symbol finder share.
+func (a *App) languagePool() *lsp.Pool {
+	if a.definition.pool == nil {
+		a.definition.pool = lsp.NewPool(a.root)
+	}
+	return a.definition.pool
+}
+
+// closeIdleServersLater ends the servers that are still unused after the idle
+// limit.
+func (a *App) closeIdleServersLater() {
+	pool := a.definition.pool
+	if pool == nil {
+		return
+	}
+	a.after(serverIdleLimit, func() { go pool.CloseIdle(serverIdleLimit) })
+}
+
 // definitionAtCaret goes to the definition of the symbol at the caret.
 func (a *App) definitionAtCaret() {
 	if d := a.activeDocument(); d != nil && d.editor != nil && !d.showsPreview() {
@@ -85,9 +104,7 @@ func (a *App) goToDefinition(d *document, offset int) {
 	if s.cancel != nil {
 		s.cancel()
 	}
-	if s.pool == nil {
-		s.pool = lsp.NewPool(a.root)
-	}
+	pool := a.languagePool()
 	buffer := d.editor.Buffer
 	at := buffer.Pos(offset)
 	line := buffer.Line(at.Line)
@@ -99,7 +116,7 @@ func (a *App) goToDefinition(d *document, offset int) {
 	ctx, cancel := context.WithTimeout(context.Background(), definitionTimeout)
 	s.request++
 	s.pending, s.cancel = true, cancel
-	request, pool := s.request, s.pool
+	request := s.request
 	go func() {
 		defer cancel()
 		found, err := pool.Definition(ctx, server, document, position)
@@ -125,8 +142,7 @@ func wordAt(line string, column int) string {
 func (a *App) definitionAnswered(origin place, server lsp.Server, word string, found []lsp.Location, err error) {
 	s := &a.definition
 	s.pending = false
-	pool := s.pool
-	a.after(serverIdleLimit, func() { go pool.CloseIdle(serverIdleLimit) })
+	a.closeIdleServersLater()
 	switch {
 	case errors.Is(err, context.Canceled):
 	case errors.Is(err, lsp.ErrServerMissing):
@@ -158,8 +174,9 @@ func (a *App) showDefinition(origin place, target lsp.Location) {
 
 // editorPos converts a position of the protocol to one of the document.
 func editorPos(d *document, position lsp.Position) editor.Pos {
-	line := d.editor.Buffer.Line(position.Line)
-	return editor.Pos{Line: position.Line, Col: lsp.ByteColumn(line, position.Character)}
+	line := max(0, min(position.Line, d.editor.Buffer.LineCount()-1))
+	text := d.editor.Buffer.Line(line)
+	return editor.Pos{Line: line, Col: lsp.ByteColumn(text, max(0, position.Character))}
 }
 
 // insideProject returns a file's path in the project. Servers may report the
@@ -202,6 +219,7 @@ func (a *App) openPlaceDocument(path string, external bool) *document {
 
 // openExternalFile shows a file outside the workspace in a read-only tab.
 func (a *App) openExternalFile(file string) {
+	a.closeOutline()
 	a.closeChange()
 	index := slices.IndexFunc(a.documents, func(d *document) bool { return d.path == file })
 	if index != noDocument {

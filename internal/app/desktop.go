@@ -304,6 +304,7 @@ func (d *Desktop) menu() *mygo.Menu {
 			d.menuItem(locales.MenuFindInFiles(), "CmdOrCtrl+Shift+F", (*App).showFindInFiles),
 		}},
 		{Label: locales.MenuGo(), Submenu: []*mygo.MenuItem{
+			d.menuItem(locales.MenuGoToSymbol(), "CmdOrCtrl+Shift+O", (*App).showOutline),
 			d.menuItem(locales.MenuGoToDefinition(), "F12", (*App).definitionAtCaret),
 			mygo.Separator(),
 			d.menuItem(locales.MenuGoBack(), "Ctrl+-", (*App).goBack),

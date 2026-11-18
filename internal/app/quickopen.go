@@ -13,14 +13,8 @@ import (
 )
 
 const (
-	quickOpenLimit      int     = 50
-	quickOpenWidth      float32 = 600
-	quickOpenListHeight float32 = 336
-	quickOpenRowHeight  float32 = 32
-	quickOpenListInset  float32 = 6
-	quickOpenNoteHeight float32 = 88
-	quickOpenTopSpace   float32 = 84
-	markedTextWeight    int     = 600
+	quickOpenLimit   int = 50
+	markedTextWeight int = 600
 )
 
 // quickOpen is the state of the file finder. It holds the file list only
@@ -44,6 +38,7 @@ func (a *App) showQuickOpen() {
 	if a.root == "" {
 		return
 	}
+	a.closeOutline()
 	a.hideQuickOpen()
 	ctx, cancel := context.WithCancel(context.Background())
 	a.quick = quickOpen{open: true, cancel: cancel}
@@ -138,13 +133,7 @@ func (a *App) quickOpenView(c *ui.Context) {
 	if !a.quick.open {
 		return
 	}
-	colors := a.look.palette
-	ui.DialogBase(c, &a.quick.open, func(backdrop ui.Element, panel ui.Element) {
-		backdrop.Background(ui.RGBA(0, 0, 0, 0.16)).Justify(ui.Start).Padding(quickOpenTopSpace, 0, 0, 0)
-		panel.Width(quickOpenWidth).Background(colors.background).Radius(radiusDialog).Border(1, colors.border).
-			Shadow(0, 12, 36, 0, ui.RGBA(0, 0, 0, 0.22))
-		a.quickOpenContent(c)
-	})
+	a.finderPanel(c, &a.quick.open, func() { a.quickOpenContent(c) })
 	if !a.quick.open {
 		a.hideQuickOpen()
 	}
@@ -152,12 +141,7 @@ func (a *App) quickOpenView(c *ui.Context) {
 
 func (a *App) quickOpenContent(c *ui.Context) {
 	colors := a.look.palette
-	if c.Shortcut(0, ui.KeyDown) {
-		a.moveQuickOpenChoice(1)
-	}
-	if c.Shortcut(0, ui.KeyUp) {
-		a.moveQuickOpenChoice(-1)
-	}
+	finderMoveShortcuts(c, a.moveQuickOpenChoice)
 	submitted := false
 	ui.Column(c).FillWidth().Children(func() {
 		ui.Row(c).FillWidth().Padding(13, 16).Children(func() {
@@ -179,9 +163,7 @@ func (a *App) quickOpenContent(c *ui.Context) {
 func (a *App) quickOpenResults(c *ui.Context) {
 	q := &a.quick
 	if message := a.quickOpenMessage(); message != "" {
-		ui.Column(c).FillWidth().Height(quickOpenNoteHeight).Center().Padding(0, 24).Children(func() {
-			ui.Text(c, message).TextColor(a.look.palette.muted)
-		})
+		a.finderNote(c, message, "")
 		return
 	}
 	q.list.Key = func(row int) any { return q.matches[row].Path }
@@ -190,15 +172,10 @@ func (a *App) quickOpenResults(c *ui.Context) {
 		if a.quickOpenRow(c, row) {
 			clicked = row
 		}
-	}).FillWidth().Height(quickOpenHeightFor(len(q.matches))).Padding(quickOpenListInset)
+	}).FillWidth().Height(finderHeightFor(len(q.matches))).Padding(finderListInset)
 	if clicked != noRow {
 		a.openQuickOpenMatch(clicked)
 	}
-}
-
-// quickOpenHeightFor fits the list to its rows, up to the finder's full height.
-func quickOpenHeightFor(rows int) float32 {
-	return min(quickOpenListHeight, float32(rows)*quickOpenRowHeight+2*quickOpenListInset)
 }
 
 // quickOpenMessage says why the finder shows no rows, and is empty when it
@@ -228,10 +205,7 @@ func (a *App) quickOpenRow(c *ui.Context, index int) bool {
 	match := a.quick.matches[index]
 	name := path.Base(match.Path)
 	dir := path.Dir(match.Path)
-	row := ui.Row(c).FillWidth().Height(quickOpenRowHeight).Gap(9).Padding(0, 10).Radius(radiusControl).AlignItems(ui.Center)
-	if index == a.quick.chosen {
-		row.Background(colors.hover)
-	}
+	row := a.finderRow(c, a.quick.chosen, index)
 	clicked := row.Clicked()
 	row.Children(func() {
 		ui.Icon(c, iconFile).FontSize(iconFontSize).TextColor(fileTint(name, colors))

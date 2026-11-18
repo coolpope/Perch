@@ -187,7 +187,11 @@ func (c *Client) initialize(ctx context.Context, root string, options json.RawMe
 		"workspaceFolders": mustRaw([]map[string]string{{"uri": uri, "name": filepath.Base(root)}}),
 		"capabilities": json.RawMessage(`{
 			"general": {"positionEncodings": ["utf-16"]},
-			"textDocument": {"synchronization": {}, "definition": {"linkSupport": true}},
+			"textDocument": {
+				"synchronization": {},
+				"definition": {"linkSupport": true},
+				"documentSymbol": {"hierarchicalDocumentSymbolSupport": true}
+			},
 			"workspace": {"configuration": true, "workspaceFolders": true}
 		}`),
 	}

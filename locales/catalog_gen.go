@@ -1288,6 +1288,16 @@ func (msgs Messages) MenuGo() string {
 	return Catalog.Format(msgs.locale, "menuGo", nil)
 }
 
+// MenuGoToSymbol says "Go to Symbol in File…"
+// in the language the app shows.
+func MenuGoToSymbol() string { return In(i18n.Locale()).MenuGoToSymbol() }
+
+// MenuGoToSymbol says "Go to Symbol in File…"
+// in the language of msgs.
+func (msgs Messages) MenuGoToSymbol() string {
+	return Catalog.Format(msgs.locale, "menuGoToSymbol", nil)
+}
+
 // MenuGoToDefinition says "Go to Definition"
 // in the language the app shows.
 func MenuGoToDefinition() string { return In(i18n.Locale()).MenuGoToDefinition() }
@@ -1316,6 +1326,166 @@ func MenuGoForward() string { return In(i18n.Locale()).MenuGoForward() }
 // in the language of msgs.
 func (msgs Messages) MenuGoForward() string {
 	return Catalog.Format(msgs.locale, "menuGoForward", nil)
+}
+
+// GoToSymbolPlaceholder says "Search symbols in this file"
+// in the language the app shows.
+func GoToSymbolPlaceholder() string { return In(i18n.Locale()).GoToSymbolPlaceholder() }
+
+// GoToSymbolPlaceholder says "Search symbols in this file"
+// in the language of msgs.
+func (msgs Messages) GoToSymbolPlaceholder() string {
+	return Catalog.Format(msgs.locale, "goToSymbolPlaceholder", nil)
+}
+
+// GoToSymbol says "Go to symbol in file"
+// in the language the app shows.
+func GoToSymbol() string { return In(i18n.Locale()).GoToSymbol() }
+
+// GoToSymbol says "Go to symbol in file"
+// in the language of msgs.
+func (msgs Messages) GoToSymbol() string {
+	return Catalog.Format(msgs.locale, "goToSymbol", nil)
+}
+
+// ReadingSymbols says "Reading symbols…"
+// in the language the app shows.
+func ReadingSymbols() string { return In(i18n.Locale()).ReadingSymbols() }
+
+// ReadingSymbols says "Reading symbols…"
+// in the language of msgs.
+func (msgs Messages) ReadingSymbols() string {
+	return Catalog.Format(msgs.locale, "readingSymbols", nil)
+}
+
+// NoSymbols says "No symbols in this file"
+// in the language the app shows.
+func NoSymbols() string { return In(i18n.Locale()).NoSymbols() }
+
+// NoSymbols says "No symbols in this file"
+// in the language of msgs.
+func (msgs Messages) NoSymbols() string {
+	return Catalog.Format(msgs.locale, "noSymbols", nil)
+}
+
+// NoMatchingSymbols says "No matching symbols"
+// in the language the app shows.
+func NoMatchingSymbols() string { return In(i18n.Locale()).NoMatchingSymbols() }
+
+// NoMatchingSymbols says "No matching symbols"
+// in the language of msgs.
+func (msgs Messages) NoMatchingSymbols() string {
+	return Catalog.Format(msgs.locale, "noMatchingSymbols", nil)
+}
+
+// SymbolsForImage says "An image has no symbols"
+// in the language the app shows.
+func SymbolsForImage() string { return In(i18n.Locale()).SymbolsForImage() }
+
+// SymbolsForImage says "An image has no symbols"
+// in the language of msgs.
+func (msgs Messages) SymbolsForImage() string {
+	return Catalog.Format(msgs.locale, "symbolsForImage", nil)
+}
+
+// OpenFileForSymbols says "Open a file to see its symbols"
+// in the language the app shows.
+func OpenFileForSymbols() string { return In(i18n.Locale()).OpenFileForSymbols() }
+
+// OpenFileForSymbols says "Open a file to see its symbols"
+// in the language of msgs.
+func (msgs Messages) OpenFileForSymbols() string {
+	return Catalog.Format(msgs.locale, "openFileForSymbols", nil)
+}
+
+// SymbolsFailed says "Could not read the symbols"
+// in the language the app shows.
+func SymbolsFailed() string { return In(i18n.Locale()).SymbolsFailed() }
+
+// SymbolsFailed says "Could not read the symbols"
+// in the language of msgs.
+func (msgs Messages) SymbolsFailed() string {
+	return Catalog.Format(msgs.locale, "symbolsFailed", nil)
+}
+
+// SymbolFunction says "func"
+// in the language the app shows.
+func SymbolFunction() string { return In(i18n.Locale()).SymbolFunction() }
+
+// SymbolFunction says "func"
+// in the language of msgs.
+func (msgs Messages) SymbolFunction() string {
+	return Catalog.Format(msgs.locale, "symbolFunction", nil)
+}
+
+// SymbolMethod says "method"
+// in the language the app shows.
+func SymbolMethod() string { return In(i18n.Locale()).SymbolMethod() }
+
+// SymbolMethod says "method"
+// in the language of msgs.
+func (msgs Messages) SymbolMethod() string {
+	return Catalog.Format(msgs.locale, "symbolMethod", nil)
+}
+
+// SymbolType says "type"
+// in the language the app shows.
+func SymbolType() string { return In(i18n.Locale()).SymbolType() }
+
+// SymbolType says "type"
+// in the language of msgs.
+func (msgs Messages) SymbolType() string {
+	return Catalog.Format(msgs.locale, "symbolType", nil)
+}
+
+// SymbolField says "field"
+// in the language the app shows.
+func SymbolField() string { return In(i18n.Locale()).SymbolField() }
+
+// SymbolField says "field"
+// in the language of msgs.
+func (msgs Messages) SymbolField() string {
+	return Catalog.Format(msgs.locale, "symbolField", nil)
+}
+
+// SymbolConstant says "const"
+// in the language the app shows.
+func SymbolConstant() string { return In(i18n.Locale()).SymbolConstant() }
+
+// SymbolConstant says "const"
+// in the language of msgs.
+func (msgs Messages) SymbolConstant() string {
+	return Catalog.Format(msgs.locale, "symbolConstant", nil)
+}
+
+// SymbolVariable says "var"
+// in the language the app shows.
+func SymbolVariable() string { return In(i18n.Locale()).SymbolVariable() }
+
+// SymbolVariable says "var"
+// in the language of msgs.
+func (msgs Messages) SymbolVariable() string {
+	return Catalog.Format(msgs.locale, "symbolVariable", nil)
+}
+
+// SymbolHeading says "heading"
+// in the language the app shows.
+func SymbolHeading() string { return In(i18n.Locale()).SymbolHeading() }
+
+// SymbolHeading says "heading"
+// in the language of msgs.
+func (msgs Messages) SymbolHeading() string {
+	return Catalog.Format(msgs.locale, "symbolHeading", nil)
+}
+
+// SymbolOther says "other"
+// in the language the app shows.
+func SymbolOther() string { return In(i18n.Locale()).SymbolOther() }
+
+// SymbolOther says "other"
+// in the language of msgs.
+func (msgs Messages) SymbolOther() string {
+	return Catalog.Format(msgs.locale, "symbolOther", nil)
 }
 
 // FindingDefinition says "Finding definition…"

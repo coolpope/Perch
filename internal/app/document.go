@@ -64,7 +64,10 @@ type document struct {
 
 	// markdownView is the Preview/Source choice that Markdown and SVG
 	// documents share.
-	markdownView    int
+	markdownView int
+	// previewScroll keeps the rendered Markdown where it was while the
+	// document shows its source.
+	previewScroll   ui.ScrollState
 	markdownOptions *markdown.Options
 	// previewText holds the rendered source only once a preview has shown,
 	// so that code files keep one copy of their text in memory.

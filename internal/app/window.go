@@ -46,6 +46,7 @@ func (a *App) release() {
 	}
 	a.stopSearch()
 	a.hideQuickOpen()
+	a.closeOutline()
 	a.stopChanges()
 	a.stopDefinitions()
 }
