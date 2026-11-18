@@ -1237,3 +1237,113 @@ func MenuMarkReviewed() string { return In(i18n.Locale()).MenuMarkReviewed() }
 func (msgs Messages) MenuMarkReviewed() string {
 	return Catalog.Format(msgs.locale, "menuMarkReviewed", nil)
 }
+
+// MenuGo says "Go"
+// in the language the app shows.
+func MenuGo() string { return In(i18n.Locale()).MenuGo() }
+
+// MenuGo says "Go"
+// in the language of msgs.
+func (msgs Messages) MenuGo() string {
+	return Catalog.Format(msgs.locale, "menuGo", nil)
+}
+
+// MenuGoToDefinition says "Go to Definition"
+// in the language the app shows.
+func MenuGoToDefinition() string { return In(i18n.Locale()).MenuGoToDefinition() }
+
+// MenuGoToDefinition says "Go to Definition"
+// in the language of msgs.
+func (msgs Messages) MenuGoToDefinition() string {
+	return Catalog.Format(msgs.locale, "menuGoToDefinition", nil)
+}
+
+// MenuGoBack says "Back"
+// in the language the app shows.
+func MenuGoBack() string { return In(i18n.Locale()).MenuGoBack() }
+
+// MenuGoBack says "Back"
+// in the language of msgs.
+func (msgs Messages) MenuGoBack() string {
+	return Catalog.Format(msgs.locale, "menuGoBack", nil)
+}
+
+// MenuGoForward says "Forward"
+// in the language the app shows.
+func MenuGoForward() string { return In(i18n.Locale()).MenuGoForward() }
+
+// MenuGoForward says "Forward"
+// in the language of msgs.
+func (msgs Messages) MenuGoForward() string {
+	return Catalog.Format(msgs.locale, "menuGoForward", nil)
+}
+
+// FindingDefinition says "Finding definition…"
+// in the language the app shows.
+func FindingDefinition() string { return In(i18n.Locale()).FindingDefinition() }
+
+// FindingDefinition says "Finding definition…"
+// in the language of msgs.
+func (msgs Messages) FindingDefinition() string {
+	return Catalog.Format(msgs.locale, "findingDefinition", nil)
+}
+
+// NoDefinition says "No definition found for {word}"
+// in the language the app shows.
+func NoDefinition(word string) string { return In(i18n.Locale()).NoDefinition(word) }
+
+// NoDefinition says "No definition found for {word}"
+// in the language of msgs.
+func (msgs Messages) NoDefinition(word string) string {
+	return Catalog.Format(msgs.locale, "noDefinition", map[string]any{"word": word})
+}
+
+// DefinitionUnsupported says "Go to definition is not available for {name}"
+// in the language the app shows.
+func DefinitionUnsupported(name string) string { return In(i18n.Locale()).DefinitionUnsupported(name) }
+
+// DefinitionUnsupported says "Go to definition is not available for {name}"
+// in the language of msgs.
+func (msgs Messages) DefinitionUnsupported(name string) string {
+	return Catalog.Format(msgs.locale, "definitionUnsupported", map[string]any{"name": name})
+}
+
+// ServerMissing says "Go to definition needs {server}"
+// in the language the app shows.
+func ServerMissing(server string) string { return In(i18n.Locale()).ServerMissing(server) }
+
+// ServerMissing says "Go to definition needs {server}"
+// in the language of msgs.
+func (msgs Messages) ServerMissing(server string) string {
+	return Catalog.Format(msgs.locale, "serverMissing", map[string]any{"server": server})
+}
+
+// ServerInstall says "Install it with: {command}"
+// in the language the app shows.
+func ServerInstall(command string) string { return In(i18n.Locale()).ServerInstall(command) }
+
+// ServerInstall says "Install it with: {command}"
+// in the language of msgs.
+func (msgs Messages) ServerInstall(command string) string {
+	return Catalog.Format(msgs.locale, "serverInstall", map[string]any{"command": command})
+}
+
+// DefinitionFailed says "Could not find the definition"
+// in the language the app shows.
+func DefinitionFailed() string { return In(i18n.Locale()).DefinitionFailed() }
+
+// DefinitionFailed says "Could not find the definition"
+// in the language of msgs.
+func (msgs Messages) DefinitionFailed() string {
+	return Catalog.Format(msgs.locale, "definitionFailed", nil)
+}
+
+// ReadOnly says "Read only"
+// in the language the app shows.
+func ReadOnly() string { return In(i18n.Locale()).ReadOnly() }
+
+// ReadOnly says "Read only"
+// in the language of msgs.
+func (msgs Messages) ReadOnly() string {
+	return Catalog.Format(msgs.locale, "readOnly", nil)
+}

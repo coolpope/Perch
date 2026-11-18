@@ -697,3 +697,110 @@ func TestEveryMessageIsTranslated(t *testing.T) {
 		}
 	}
 }
+
+// definitionProject writes a Go module and opens its main file.
+func definitionProject(t *testing.T) (*App, *ui.Tester, <-chan func()) {
+	t.Helper()
+	if _, err := exec.LookPath("gopls"); err != nil {
+		t.Skip("gopls is not installed")
+	}
+	root := t.TempDir()
+	writeFile(t, root, "go.mod", "module example.test\n\ngo 1.22\n")
+	writeFile(t, root, "util.go", "package main\n\n// Helper is here.\nfunc Helper() int { return 1 }\n")
+	writeFile(t, root, "main.go", "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(Helper())\n}\n")
+	a, tester, posted := openWithPosts(t, root)
+	t.Cleanup(a.stopDefinitions)
+	tester.Frame()
+	a.openFile("main.go")
+	tester.Frame()
+	return a, tester, posted
+}
+
+func definitionOffset(d *document, word string) int {
+	return strings.Index(d.editor.Buffer.String(), word) + 1
+}
+
+func TestDefinitionOpensTheFileAndComesBack(t *testing.T) {
+	a, tester, posted := definitionProject(t)
+	start := a.activeDocument()
+	a.goToDefinition(start, definitionOffset(start, "Helper"))
+	followPosts(t, posted, tester, func() bool { return !a.definition.pending })
+	d := a.activeDocument()
+	if d == nil || d.path != "util.go" {
+		t.Fatalf("opened %+v; message %+v", d, a.brief)
+	}
+	if got := d.editor.SelectedText(); got != "Helper" || d.editor.CursorPos().Line != 3 {
+		t.Errorf("selected %q on line %d", got, d.editor.CursorPos().Line)
+	}
+
+	a.goBack()
+	if d := a.activeDocument(); d.path != "main.go" || d.editor.CursorPos().Line != 5 {
+		t.Errorf("back at %s line %d", d.path, d.editor.CursorPos().Line)
+	}
+	a.goForward()
+	if d := a.activeDocument(); d.path != "util.go" {
+		t.Errorf("forward at %s", d.path)
+	}
+}
+
+func TestDefinitionInALibraryOpensReadOnly(t *testing.T) {
+	a, tester, posted := definitionProject(t)
+	start := a.activeDocument()
+	a.goToDefinition(start, definitionOffset(start, "Println"))
+	followPosts(t, posted, tester, func() bool { return !a.definition.pending })
+	tester.Frame()
+	d := a.activeDocument()
+	if d == nil || !d.external || d.name() != "print.go" || !d.editor.ReadOnly {
+		t.Fatalf("opened %+v; message %+v", d, a.brief)
+	}
+	if !tester.HasText("Read only") {
+		t.Errorf("texts %q", tester.Texts())
+	}
+	if err := a.save(d); err != nil {
+		t.Errorf("saving a library file: %v", err)
+	}
+}
+
+func TestDefinitionExplainsAFileWithoutAServer(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "notes.txt", "plain words\n")
+	a, tester := openWorkspace(t, root)
+	clickFile(t, tester, "notes.txt")
+	a.goToDefinition(a.activeDocument(), 1)
+	if want := "Go to definition is not available for notes.txt"; a.brief.title != want {
+		t.Errorf("message %+v", a.brief)
+	}
+}
+
+func TestQuickOpenStillWorksAfterAJump(t *testing.T) {
+	a, tester, posted := definitionProject(t)
+	start := a.activeDocument()
+	a.goToDefinition(start, definitionOffset(start, "Helper"))
+	followPosts(t, posted, tester, func() bool { return !a.definition.pending })
+	tester.Frame()
+	a.goBack()
+	tester.Frame()
+	a.goForward()
+	tester.Frame()
+
+	a.showQuickOpen()
+	tester.Frame()
+	followPosts(t, posted, tester, func() bool { return a.quick.loaded })
+	tester.Frame()
+	tester.Type("main:6")
+	tester.Frame()
+	tester.Key(0, ui.KeyEnter)
+	tester.Frame()
+	if d := a.activeDocument(); d.path != "main.go" || d.editor.CursorPos().Line != 5 {
+		t.Errorf("opened %s line %d", d.path, d.editor.CursorPos().Line)
+	}
+	tester.Frame()
+	if !a.activeDocument().editor.Focused() {
+		t.Error("the keyboard did not reach the editor")
+	}
+	tester.Key(0, ui.KeyRight)
+	tester.Frame()
+	if got := a.activeDocument().editor.CursorPos(); got.Line != 5 || got.Col != 1 {
+		t.Errorf("Right moved the caret to %+v", got)
+	}
+}

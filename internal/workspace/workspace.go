@@ -135,6 +135,16 @@ func ReadText(root string, relPath string) (TextFile, error) {
 	if err != nil {
 		return TextFile{}, err
 	}
+	return readTextFile(file, relPath)
+}
+
+// ReadExternalText reads a UTF-8 text file outside the workspace, as the source
+// of a library that a definition leads to.
+func ReadExternalText(file string) (TextFile, error) {
+	return readTextFile(file, file)
+}
+
+func readTextFile(file string, relPath string) (TextFile, error) {
 	info, err := os.Stat(file)
 	if err != nil {
 		return TextFile{}, fmt.Errorf("read %q: %w", relPath, err)

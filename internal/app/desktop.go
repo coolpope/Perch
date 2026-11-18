@@ -289,6 +289,12 @@ func (d *Desktop) menu() *mygo.Menu {
 			mygo.Separator(),
 			d.menuItem(locales.MenuFindInFiles(), "CmdOrCtrl+Shift+F", (*App).showFindInFiles),
 		}},
+		{Label: locales.MenuGo(), Submenu: []*mygo.MenuItem{
+			d.menuItem(locales.MenuGoToDefinition(), "F12", (*App).definitionAtCaret),
+			mygo.Separator(),
+			d.menuItem(locales.MenuGoBack(), "Ctrl+-", (*App).goBack),
+			d.menuItem(locales.MenuGoForward(), "Ctrl+Shift+-", (*App).goForward),
+		}},
 		{Label: locales.MenuView(), Submenu: []*mygo.MenuItem{
 			d.menuItem(locales.MenuToggleMarkdown(), "CmdOrCtrl+Shift+V", (*App).toggleMarkdownView),
 			mygo.Separator(),

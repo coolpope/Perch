@@ -46,6 +46,7 @@ func (a *App) release() {
 	a.stopSearch()
 	a.hideQuickOpen()
 	a.stopChanges()
+	a.stopDefinitions()
 }
 
 // runFind opens the find bar of the current file, which shows over its

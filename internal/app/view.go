@@ -310,7 +310,10 @@ func (a *App) pathCrumbsView(c *ui.Context, relPath string) {
 func (a *App) pathBarView(c *ui.Context, d *document) {
 	colors := a.look.palette
 	ui.Row(c).FillWidth().Height(pathBarHeight).Shrink(0).Gap(5).Padding(0, 14).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(colors.border).Children(func() {
-		a.pathCrumbsView(c, d.path)
+		a.pathCrumbsView(c, d.displayPath())
+		if d.external {
+			ui.Text(c, locales.ReadOnly()).FontSize(smallFontSize-1).TextColor(colors.muted).Padding(0, 0, 0, 6)
+		}
 		ui.Spacer(c)
 		if d.isMarkdown() {
 			ui.Segmented(c, &d.markdownView, locales.MarkdownPreview(), locales.MarkdownEdit())
@@ -379,6 +382,9 @@ func (a *App) statusView(c *ui.Context, d *document) {
 	}
 	ui.Row(c).FillWidth().Height(statusBarHeight).Shrink(0).Gap(16).Padding(0, 14).AlignItems(ui.Center).Background(colors.sidebar).Children(func() {
 		item(state)
+		if a.definition.pending {
+			item(locales.FindingDefinition())
+		}
 		ui.Spacer(c)
 		item(locales.CursorPosition(position.Line+1, position.Col+1))
 		item(locales.LineCount(d.editor.Buffer.LineCount()))

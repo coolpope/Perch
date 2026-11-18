@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
@@ -29,6 +30,9 @@ const (
 // codeLineHeight is the height of code lines as a multiple of the font size.
 const codeLineHeight float32 = 1.6
 
+// externalPathParts is how much of a path outside the workspace shows.
+const externalPathParts int = 3
+
 // Indexes of the Markdown view switch.
 const (
 	markdownPreview int = 0
@@ -40,6 +44,9 @@ type document struct {
 	// path is relative to the workspace root.
 	path   string
 	editor *editor.State
+	// external marks a read-only file outside the workspace, whose path is
+	// absolute.
+	external bool
 	// focus names the editor's view, to move the keyboard to it.
 	focus ui.Handle
 	// digest identifies the disk content the buffer was last in step with.
@@ -74,6 +81,33 @@ func newDocument(root string, relPath string, file workspace.TextFile) *document
 		htmlParsed:      map[string][]htmlblock.Block{},
 		images:          map[string]ui.ImageSource{},
 	}
+}
+
+// newExternalDocument opens a file outside the workspace for reading.
+func newExternalDocument(file string, text workspace.TextFile) *document {
+	d := newDocument(filepath.Dir(file), filepath.Base(file), text)
+	d.path = file
+	d.external = true
+	d.editor.ReadOnly = true
+	d.editor.Label = file
+	return d
+}
+
+// absolutePath returns where the document's file is on the machine.
+func (d *document) absolutePath(root string) string {
+	if d.external {
+		return d.path
+	}
+	return filepath.Join(root, filepath.FromSlash(d.path))
+}
+
+// displayPath returns the path to show: the end of a path outside the workspace.
+func (d *document) displayPath() string {
+	if !d.external {
+		return d.path
+	}
+	parts := strings.Split(filepath.ToSlash(d.path), "/")
+	return strings.Join(parts[max(len(parts)-externalPathParts, 0):], "/")
 }
 
 func (d *document) name() string {

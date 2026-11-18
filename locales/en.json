@@ -170,5 +170,16 @@
   "menuFindInFiles": "Find in Files…",
   "menuToggleMarkdown": "Toggle Markdown Preview",
   "menuShowChanges": "Show Changes",
-  "menuMarkReviewed": "Mark File Reviewed"
+  "menuMarkReviewed": "Mark File Reviewed",
+  "menuGo": "Go",
+  "menuGoToDefinition": "Go to Definition",
+  "menuGoBack": "Back",
+  "menuGoForward": "Forward",
+  "findingDefinition": "Finding definition…",
+  "noDefinition": "No definition found for {word}",
+  "definitionUnsupported": "Go to definition is not available for {name}",
+  "serverMissing": "Go to definition needs {server}",
+  "serverInstall": "Install it with: {command}",
+  "definitionFailed": "Could not find the definition",
+  "readOnly": "Read only"
 }

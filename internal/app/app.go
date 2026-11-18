@@ -46,9 +46,10 @@ type App struct {
 	sidebarWidth float32
 	sidebarTab   int
 
-	quick  quickOpen
-	find   findInFiles
-	review changesPanel
+	quick      quickOpen
+	find       findInFiles
+	review     changesPanel
+	definition definitionState
 
 	settings     settings.Settings
 	settingsOpen bool
@@ -113,6 +114,7 @@ func (a *App) loadFolder(root string) error {
 	a.hideQuickOpen()
 	a.stopSearch()
 	a.stopChanges()
+	a.stopDefinitions()
 	a.find = findInFiles{chosen: noRow}
 	a.sidebarTab = sidebarFiles
 	a.root = absolute
@@ -168,6 +170,7 @@ func (a *App) openFile(relPath string) {
 	a.brief = toast{}
 	d := newDocument(a.root, relPath, file)
 	a.attachMarkdownActions(d)
+	a.attachDefinitions(d)
 	if a.settings.MarkdownView == settings.MarkdownSource {
 		d.markdownView = markdownSource
 	}
@@ -195,6 +198,9 @@ func (a *App) activeDocument() *document {
 
 // save writes a document, refusing to replace a version it has not seen.
 func (a *App) save(d *document) error {
+	if d.external {
+		return nil
+	}
 	if d.conflict != conflictNone {
 		return fmt.Errorf("save %q: %w", d.path, errUnresolvedConflict)
 	}
@@ -321,6 +327,9 @@ func changesTree(event mygo.FileEvent) bool {
 // edits follows the file, and one with unsaved edits shows a conflict rather
 // than losing either version.
 func (a *App) reconcile(d *document) {
+	if d.external {
+		return
+	}
 	file, err := workspace.ReadText(a.root, d.path)
 	if errors.Is(err, fs.ErrNotExist) {
 		d.conflict = conflictRemoved

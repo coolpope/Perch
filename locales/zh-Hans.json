@@ -119,5 +119,16 @@
   "menuFindInFiles": "在文件中查找…",
   "menuToggleMarkdown": "切换 Markdown 预览",
   "menuShowChanges": "显示改动",
-  "menuMarkReviewed": "将文件标记为已审"
+  "menuMarkReviewed": "将文件标记为已审",
+  "menuGo": "前往",
+  "menuGoToDefinition": "跳转到定义",
+  "menuGoBack": "后退",
+  "menuGoForward": "前进",
+  "findingDefinition": "正在查找定义…",
+  "noDefinition": "没有找到 {word} 的定义",
+  "definitionUnsupported": "暂不支持在 {name} 中跳转定义",
+  "serverMissing": "跳转定义需要安装 {server}",
+  "serverInstall": "安装命令：{command}",
+  "definitionFailed": "无法查找定义",
+  "readOnly": "只读"
 }
