@@ -9,7 +9,7 @@ import (
 )
 
 // palette is the color scheme of one appearance: warm paper or graphite with
-// a single rust accent.
+// a single blue accent taken from the app icon.
 type palette struct {
 	background ui.Color
 	sidebar    ui.Color
@@ -38,7 +38,7 @@ func lightPalette() palette {
 		border:     ui.Hex("#E5E1D8"),
 		text:       ui.Hex("#2B2925"),
 		muted:      ui.Hex("#7D776C"),
-		accent:     ui.Hex("#B4532A"),
+		accent:     ui.Hex("#1464F0"),
 		warning:    ui.Hex("#9A6A10"),
 		danger:     ui.Hex("#B3382C"),
 		keyword:    ui.Hex("#A8461F"),
@@ -59,7 +59,7 @@ func darkPalette() palette {
 		border:     ui.Hex("#2E2C29"),
 		text:       ui.Hex("#E7E2D9"),
 		muted:      ui.Hex("#928C80"),
-		accent:     ui.Hex("#E08B5C"),
+		accent:     ui.Hex("#4A9DFF"),
 		warning:    ui.Hex("#D9A441"),
 		danger:     ui.Hex("#E5705F"),
 		keyword:    ui.Hex("#E59068"),
