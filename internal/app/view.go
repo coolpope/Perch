@@ -361,6 +361,7 @@ func conflictWording(kind conflict) (message string, keep string, drop string) {
 
 func (a *App) documentView(c *ui.Context, d *document) {
 	c.Key(d.path)
+	a.followLineBaseline(d)
 	switch {
 	case d.isRasterImage():
 		a.rasterImageView(c, d)

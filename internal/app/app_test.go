@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"image"
@@ -724,6 +725,41 @@ func TestReviewFollowsAgentWorkToTheEnd(t *testing.T) {
 	followPosts(t, posted, tester, func() bool {
 		return tester.HasText("2 of 2 files reviewed") && !tester.HasText("Undo Finish Review")
 	})
+}
+
+func TestEditorMarksTheLinesLeftToRead(t *testing.T) {
+	root := reviewedRepository(t)
+	writeFile(t, root, ".gitignore", "secret.txt\n")
+	writeFile(t, root, "secret.txt", "private\n")
+	writeFile(t, root, "a.go", "package a\n\nfunc Agent() {}\n")
+	a, tester, posted := openWithPosts(t, root)
+	t.Cleanup(a.stopChanges)
+	tester.Frame()
+	a.showChanges()
+	settleChanges(t, a, tester, posted)
+
+	a.openFile("a.go")
+	tester.Frame()
+	d := a.activeDocument()
+	followPosts(t, posted, tester, func() bool { return d.editor.DiffBase != nil })
+	if got := d.editor.DiffBase.String(); got != "package a\n" {
+		t.Errorf("compared with %q", got)
+	}
+
+	a.setReviewed("a.go", true)
+	followPosts(t, posted, tester, func() bool {
+		return d.editor.DiffBase != nil && d.editor.DiffBase.String() == d.editor.Buffer.String()
+	})
+
+	a.openFile("b.go")
+	tester.Frame()
+	if d.editor.DiffBase != nil {
+		t.Error("a tab out of sight kept its comparison text")
+	}
+	ignored, err := a.review.store.Baseline(context.Background(), "secret.txt")
+	if err != nil || ignored.Known {
+		t.Errorf("an ignored file has baseline %+v, %v", ignored, err)
+	}
 }
 
 func TestMarkdownChangeRendersAndOpensTheFile(t *testing.T) {
