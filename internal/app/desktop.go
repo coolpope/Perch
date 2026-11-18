@@ -308,6 +308,9 @@ func (d *Desktop) menu() *mygo.Menu {
 			mygo.Separator(),
 			d.menuItem(locales.MenuGoBack(), "Ctrl+-", (*App).goBack),
 			d.menuItem(locales.MenuGoForward(), "Ctrl+Shift+-", (*App).goForward),
+			mygo.Separator(),
+			d.menuItem(locales.MenuNextTab(), "CmdOrCtrl+Shift+]", (*App).nextTab),
+			d.menuItem(locales.MenuPreviousTab(), "CmdOrCtrl+Shift+[", (*App).previousTab),
 		}},
 		{Label: locales.MenuView(), Submenu: []*mygo.MenuItem{
 			d.menuItem(locales.MenuToggleMarkdown(), "CmdOrCtrl+Shift+V", (*App).toggleMarkdownView),

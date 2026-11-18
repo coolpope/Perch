@@ -187,5 +187,7 @@
   "languageConfigWriteFailed": "无法创建配置文件",
   "definitionTurnedOff": "{language} 的跳转定义已关闭",
   "definitionTurnOnHint": "可以在设置的“语言服务”里打开。",
+  "menuNextTab": "下一个标签页",
+  "menuPreviousTab": "上一个标签页",
   "readOnly": "只读"
 }

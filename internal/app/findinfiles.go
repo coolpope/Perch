@@ -289,7 +289,7 @@ func (a *App) searchFileRow(c *ui.Context, index int) {
 func (a *App) searchHitRow(c *ui.Context, index int) {
 	colors := a.look.palette
 	hit := a.find.rows[index].hit
-	row := ui.Row(c).FillWidth().Gap(8).Padding(3, 6, 3, 12).Radius(4).AlignItems(ui.Center)
+	row := ui.Row(c).FillWidth().Gap(8).Padding(3, 6, 3, 12).Radius(radiusControl).AlignItems(ui.Center)
 	switch {
 	case index == a.find.chosen:
 		row.Background(colors.hover)

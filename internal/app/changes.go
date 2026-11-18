@@ -330,7 +330,7 @@ func (a *App) changedBlockView(c *ui.Context, doc *parser.Document, index int, p
 		return false
 	}
 	accent := a.look.palette.accent
-	ui.Column(c).FillWidth().Padding(4, 10, 4, 12).Radius(3).Background(accent.Alpha(0.07)).
+	ui.Column(c).FillWidth().Padding(4, 10, 4, 12).Radius(radiusSmall).Background(accent.Alpha(0.07)).
 		BorderWidth(0, 0, 0, changedBlockBar).BorderColor(accent).Children(func() {
 		markdown.View(c, doc.Source()[block.Start:block.End], plain).FillWidth()
 	})
@@ -611,7 +611,7 @@ func (a *App) reopenReviewView(c *ui.Context) {
 func (a *App) changeRowView(c *ui.Context, change review.Change) {
 	colors := a.look.palette
 	name := path.Base(change.Path)
-	row := ui.Row(c).FillWidth().Height(changeRowHeight).Gap(7).Padding(0, 8).Radius(5).AlignItems(ui.Center)
+	row := ui.Row(c).FillWidth().Height(changeRowHeight).Gap(7).Padding(0, 8).Radius(radiusControl).AlignItems(ui.Center)
 	switch {
 	case change.Path == a.review.selected:
 		row.Background(colors.hover)

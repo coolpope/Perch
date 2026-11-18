@@ -1914,6 +1914,26 @@ func (msgs Messages) DefinitionTurnOnHint() string {
 	return Catalog.Format(msgs.locale, "definitionTurnOnHint", nil)
 }
 
+// MenuNextTab says "Next Tab"
+// in the language the app shows.
+func MenuNextTab() string { return In(i18n.Locale()).MenuNextTab() }
+
+// MenuNextTab says "Next Tab"
+// in the language of msgs.
+func (msgs Messages) MenuNextTab() string {
+	return Catalog.Format(msgs.locale, "menuNextTab", nil)
+}
+
+// MenuPreviousTab says "Previous Tab"
+// in the language the app shows.
+func MenuPreviousTab() string { return In(i18n.Locale()).MenuPreviousTab() }
+
+// MenuPreviousTab says "Previous Tab"
+// in the language of msgs.
+func (msgs Messages) MenuPreviousTab() string {
+	return Catalog.Format(msgs.locale, "menuPreviousTab", nil)
+}
+
 // ReadOnly says "Read only"
 // in the language the app shows.
 func ReadOnly() string { return In(i18n.Locale()).ReadOnly() }

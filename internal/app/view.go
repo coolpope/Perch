@@ -13,7 +13,7 @@ import (
 
 const (
 	headerHeight     float32 = 40
-	pathBarHeight    float32 = 30
+	pathBarHeight    float32 = 36
 	statusBarHeight  float32 = 24
 	trafficLightRoom float32 = 84
 	markdownMaxWidth float32 = 760
@@ -25,12 +25,22 @@ const (
 	sidebarTabIconSize float32 = 16
 	projectNameHeight  float32 = 30
 	minSidebarWidth    float32 = 232
+
+	tabHeight   float32 = 30
+	panelMargin float32 = 8
+	// panelGap is the space each panel keeps from the divider between them.
+	panelGap     float32 = 4
+	treeRowInset float32 = 8
+	// tabTextLift raises a tab's name, whose lowercase letters sit below the
+	// middle of its line, to the middle of the tab.
+	tabTextLift float32 = 2
 )
 
 // view builds the window.
 func (a *App) view(c *ui.Context) {
 	a.look = a.lookFor(c.Theme())
 	c.SetTheme(a.look.theme)
+	c.SetMenuPresentation(ui.PopoverMenus)
 	a.toastsView(c)
 	if a.root == "" {
 		a.welcomeView(c)
@@ -38,7 +48,13 @@ func (a *App) view(c *ui.Context) {
 		return
 	}
 	a.sidebarWidth = max(a.sidebarWidth, minSidebarWidth)
-	ui.Split(c, &a.sidebarWidth, func() { a.sidebarView(c) }, func() { a.mainView(c) }).Fill()
+	ui.Themed(c, a.look.shell).Fill().Children(func() {
+		ui.Split(c, &a.sidebarWidth, func() {
+			ui.Themed(c, a.look.theme).Fill().Children(func() { a.sidebarView(c) })
+		}, func() {
+			ui.Themed(c, a.look.theme).Fill().Children(func() { a.mainView(c) })
+		}).Fill()
+	})
 	a.closeTabAlert(c)
 	a.closeWindowAlert(c)
 	a.quickOpenView(c)
@@ -69,17 +85,31 @@ func (a *App) sidebarView(c *ui.Context) {
 	colors := a.look.palette
 	ui.Column(c).Fill().Background(colors.sidebar).Children(func() {
 		a.sidebarHeaderView(c)
-		a.projectNameView(c)
-		switch a.sidebarTab {
-		case sidebarSearch:
-			a.findInFilesView(c)
-			return
-		case sidebarChanges:
-			a.changesPanelView(c)
-			return
-		}
-		a.fileTreeView(c)
+		ui.Column(c).Grow(1).FillWidth().Padding(0, panelGap, panelMargin, panelMargin).Children(func() {
+			a.panelView(c, func() {
+				a.projectNameView(c)
+				a.sidebarContentView(c)
+			})
+		})
 	})
+}
+
+// sidebarContentView shows the sidebar's chosen view.
+func (a *App) sidebarContentView(c *ui.Context) {
+	switch a.sidebarTab {
+	case sidebarSearch:
+		a.findInFilesView(c)
+	case sidebarChanges:
+		a.changesPanelView(c)
+	default:
+		a.fileTreeView(c)
+	}
+}
+
+// panelView builds one of the window's rounded panels.
+func (a *App) panelView(c *ui.Context, content func()) {
+	colors := a.look.palette
+	ui.Column(c).Fill().Clip().Radius(radiusCard).Background(colors.background).Border(1, colors.border).Children(content)
 }
 
 // sidebarHeaderView puts the sidebar's views beside the window's controls.
@@ -115,7 +145,7 @@ func (a *App) projectNameView(c *ui.Context) {
 // sidebarTabView builds a button of the sidebar's views and reports a click.
 func (a *App) sidebarTabView(c *ui.Context, icon *ui.SVG, label string, active bool) bool {
 	colors := a.look.palette
-	button := ui.Box(c).Size(sidebarTabWidth, sidebarTabHeight).Center().Radius(6).Label(label)
+	button := ui.Box(c).Size(sidebarTabWidth, sidebarTabHeight).Center().Radius(radiusControl).Label(label)
 	sidebarTooltip(c, button, label, colors)
 	color := colors.muted
 	switch {
@@ -137,7 +167,7 @@ func (a *App) sidebarTabView(c *ui.Context, icon *ui.SVG, label string, active b
 // above the sidebar.
 func sidebarTooltip(c *ui.Context, button ui.Element, label string, colors palette) {
 	ui.TooltipBase(c, button, func(tip ui.Element) {
-		tip.AttachTo(button, ui.AnchorBottom, ui.AnchorTop).Margin(6, 0, 0, 0).Padding(4, 8).Radius(5).
+		tip.AttachTo(button, ui.AnchorBottom, ui.AnchorTop).Margin(6, 0, 0, 0).Padding(4, 8).Radius(radiusSmall).
 			Background(colors.text).TextColor(colors.background).FontSize(smallFontSize)
 		tip.Children(func() { ui.Text(c, label) })
 	})
@@ -148,7 +178,7 @@ func (a *App) fileTreeView(c *ui.Context) {
 		a.tree.List.Selected = &a.treeRow
 		tree := ui.Outline(c, &a.tree, a.childPaths("."), a.childPaths, func(item string) {
 			a.treeRowView(c, item)
-		}).Grow(1).FillWidth().Label(locales.TabFiles()).ContextMenu(func(m *ui.Menu) {
+		}).Grow(1).FillWidth().Padding(0, treeRowInset).Label(locales.TabFiles()).ContextMenu(func(m *ui.Menu) {
 			a.fileMenu(m, ".")
 		})
 		if tree.Changed() {
@@ -207,34 +237,44 @@ func (a *App) chooseTab(index int) {
 	}
 }
 
+// mainView floats the open file on a rounded panel below its tabs.
 func (a *App) mainView(c *ui.Context) {
-	ui.Column(c).Fill().Background(a.look.palette.background).Children(func() {
+	a.tabShortcuts(c)
+	colors := a.look.palette
+	ui.Column(c).Fill().Background(colors.sidebar).Children(func() {
 		a.tabsView(c)
-		if a.showsChange() {
-			a.changeView(c)
-			return
-		}
-		d := a.activeDocument()
-		if d == nil {
-			ui.Column(c).Grow(1).FillWidth().Center().Gap(8).Children(func() {
-				ui.Icon(c, iconPerch).FontSize(32).TextColor(a.look.palette.border)
-				ui.Text(c, locales.ChooseFileToRead()).TextColor(a.look.palette.muted)
-			})
-			return
-		}
-		a.pathBarView(c, d)
-		a.conflictView(c, d)
-		a.documentView(c, d)
-		a.statusView(c, d)
+		ui.Column(c).Grow(1).FillWidth().Padding(0, panelMargin, panelMargin, panelGap).Children(func() {
+			a.panelView(c, func() { a.panelContentView(c) })
+		})
 	})
+}
+
+// panelContentView shows the review, the open file, or an invitation to open one.
+func (a *App) panelContentView(c *ui.Context) {
+	if a.showsChange() {
+		a.changeView(c)
+		return
+	}
+	d := a.activeDocument()
+	if d == nil {
+		ui.Column(c).Grow(1).FillWidth().Center().Gap(8).Children(func() {
+			ui.Icon(c, iconPerch).FontSize(32).TextColor(a.look.palette.border)
+			ui.Text(c, locales.ChooseFileToRead()).TextColor(a.look.palette.muted)
+		})
+		return
+	}
+	a.pathBarView(c, d)
+	a.conflictView(c, d)
+	a.documentView(c, d)
+	a.statusView(c, d)
 }
 
 func (a *App) tabsView(c *ui.Context) {
 	colors := a.look.palette
 	var closing *document
-	ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).Background(colors.sidebar).DragWindow().Children(func() {
+	ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).PaddingStart(panelGap).PaddingEnd(panelMargin).Background(colors.sidebar).DragWindow().Children(func() {
 		ui.ScrollHorizontal(c).Shrink(1).FillHeight().Children(func() {
-			ui.Row(c).FillHeight().Children(func() {
+			ui.Row(c).FillHeight().Gap(4).AlignItems(ui.Center).Children(func() {
 				for i, d := range a.documents {
 					c.Key(d.path)
 					if a.tabView(c, d, i == a.active, i) {
@@ -253,9 +293,9 @@ func (a *App) tabsView(c *ui.Context) {
 func (a *App) tabView(c *ui.Context, d *document, active bool, index int) bool {
 	colors := a.look.palette
 	closed := false
-	tab := ui.Column(c).FillHeight()
+	tab := ui.Row(c).Height(tabHeight).Gap(6).PaddingStart(12).PaddingEnd(6).AlignItems(ui.Center).Radius(radiusControl)
 	if active {
-		tab.Background(colors.background)
+		tab.Background(colors.background).Border(1, colors.border)
 	} else if tab.Hovered() {
 		tab.Background(colors.hover.Alpha(0.5))
 	}
@@ -264,17 +304,11 @@ func (a *App) tabView(c *ui.Context, d *document, active bool, index int) bool {
 	}
 	hovered := tab.Hovered()
 	tab.Children(func() {
-		strip := ui.Box(c).FillWidth().Height(2).Shrink(0)
-		if active {
-			strip.Background(colors.accent)
+		name := ui.Text(c, d.name()).MaxLines(1).Padding(0, 0, tabTextLift, 0)
+		if !active {
+			name.TextColor(colors.muted)
 		}
-		ui.Row(c).Grow(1).Gap(6).PaddingStart(14).PaddingEnd(8).AlignItems(ui.Center).Children(func() {
-			name := ui.Text(c, d.name()).MaxLines(1)
-			if !active {
-				name.TextColor(colors.muted)
-			}
-			closed = a.tabCloseView(c, d, hovered || active)
-		})
+		closed = a.tabCloseView(c, d, hovered || active)
 	})
 	return closed
 }
@@ -283,7 +317,7 @@ func (a *App) tabView(c *ui.Context, d *document, active bool, index int) bool {
 // the tab, and then its close button.
 func (a *App) tabCloseView(c *ui.Context, d *document, showClose bool) bool {
 	colors := a.look.palette
-	button := ui.Box(c).Size(18, 18).Center().Radius(4).Label(locales.ClosePath(d.path))
+	button := ui.Box(c).Size(18, 18).Center().Radius(radiusSmall).Label(locales.ClosePath(d.path))
 	if button.Hovered() {
 		button.Background(colors.hover)
 	}
@@ -401,7 +435,7 @@ func (a *App) statusView(c *ui.Context, d *document) {
 		ui.Text(c, text).FontSize(smallFontSize - 1).TextColor(colors.muted)
 	}
 	if d.isRasterImage() || d.showsSVGPreview() {
-		ui.Row(c).FillWidth().Height(statusBarHeight).Shrink(0).Padding(0, 14).AlignItems(ui.Center).Background(colors.sidebar).Children(func() {
+		ui.Row(c).FillWidth().Height(statusBarHeight).Shrink(0).Padding(0, 14).AlignItems(ui.Center).BorderWidth(1, 0, 0, 0).BorderColor(colors.border).Children(func() {
 			ui.Spacer(c)
 			item(d.image.status())
 		})
@@ -416,7 +450,7 @@ func (a *App) statusView(c *ui.Context, d *document) {
 	if d.modified() {
 		state = locales.StatusEdited()
 	}
-	ui.Row(c).FillWidth().Height(statusBarHeight).Shrink(0).Gap(16).Padding(0, 14).AlignItems(ui.Center).Background(colors.sidebar).Children(func() {
+	ui.Row(c).FillWidth().Height(statusBarHeight).Shrink(0).Gap(16).Padding(0, 14).AlignItems(ui.Center).BorderWidth(1, 0, 0, 0).BorderColor(colors.border).Children(func() {
 		item(state)
 		if a.definition.pending {
 			item(locales.FindingDefinition())

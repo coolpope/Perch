@@ -112,7 +112,7 @@ func (a *App) toastsView(c *ui.Context) {
 func (a *App) toastView(c *ui.Context, message toast) bool {
 	colors := a.look.palette
 	closed := false
-	card := ui.Row(c).FillWidth().Gap(10).Padding(11, 10, 11, 12).Radius(10).Background(colors.background).
+	card := ui.Row(c).FillWidth().Gap(10).Padding(11, 10, 11, 12).Radius(radiusCard).Background(colors.background).
 		Border(1, colors.border).Shadow(0, 8, 24, 0, ui.RGBA(0, 0, 0, 0.2))
 	if message == a.brief {
 		a.briefHovered = card.Hovered()
@@ -125,7 +125,7 @@ func (a *App) toastView(c *ui.Context, message toast) bool {
 				ui.Text(c, message.detail).FontSize(smallFontSize).TextColor(colors.muted)
 			}
 		})
-		button := ui.Box(c).Size(20, 20).Center().Radius(5).Shrink(0).Label(locales.Dismiss())
+		button := ui.Box(c).Size(20, 20).Center().Radius(radiusSmall).Shrink(0).Label(locales.Dismiss())
 		if button.Hovered() {
 			button.Background(colors.hover)
 		}

@@ -1723,6 +1723,39 @@ func TestLanguageSettingsListEveryServer(t *testing.T) {
 	}
 }
 
+func TestKeysSwitchBetweenTabs(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range []string{"a.txt", "b.txt", "c.txt"} {
+		writeFile(t, root, name, name+"\n")
+	}
+	a, tester := openWorkspace(t, root)
+	for _, name := range []string{"a.txt", "b.txt", "c.txt"} {
+		a.openFile(name)
+	}
+	tester.Frame()
+	steps := []struct {
+		mods ui.Modifiers
+		key  ui.Key
+		want string
+	}{
+		{ui.Ctrl, ui.KeyTab, "a.txt"},
+		{ui.Ctrl | ui.Shift, ui.KeyTab, "c.txt"},
+		{ui.Cmd, ui.Key2, "b.txt"},
+		{ui.Cmd, ui.Key8, "b.txt"},
+		{ui.Cmd, ui.Key9, "c.txt"},
+	}
+	for _, step := range steps {
+		tester.Key(step.mods, step.key)
+		tester.Frame()
+		if got := a.activeDocument().path; got != step.want {
+			t.Errorf("keys %v+%v showed %s, want %s", step.mods, step.key, got, step.want)
+		}
+	}
+	if !a.activeDocument().editor.Focused() {
+		t.Error("the keyboard did not follow the tab")
+	}
+}
+
 func TestQuickOpenStillWorksAfterAJump(t *testing.T) {
 	a, tester, posted := definitionProject(t)
 	start := a.activeDocument()

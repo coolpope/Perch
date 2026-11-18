@@ -258,5 +258,7 @@
   "languageConfigWriteFailed": "Could not create the configuration file",
   "definitionTurnedOff": "Go to definition is turned off for {language}",
   "definitionTurnOnHint": "Turn it on in Settings, under Language servers.",
+  "menuNextTab": "Next Tab",
+  "menuPreviousTab": "Previous Tab",
   "readOnly": "Read only"
 }
