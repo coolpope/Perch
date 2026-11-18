@@ -12,6 +12,13 @@
   <a href="README.md">English</a> · 简体中文
 </p>
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/perch-dark.png">
+    <img src=".github/screenshots/perch-light.png" width="880" alt="Perch 正在显示一个 Go 文件，文件树中被 Git 忽略的文件已置灰">
+  </picture>
+</p>
+
 Perch 是一个轻量的原生代码查看器和轻量编辑器。当大部分代码由 agent 来写，你仍然需要一个地方看清改了什么、仔细读一读、顺手改一行，而不必打开完整的 IDE。
 
 Perch 使用 Go 和 [MyGo](https://github.com/egoist/mygo) 构建，界面通过 Metal 原生绘制，没有 WebView。
@@ -22,7 +29,7 @@ Perch 使用 Go 和 [MyGo](https://github.com/egoist/mygo) 构建，界面通过
 - **舒服地阅读：** 语法高亮、渲染 Markdown（包括 README 里的 HTML），以及 PNG、JPEG、GIF、WebP 和 SVG 预览。
 - **安全地编辑：** agent 改写了你正在编辑的文件时，Perch 会询问保留哪个版本，不会覆盖任何一方。
 - **快速定位：** 快速打开、项目搜索、查找替换，以及通过语言服务跳转定义。
-- **管理文件：** 在文件树里新建、重命名、移到废纸篓。重命名后，打开的标签页会跟着更新，未保存的修改也会保留。
+- **管理文件：** 在文件树里新建、重命名、移到废纸篓。重命名后，打开的标签页会跟着更新，未保存的修改也会保留。被 Git 忽略的文件会置灰显示。
 - **接着上次继续：** 每个项目重新打开时恢复标签页、光标、滚动位置和布局，不同项目在各自的窗口中打开。
 - **保持轻量：** 语言服务只在需要时启动，闲置后自动退出。在 macOS 上空闲内存约 52 MB。
 - **支持英文和简体中文**，以及浅色和深色外观。
@@ -84,3 +91,7 @@ golangci-lint run
 ```
 
 `command` 必须是 `PATH` 中的程序名或绝对路径。Perch 只从你自己的设置目录读取这个文件，不会运行所打开项目指定的命令。
+
+## 许可证
+
+[MIT](LICENSE)
