@@ -21,6 +21,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
+	"perch/internal/review"
 	"perch/internal/session"
 	"perch/internal/settings"
 	"perch/internal/workspace"
@@ -1786,5 +1787,64 @@ func TestQuickOpenStillWorksAfterAJump(t *testing.T) {
 	tester.Frame()
 	if got := a.activeDocument().editor.CursorPos(); got.Line != 5 || got.Col != 1 {
 		t.Errorf("Right moved the caret to %+v", got)
+	}
+}
+
+func TestTreeMarksWhatGitIgnores(t *testing.T) {
+	root := t.TempDir()
+	gitIn(t, root, "init", "--quiet")
+	writeFile(t, root, ".gitignore", "build/\n*.log\n:odd\n")
+	writeFile(t, root, "main.go", "package main\n")
+	writeFile(t, root, "kept.log", "tracked\n")
+	writeFile(t, root, "debug.log", "noise\n")
+	writeFile(t, root, ":odd", "noise\n")
+	writeFile(t, root, "build/out/app.o", "binary\n")
+	gitIn(t, root, "add", "-f", "kept.log")
+
+	a := New()
+	posted := make(chan func(), 16)
+	a.post = func(action func()) { posted <- action }
+	if err := a.loadFolder(root); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(a.stopIgnoreMarks)
+	a.startIgnoreMarks()
+	settle := func() {
+		t.Helper()
+		a.childPaths(".")
+		for a.ignored.asking {
+			select {
+			case action := <-posted:
+				action()
+			case <-time.After(10 * time.Second):
+				t.Fatal("Git did not answer")
+			}
+		}
+	}
+	settle()
+
+	for item, want := range map[string]bool{
+		"main.go": false, "kept.log": false, ".gitignore": false,
+		"debug.log": true, ":odd": true, "build": true, "build/out/app.o": true,
+	} {
+		if got := a.treeRowIgnored(item); got != want {
+			t.Errorf("%s ignored = %v, want %v", item, got, want)
+		}
+	}
+
+	writeFile(t, root, ".gitignore", "main.go\n")
+	a.applyFileEvents([]mygo.FileEvent{{Op: mygo.FileHint, Path: "."}})
+	settle()
+	if !a.treeRowIgnored("main.go") || a.treeRowIgnored("build") {
+		t.Errorf("marks did not follow .gitignore: %+v", a.ignored.names)
+	}
+}
+
+func TestTreeHasNoMarksOutsideGit(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "debug.log", "noise\n")
+	found, err := review.IgnoredNames(t.Context(), root, []string{"debug.log"})
+	if !errors.Is(err, review.ErrNotRepository) || found != nil {
+		t.Fatalf("found %q, err %v", found, err)
 	}
 }

@@ -48,6 +48,7 @@ func (a *App) release() {
 	a.hideQuickOpen()
 	a.stopChanges()
 	a.stopDefinitions()
+	a.stopIgnoreMarks()
 }
 
 // runFind opens the find bar of the current file, which shows over its
@@ -110,6 +111,7 @@ func (a *App) openFolder(root string) {
 		a.notice = toast{title: locales.LiveUpdatesStopped(), detail: err.Error()}
 	}
 	a.beginReview()
+	a.startIgnoreMarks()
 }
 
 // handleWindowClose keeps the window open while unsaved edits need an answer.
