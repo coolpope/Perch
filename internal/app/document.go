@@ -6,9 +6,11 @@ import (
 	"path"
 	"path/filepath"
 
+	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/egoist/mygo/ui/markdown"
 
+	"perch/internal/htmlblock"
 	"perch/internal/workspace"
 )
 
@@ -38,6 +40,8 @@ type document struct {
 	// path is relative to the workspace root.
 	path   string
 	editor *editor.State
+	// focus names the editor's view, to move the keyboard to it.
+	focus ui.Handle
 	// digest identifies the disk content the buffer was last in step with.
 	digest   workspace.Digest
 	conflict conflict
@@ -51,6 +55,10 @@ type document struct {
 	previewText    string
 	previewVersion uint64
 	previewLoaded  bool
+	// htmlParsed keeps the HTML blocks of the preview, which build every
+	// frame, until the text changes.
+	htmlParsed map[string][]htmlblock.Block
+	images     map[string]ui.ImageSource
 }
 
 func newDocument(root string, relPath string, file workspace.TextFile) *document {
@@ -63,6 +71,8 @@ func newDocument(root string, relPath string, file workspace.TextFile) *document
 		digest:          file.Digest,
 		markdownView:    markdownPreview,
 		markdownOptions: &markdown.Options{LoadImage: markdown.FileImages(dir)},
+		htmlParsed:      map[string][]htmlblock.Block{},
+		images:          map[string]ui.ImageSource{},
 	}
 }
 
@@ -92,8 +102,34 @@ func (d *document) markdownText() string {
 		d.previewText = d.editor.Buffer.String()
 		d.previewVersion = version
 		d.previewLoaded = true
+		d.htmlParsed = map[string][]htmlblock.Block{}
 	}
 	return d.previewText
+}
+
+// htmlBlocks returns the model of an HTML block of the preview.
+func (d *document) htmlBlocks(source string) ([]htmlblock.Block, error) {
+	if blocks, parsed := d.htmlParsed[source]; parsed {
+		return blocks, nil
+	}
+	blocks, err := htmlblock.Parse(source)
+	if err != nil {
+		return nil, err
+	}
+	d.htmlParsed[source] = blocks
+	return blocks, nil
+}
+
+// reveal shows the source with the range from start to end selected, and
+// moves the keyboard to it.
+func (d *document) reveal(start editor.Pos, end editor.Pos) {
+	d.markdownView = markdownSource
+	d.editor.GoTo(start)
+	if end != start {
+		buffer := d.editor.Buffer
+		d.editor.Select(buffer.Offset(start), buffer.Offset(end))
+	}
+	d.focus.Focus()
 }
 
 // content returns the bytes a save writes, with each line's original ending.

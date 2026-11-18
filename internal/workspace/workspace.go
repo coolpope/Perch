@@ -34,6 +34,23 @@ var (
 	ErrOutsideWorkspace = errors.New("path is outside the workspace")
 )
 
+// FileTooLargeError reports the size of a file above the limit. It matches
+// ErrFileTooLarge.
+type FileTooLargeError struct {
+	Path  string
+	Size  int64
+	Limit int64
+}
+
+func (e *FileTooLargeError) Error() string {
+	return fmt.Sprintf("read %q (%d bytes, limit %d): %v", e.Path, e.Size, e.Limit, ErrFileTooLarge)
+}
+
+// Is reports whether target is ErrFileTooLarge.
+func (e *FileTooLargeError) Is(target error) bool {
+	return target == ErrFileTooLarge
+}
+
 // Digest identifies the exact bytes of a file.
 type Digest [sha256.Size]byte
 
@@ -123,7 +140,7 @@ func ReadText(root string, relPath string) (TextFile, error) {
 		return TextFile{}, fmt.Errorf("read %q: %w", relPath, err)
 	}
 	if info.Size() > MaxTextFileBytes {
-		return TextFile{}, fmt.Errorf("read %q (%d bytes, limit %d): %w", relPath, info.Size(), MaxTextFileBytes, ErrFileTooLarge)
+		return TextFile{}, &FileTooLargeError{Path: relPath, Size: info.Size(), Limit: MaxTextFileBytes}
 	}
 	data, err := os.ReadFile(file)
 	if err != nil {

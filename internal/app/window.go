@@ -5,14 +5,19 @@ import (
 	"fmt"
 	"path/filepath"
 	"slices"
+	"time"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/editor"
 )
 
 // Start shows the window, opening initialFolder when it is not empty.
 func (a *App) Start(initialFolder string) {
 	mygo.App.SetMenu(a.menu())
+	a.after = func(delay time.Duration, action func()) {
+		time.AfterFunc(delay, func() { a.post(action) })
+	}
 	a.window = mygo.NewWindow(mygo.WindowOptions{
 		Title:     "Perch",
 		Width:     1180,
@@ -36,11 +41,18 @@ func (a *App) menu() *mygo.Menu {
 		{Role: mygo.RoleAppMenu},
 		{Label: "File", Submenu: []*mygo.MenuItem{
 			a.menuItem("Open Folder…", "CmdOrCtrl+O", a.chooseFolder),
+			a.menuItem("Go to File…", "CmdOrCtrl+P", a.showQuickOpen),
 			mygo.Separator(),
 			a.menuItem("Save", "CmdOrCtrl+S", a.saveActive),
 			a.menuItem("Close Tab", "CmdOrCtrl+W", a.closeActiveTab),
 		}},
 		{Role: mygo.RoleEditMenu},
+		{Label: "Find", Submenu: []*mygo.MenuItem{
+			a.menuItem("Find…", "CmdOrCtrl+F", func() { a.runFind(editor.Find) }),
+			a.menuItem("Find and Replace…", "CmdOrCtrl+Alt+F", func() { a.runFind(editor.FindReplace) }),
+			mygo.Separator(),
+			a.menuItem("Find in Files…", "CmdOrCtrl+Shift+F", a.showFindInFiles),
+		}},
 		{Label: "View", Submenu: []*mygo.MenuItem{
 			a.menuItem("Toggle Markdown Preview", "CmdOrCtrl+Shift+V", a.toggleMarkdownView),
 		}},
@@ -57,6 +69,17 @@ func (a *App) menuItem(label string, accelerator string, action func()) *mygo.Me
 			a.window.Update(action)
 		},
 	}
+}
+
+// runFind opens the find bar of the current file, which shows over its
+// source.
+func (a *App) runFind(command editor.Command) {
+	d := a.activeDocument()
+	if d == nil {
+		return
+	}
+	d.markdownView = markdownSource
+	d.editor.Run(command)
 }
 
 func (a *App) toggleMarkdownView() {
@@ -96,7 +119,7 @@ func (a *App) chooseFolder() {
 // edits keep the current folder open.
 func (a *App) openFolder(root string) {
 	if slices.ContainsFunc(a.documents, (*document).modified) {
-		a.notice = "Save or close modified files before opening another folder."
+		a.tell(toast{title: "Unsaved changes", detail: "Save or close modified files before opening another folder."})
 		return
 	}
 	if err := a.loadFolder(root); err != nil {

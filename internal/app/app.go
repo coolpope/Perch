@@ -11,9 +11,11 @@ import (
 	"io/fs"
 	"path/filepath"
 	"slices"
+	"time"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/editor"
 
 	"perch/internal/workspace"
 )
@@ -34,10 +36,19 @@ type App struct {
 	tree         ui.OutlineState[string]
 	treeRow      int
 	sidebarWidth float32
+	sidebarTab   int
+
+	quick quickOpen
+	find  findInFiles
 
 	documents []*document
 	active    int
-	notice    string
+	// notice is a failure that stays until it is dismissed.
+	notice string
+	// brief is a message that goes away by itself.
+	brief        toast
+	briefID      uint64
+	briefHovered bool
 
 	look      *look
 	lightLook *look
@@ -49,17 +60,25 @@ type App struct {
 	closeConfirmed  bool
 
 	stopWatch context.CancelFunc
+
+	// post runs a function on the main thread and redraws.
+	post func(func())
+	// after runs a function on the main thread once a delay has passed.
+	after func(time.Duration, func())
 }
 
 // New returns the app with no folder open.
 func New() *App {
-	return &App{
+	a := &App{
 		entries:      map[string]workspace.Entry{},
 		children:     map[string][]string{},
 		treeRow:      noRow,
 		sidebarWidth: initialSidebarWidth,
 		active:       noDocument,
 	}
+	a.post = func(action func()) { a.window.Update(action) }
+	a.after = func(time.Duration, func()) {}
+	return a
 }
 
 // loadFolder makes root the workspace, closing the documents of the last one.
@@ -71,6 +90,10 @@ func (a *App) loadFolder(root string) error {
 	if _, err := workspace.ListDir(absolute, "."); err != nil {
 		return fmt.Errorf("open folder %q: %w", absolute, err)
 	}
+	a.hideQuickOpen()
+	a.stopSearch()
+	a.find = findInFiles{chosen: noRow}
+	a.sidebarTab = sidebarFiles
 	a.root = absolute
 	a.entries = map[string]workspace.Entry{}
 	a.children = map[string][]string{}
@@ -79,6 +102,7 @@ func (a *App) loadFolder(root string) error {
 	a.documents = nil
 	a.active = noDocument
 	a.notice = ""
+	a.brief = toast{}
 	return nil
 }
 
@@ -111,15 +135,30 @@ func (a *App) openFile(relPath string) {
 	index := slices.IndexFunc(a.documents, func(d *document) bool { return d.path == relPath })
 	if index != noDocument {
 		a.active = index
+		a.brief = toast{}
 		return
 	}
 	file, err := workspace.ReadText(a.root, relPath)
 	if err != nil {
-		a.notice = err.Error()
+		a.tell(openFailure(relPath, err))
 		return
 	}
-	a.documents = append(a.documents, newDocument(a.root, relPath, file))
+	a.brief = toast{}
+	d := newDocument(a.root, relPath, file)
+	a.attachMarkdownActions(d)
+	a.documents = append(a.documents, d)
 	a.active = len(a.documents) - 1
+}
+
+// openAt shows a file with the range from start to end selected.
+func (a *App) openAt(relPath string, start editor.Pos, end editor.Pos) {
+	a.openFile(relPath)
+	d := a.activeDocument()
+	if d == nil || d.path != relPath {
+		return
+	}
+	a.chooseTab(a.active)
+	d.reveal(start, end)
 }
 
 func (a *App) activeDocument() *document {

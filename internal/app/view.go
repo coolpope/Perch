@@ -18,12 +18,17 @@ const (
 	markdownMaxWidth float32 = 760
 	smallFontSize    float32 = 12
 	iconFontSize     float32 = 14
+
+	sidebarTabWidth    float32 = 34
+	sidebarTabHeight   float32 = 28
+	sidebarTabIconSize float32 = 16
 )
 
 // view builds the window.
 func (a *App) view(c *ui.Context) {
 	a.look = a.lookFor(c.Theme())
 	c.SetTheme(a.look.theme)
+	a.toastsView(c)
 	if a.root == "" {
 		a.welcomeView(c)
 		return
@@ -31,6 +36,7 @@ func (a *App) view(c *ui.Context) {
 	ui.Split(c, &a.sidebarWidth, func() { a.sidebarView(c) }, func() { a.mainView(c) }).Fill()
 	a.closeTabAlert(c)
 	a.closeWindowAlert(c)
+	a.quickOpenView(c)
 }
 
 func (a *App) welcomeView(c *ui.Context) {
@@ -46,7 +52,6 @@ func (a *App) welcomeView(c *ui.Context) {
 				a.chooseFolder()
 			}
 			ui.Text(c, "⌘O").FontSize(smallFontSize).TextColor(colors.muted)
-			a.noticeView(c)
 		})
 	})
 }
@@ -57,15 +62,51 @@ func (a *App) sidebarView(c *ui.Context) {
 		ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).PaddingStart(trafficLightRoom).PaddingEnd(12).AlignItems(ui.Center).DragWindow().Children(func() {
 			ui.Text(c, filepath.Base(a.root)).FontWeight(600).TextColor(colors.muted).MaxLines(1)
 		})
-		ui.Themed(c, a.look.tree).Grow(1).FillWidth().Children(func() {
-			a.tree.List.Selected = &a.treeRow
-			tree := ui.Outline(c, &a.tree, a.childPaths("."), a.childPaths, func(item string) {
-				a.treeRowView(c, item)
-			}).Grow(1).FillWidth().Label("Files")
-			if tree.Changed() {
-				a.chooseTreeRow()
+		ui.Row(c).FillWidth().Shrink(0).Gap(2).Padding(0, 10, 6, 10).Children(func() {
+			if a.sidebarTabView(c, iconFiles, "Files", a.sidebarTab == sidebarFiles) {
+				a.sidebarTab = sidebarFiles
+			}
+			if a.sidebarTabView(c, iconSearch, "Search", a.sidebarTab == sidebarSearch) {
+				a.showFindInFiles()
 			}
 		})
+		if a.sidebarTab == sidebarSearch {
+			a.findInFilesView(c)
+			return
+		}
+		a.fileTreeView(c)
+	})
+}
+
+// sidebarTabView builds a button of the sidebar's views and reports a click.
+func (a *App) sidebarTabView(c *ui.Context, icon *ui.SVG, label string, active bool) bool {
+	colors := a.look.palette
+	button := ui.Box(c).Size(sidebarTabWidth, sidebarTabHeight).Center().Radius(6).Label(label).Tooltip(label)
+	color := colors.muted
+	switch {
+	case active:
+		button.Background(colors.accent.Alpha(0.14))
+		color = colors.accent
+	case button.Hovered():
+		button.Background(colors.hover)
+		color = colors.text
+	}
+	clicked := button.Clicked()
+	button.Children(func() {
+		ui.Icon(c, icon).FontSize(sidebarTabIconSize).TextColor(color)
+	})
+	return clicked
+}
+
+func (a *App) fileTreeView(c *ui.Context) {
+	ui.Themed(c, a.look.tree).Grow(1).FillWidth().Children(func() {
+		a.tree.List.Selected = &a.treeRow
+		tree := ui.Outline(c, &a.tree, a.childPaths("."), a.childPaths, func(item string) {
+			a.treeRowView(c, item)
+		}).Grow(1).FillWidth().Label("Files")
+		if tree.Changed() {
+			a.chooseTreeRow()
+		}
 	})
 }
 
@@ -119,7 +160,6 @@ func (a *App) chooseTab(index int) {
 func (a *App) mainView(c *ui.Context) {
 	ui.Column(c).Fill().Background(a.look.palette.background).Children(func() {
 		a.tabsView(c)
-		a.noticeView(c)
 		d := a.activeDocument()
 		if d == nil {
 			ui.Column(c).Grow(1).FillWidth().Center().Gap(8).Children(func() {
@@ -225,18 +265,6 @@ func (a *App) pathBarView(c *ui.Context, d *document) {
 	})
 }
 
-func (a *App) noticeView(c *ui.Context) {
-	if a.notice == "" {
-		return
-	}
-	colors := a.look.palette
-	a.bannerView(c, a.notice, colors.danger, func() {
-		if ui.Button(c, "Dismiss").Clicked() {
-			a.notice = ""
-		}
-	})
-}
-
 // bannerView shows a message tinted with color, with actions at its end.
 func (a *App) bannerView(c *ui.Context, message string, color ui.Color, actions func()) {
 	ui.Row(c).FillWidth().Shrink(0).Gap(8).Padding(7, 14).AlignItems(ui.Center).Background(color.Alpha(0.1)).Children(func() {
@@ -278,7 +306,7 @@ func (a *App) documentView(c *ui.Context, d *document) {
 		return
 	}
 	d.editor.Theme = a.look.code
-	editor.View(c, d.editor).Grow(1).FillWidth()
+	editor.View(c, d.editor).Bind(&d.focus).Grow(1).FillWidth()
 }
 
 func (a *App) statusView(c *ui.Context, d *document) {
