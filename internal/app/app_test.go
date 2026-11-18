@@ -3,6 +3,8 @@ package app
 import (
 	"encoding/json"
 	"errors"
+	"image"
+	"image/png"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -38,6 +40,24 @@ func writeFile(t *testing.T, root string, name string, text string) {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(file, []byte(text), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func writePNG(t *testing.T, root string, name string, width int, height int) {
+	t.Helper()
+	file := filepath.Join(root, filepath.FromSlash(name))
+	if err := os.MkdirAll(filepath.Dir(file), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	handle, err := os.Create(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := png.Encode(handle, image.NewRGBA(image.Rect(0, 0, width, height))); err != nil {
+		t.Fatal(errors.Join(err, handle.Close()))
+	}
+	if err := handle.Close(); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -250,6 +270,156 @@ func TestBinaryFileIsRefused(t *testing.T) {
 	a.openFile("image.bin")
 	if a.activeDocument() != nil || a.brief.title != "image.bin is not a text file" {
 		t.Errorf("document %v, message %+v for a binary file", a.activeDocument(), a.brief)
+	}
+}
+
+func TestImageOpensWithItsDimensions(t *testing.T) {
+	root := t.TempDir()
+	writePNG(t, root, "photo.png", 3, 2)
+	a, tester, posted := openWithPosts(t, root)
+	clickFile(t, tester, "photo.png")
+	followPosts(t, posted, tester, func() bool {
+		d := a.activeDocument()
+		return d != nil && d.image != nil && d.image.decoded
+	})
+	tester.Frame()
+
+	d := a.activeDocument()
+	if d == nil || d.path != "photo.png" || !d.isRasterImage() {
+		t.Fatalf("opened %+v; texts %q", d, tester.Texts())
+	}
+	if d.editor != nil {
+		t.Error("a picture tab has an editor")
+	}
+	if d.image.width != 3 || d.image.height != 2 {
+		t.Errorf("picture is %d × %d pixels", d.image.width, d.image.height)
+	}
+	if !tester.HasText("3 × 2") {
+		t.Errorf("status line does not show the dimensions; texts %q", tester.Texts())
+	}
+	if a.brief != (toast{}) {
+		t.Errorf("opening the picture reported %+v", a.brief)
+	}
+}
+
+func TestCorruptImageShowsAToastAndOpensNothing(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "broken.png", "not a png")
+	a, tester := openWorkspace(t, root)
+	clickFile(t, tester, "broken.png")
+
+	if a.activeDocument() != nil || len(a.documents) != 0 {
+		t.Fatalf("opened %+v for a corrupt picture", a.documents)
+	}
+	if want := "broken.png could not be shown"; a.brief.title != want {
+		t.Errorf("message %+v, want %q", a.brief, want)
+	}
+	if !tester.HasText("broken.png could not be shown") {
+		t.Errorf("texts %q", tester.Texts())
+	}
+}
+
+func TestSVGSwitchesBetweenPreviewAndSource(t *testing.T) {
+	root := t.TempDir()
+	source := `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80"><rect width="120" height="80" fill="#1464F0"/></svg>`
+	writeFile(t, root, "icon.svg", source)
+	a, tester := openWorkspace(t, root)
+	clickFile(t, tester, "icon.svg")
+
+	d := a.activeDocument()
+	if d == nil || !d.isSVG() || !d.showsSVGPreview() {
+		t.Fatalf("opened %+v; texts %q", d, tester.Texts())
+	}
+	if d.editor == nil || d.editor.Buffer.String() != source {
+		t.Errorf("editor buffer %q", d.editor.Buffer.String())
+	}
+	if !tester.HasText("120 × 80") {
+		t.Errorf("status line does not show the dimensions; texts %q", tester.Texts())
+	}
+	if err := tester.Click("Source"); err != nil {
+		t.Fatalf("%v; texts %q", err, tester.Texts())
+	}
+	tester.Frame()
+	if d.showsSVGPreview() {
+		t.Error("the SVG stayed on its preview")
+	}
+	if !tester.HasText("Ln 1, Col 1") {
+		t.Errorf("the source lost its status bar; texts %q", tester.Texts())
+	}
+	if err := tester.Click("Preview"); err != nil {
+		t.Fatalf("%v; texts %q", err, tester.Texts())
+	}
+	tester.Frame()
+	if !d.showsSVGPreview() {
+		t.Error("the SVG did not return to its preview")
+	}
+	edited := strings.Replace(source, `width="120" height="80"`, `width="200" height="100"`, 1)
+	d.editor.Buffer.Edit(editor.Edit{Start: 0, End: d.editor.Buffer.Len(), Text: edited})
+	tester.Frame()
+	if d.image.width != 200 || !tester.HasText("200 × 100") {
+		t.Errorf("preview followed the edit to %d × %d; texts %q", d.image.width, d.image.height, tester.Texts())
+	}
+}
+
+func TestBrokenSVGOpensOnItsSource(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "broken.svg", "<svg")
+	a, tester := openWorkspace(t, root)
+	clickFile(t, tester, "broken.svg")
+
+	d := a.activeDocument()
+	if d == nil || d.showsSVGPreview() || d.editor.Buffer.String() != "<svg" {
+		t.Fatalf("opened %+v; message %+v", d, a.brief)
+	}
+}
+
+func TestHalfWrittenImageKeepsTheLastPicture(t *testing.T) {
+	root := t.TempDir()
+	writePNG(t, root, "photo.png", 40, 30)
+	a, tester, posted := openWithPosts(t, root)
+	clickFile(t, tester, "photo.png")
+	followPosts(t, posted, tester, func() bool {
+		d := a.activeDocument()
+		return d != nil && d.image != nil && d.image.decoded
+	})
+	d := a.activeDocument()
+	before := d.image.raster
+
+	file := filepath.Join(root, "photo.png")
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(file, data[:len(data)-12], 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a.applyFileEvents(writeEvent)
+	followPosts(t, posted, tester, func() bool { return a.brief != (toast{}) })
+	if !slices.Contains(a.documents, d) || d.image.raster != before || d.image.width != 40 {
+		t.Errorf("the tab lost its picture: open %v, %d wide", slices.Contains(a.documents, d), d.image.width)
+	}
+}
+
+func TestImageFollowsTheDisk(t *testing.T) {
+	root := t.TempDir()
+	writePNG(t, root, "photo.png", 2, 2)
+	a, tester, posted := openWithPosts(t, root)
+	clickFile(t, tester, "photo.png")
+	followPosts(t, posted, tester, func() bool {
+		d := a.activeDocument()
+		return d != nil && d.image != nil && d.image.decoded
+	})
+	d := a.activeDocument()
+	before := d.image.raster
+
+	writePNG(t, root, "photo.png", 4, 3)
+	a.applyFileEvents(writeEvent)
+	followPosts(t, posted, tester, func() bool {
+		return d.image.raster != before && d.image.width == 4 && d.image.height == 3
+	})
+	tester.Frame()
+	if !tester.HasText("4 × 3") {
+		t.Errorf("status line did not follow the disk; texts %q", tester.Texts())
 	}
 }
 

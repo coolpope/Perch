@@ -60,7 +60,7 @@ func (a *App) stopDefinitions() {
 
 // definitionAtCaret goes to the definition of the symbol at the caret.
 func (a *App) definitionAtCaret() {
-	if d := a.activeDocument(); d != nil && !d.showsPreview() {
+	if d := a.activeDocument(); d != nil && d.editor != nil && !d.showsPreview() {
 		a.goToDefinition(d, d.editor.Cursor())
 	}
 }
@@ -222,7 +222,7 @@ func appendPlace(places []place, added place) []place {
 // currentPlace returns where the caret is now.
 func (a *App) currentPlace() (place, bool) {
 	d := a.activeDocument()
-	if d == nil {
+	if d == nil || d.editor == nil {
 		return place{}, false
 	}
 	return place{path: d.path, external: d.external, position: d.editor.CursorPos()}, true

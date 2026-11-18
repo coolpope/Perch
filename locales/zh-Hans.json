@@ -130,5 +130,13 @@
   "serverMissing": "跳转定义需要安装 {server}",
   "serverInstall": "安装命令：{command}",
   "definitionFailed": "无法查找定义",
+  "imageOpening": "正在打开图片…",
+  "imageOpenFailed": "无法显示 {name}",
+  "imageOpenFailedDetail": "文件可能已损坏，或不是受支持的图片格式。",
+  "imageTooLarge": "{name} 太大，无法预览",
+  "imageTooLargeDetail": "文件大小为 {size}，Perch 最大支持预览 {limit} 的图片。",
+  "imageTooManyPixels": "{name} 的像素太多，无法预览",
+  "imageTooManyPixelsDetail": "图片尺寸为 {width} × {height} 像素，Perch 最大支持 {limit} 百万像素。",
+  "svgPreviewFailed": "无法显示这个 SVG，请修正源码后再查看。",
   "readOnly": "只读"
 }

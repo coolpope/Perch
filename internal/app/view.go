@@ -315,8 +315,11 @@ func (a *App) pathBarView(c *ui.Context, d *document) {
 			ui.Text(c, locales.ReadOnly()).FontSize(smallFontSize-1).TextColor(colors.muted).Padding(0, 0, 0, 6)
 		}
 		ui.Spacer(c)
-		if d.isMarkdown() {
+		switch {
+		case d.isMarkdown():
 			ui.Segmented(c, &d.markdownView, locales.MarkdownPreview(), locales.MarkdownEdit())
+		case d.isSVG():
+			ui.Segmented(c, &d.markdownView, locales.MarkdownPreview(), locales.MarkdownSource())
 		}
 	})
 }
@@ -340,6 +343,9 @@ func (a *App) conflictView(c *ui.Context, d *document) {
 		if ui.Button(c, drop).Clicked() {
 			a.useDisk(d)
 		}
+		if d.editor == nil {
+			return
+		}
 		if ui.PrimaryButton(c, keep).Clicked() {
 			a.keepMine(d)
 		}
@@ -355,6 +361,14 @@ func conflictWording(kind conflict) (message string, keep string, drop string) {
 
 func (a *App) documentView(c *ui.Context, d *document) {
 	c.Key(d.path)
+	switch {
+	case d.isRasterImage():
+		a.rasterImageView(c, d)
+		return
+	case d.showsSVGPreview():
+		a.svgImageView(c, d)
+		return
+	}
 	if d.showsPreview() {
 		ui.Scroll(c).Grow(1).FillWidth().Padding(28, 32).AlignItems(ui.Center).Children(func() {
 			markdown.View(c, d.markdownText(), d.markdownOptions).MaxWidth(markdownMaxWidth).FillWidth()
@@ -368,6 +382,16 @@ func (a *App) documentView(c *ui.Context, d *document) {
 
 func (a *App) statusView(c *ui.Context, d *document) {
 	colors := a.look.palette
+	item := func(text string) {
+		ui.Text(c, text).FontSize(smallFontSize - 1).TextColor(colors.muted)
+	}
+	if d.isRasterImage() || d.showsSVGPreview() {
+		ui.Row(c).FillWidth().Height(statusBarHeight).Shrink(0).Padding(0, 14).AlignItems(ui.Center).Background(colors.sidebar).Children(func() {
+			ui.Spacer(c)
+			item(d.image.status())
+		})
+		return
+	}
 	position := d.editor.CursorPos()
 	language := locales.PlainText()
 	if l := d.editor.Buffer.Language(); l != nil {
@@ -376,9 +400,6 @@ func (a *App) statusView(c *ui.Context, d *document) {
 	state := locales.StatusSaved()
 	if d.modified() {
 		state = locales.StatusEdited()
-	}
-	item := func(text string) {
-		ui.Text(c, text).FontSize(smallFontSize - 1).TextColor(colors.muted)
 	}
 	ui.Row(c).FillWidth().Height(statusBarHeight).Shrink(0).Gap(16).Padding(0, 14).AlignItems(ui.Center).Background(colors.sidebar).Children(func() {
 		item(state)

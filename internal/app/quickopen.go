@@ -124,7 +124,7 @@ func (a *App) openQuickOpenMatch(index int) {
 		return
 	}
 	a.chooseTab(a.active)
-	if !d.showsPreview() {
+	if !d.showsPreview() && d.editor != nil {
 		d.focus.Focus()
 	}
 }
@@ -209,7 +209,7 @@ func (a *App) quickOpenMessage() string {
 	switch {
 	case q.failure != "":
 		return q.failure
-	case target.Path == "" && target.Line > 0 && a.activeDocument() != nil:
+	case target.Path == "" && target.Line > 0 && a.activeTextDocument() != nil:
 		return locales.PressEnterForLine(target.Line)
 	case target.Path == "" && target.Line > 0:
 		return locales.OpenFileForLine()

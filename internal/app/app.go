@@ -162,6 +162,14 @@ func (a *App) openFile(relPath string) {
 		a.brief = toast{}
 		return
 	}
+	switch imageKindOf(relPath) {
+	case imageKindRaster:
+		a.openRasterImage(relPath)
+		return
+	case imageKindSVG:
+		a.openSVGFile(relPath)
+		return
+	}
 	file, err := workspace.ReadText(a.root, relPath)
 	if err != nil {
 		a.tell(openFailure(relPath, err))
@@ -196,9 +204,18 @@ func (a *App) activeDocument() *document {
 	return a.documents[a.active]
 }
 
+// activeTextDocument returns the shown document when it has an editor.
+func (a *App) activeTextDocument() *document {
+	d := a.activeDocument()
+	if d == nil || d.editor == nil {
+		return nil
+	}
+	return d
+}
+
 // save writes a document, refusing to replace a version it has not seen.
 func (a *App) save(d *document) error {
-	if d.external {
+	if d.external || d.editor == nil {
 		return nil
 	}
 	if d.conflict != conflictNone {
@@ -217,6 +234,9 @@ func (a *App) save(d *document) error {
 		return err
 	}
 	d.markSaved(digest)
+	if d.isSVG() {
+		d.image.size = int64(len(data))
+	}
 	return nil
 }
 
@@ -269,6 +289,9 @@ func (a *App) closeTab(d *document) {
 	a.documents = slices.Delete(slices.Clone(a.documents), index, index+1)
 	a.active = activeAfterClose(a.active, index, len(a.documents))
 	a.treeRow = noRow
+	if d.image != nil {
+		d.image.release()
+	}
 }
 
 // activeAfterClose returns the tab to show after the tab at closed went away.
@@ -295,6 +318,9 @@ func (a *App) keepMine(d *document) {
 		return
 	}
 	d.markSaved(digest)
+	if d.isSVG() {
+		d.image.size = int64(len(data))
+	}
 }
 
 // useDisk resolves a conflict by dropping the buffer's edits for the file on
@@ -330,6 +356,10 @@ func (a *App) reconcile(d *document) {
 	if d.external {
 		return
 	}
+	if d.isRasterImage() {
+		a.reconcileImage(d)
+		return
+	}
 	file, err := workspace.ReadText(a.root, d.path)
 	if errors.Is(err, fs.ErrNotExist) {
 		d.conflict = conflictRemoved
@@ -338,6 +368,9 @@ func (a *App) reconcile(d *document) {
 	if err != nil {
 		a.notice = toast{title: locales.FileReadFailed(d.name()), detail: err.Error()}
 		return
+	}
+	if d.isSVG() {
+		d.image.size = int64(len(file.Text))
 	}
 	if file.Digest == d.digest {
 		d.conflict = conflictNone

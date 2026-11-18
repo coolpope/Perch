@@ -1338,6 +1338,90 @@ func (msgs Messages) DefinitionFailed() string {
 	return Catalog.Format(msgs.locale, "definitionFailed", nil)
 }
 
+// ImageOpening says "Opening image…"
+// in the language the app shows.
+func ImageOpening() string { return In(i18n.Locale()).ImageOpening() }
+
+// ImageOpening says "Opening image…"
+// in the language of msgs.
+func (msgs Messages) ImageOpening() string {
+	return Catalog.Format(msgs.locale, "imageOpening", nil)
+}
+
+// ImageOpenFailed says "{name} could not be shown"
+// in the language the app shows.
+func ImageOpenFailed(name string) string { return In(i18n.Locale()).ImageOpenFailed(name) }
+
+// ImageOpenFailed says "{name} could not be shown"
+// in the language of msgs.
+func (msgs Messages) ImageOpenFailed(name string) string {
+	return Catalog.Format(msgs.locale, "imageOpenFailed", map[string]any{"name": name})
+}
+
+// ImageOpenFailedDetail says "It may be damaged or not a supported image."
+// in the language the app shows.
+func ImageOpenFailedDetail() string { return In(i18n.Locale()).ImageOpenFailedDetail() }
+
+// ImageOpenFailedDetail says "It may be damaged or not a supported image."
+// in the language of msgs.
+func (msgs Messages) ImageOpenFailedDetail() string {
+	return Catalog.Format(msgs.locale, "imageOpenFailedDetail", nil)
+}
+
+// ImageTooLarge says "{name} is too large to preview"
+// in the language the app shows.
+func ImageTooLarge(name string) string { return In(i18n.Locale()).ImageTooLarge(name) }
+
+// ImageTooLarge says "{name} is too large to preview"
+// in the language of msgs.
+func (msgs Messages) ImageTooLarge(name string) string {
+	return Catalog.Format(msgs.locale, "imageTooLarge", map[string]any{"name": name})
+}
+
+// ImageTooLargeDetail says "It is {size}. Perch previews images up to {limit}."
+// in the language the app shows.
+func ImageTooLargeDetail(size string, limit string) string {
+	return In(i18n.Locale()).ImageTooLargeDetail(size, limit)
+}
+
+// ImageTooLargeDetail says "It is {size}. Perch previews images up to {limit}."
+// in the language of msgs.
+func (msgs Messages) ImageTooLargeDetail(size string, limit string) string {
+	return Catalog.Format(msgs.locale, "imageTooLargeDetail", map[string]any{"size": size, "limit": limit})
+}
+
+// ImageTooManyPixels says "{name} has too many pixels to preview"
+// in the language the app shows.
+func ImageTooManyPixels(name string) string { return In(i18n.Locale()).ImageTooManyPixels(name) }
+
+// ImageTooManyPixels says "{name} has too many pixels to preview"
+// in the language of msgs.
+func (msgs Messages) ImageTooManyPixels(name string) string {
+	return Catalog.Format(msgs.locale, "imageTooManyPixels", map[string]any{"name": name})
+}
+
+// ImageTooManyPixelsDetail says "It is {width} × {height} pixels. Perch previews images up to {limit} megapixels."
+// in the language the app shows.
+func ImageTooManyPixelsDetail(width int, height int, limit int) string {
+	return In(i18n.Locale()).ImageTooManyPixelsDetail(width, height, limit)
+}
+
+// ImageTooManyPixelsDetail says "It is {width} × {height} pixels. Perch previews images up to {limit} megapixels."
+// in the language of msgs.
+func (msgs Messages) ImageTooManyPixelsDetail(width int, height int, limit int) string {
+	return Catalog.Format(msgs.locale, "imageTooManyPixelsDetail", map[string]any{"width": width, "height": height, "limit": limit})
+}
+
+// SvgPreviewFailed says "This SVG cannot be shown. Fix the source to see it."
+// in the language the app shows.
+func SvgPreviewFailed() string { return In(i18n.Locale()).SvgPreviewFailed() }
+
+// SvgPreviewFailed says "This SVG cannot be shown. Fix the source to see it."
+// in the language of msgs.
+func (msgs Messages) SvgPreviewFailed() string {
+	return Catalog.Format(msgs.locale, "svgPreviewFailed", nil)
+}
+
 // ReadOnly says "Read only"
 // in the language the app shows.
 func ReadOnly() string { return In(i18n.Locale()).ReadOnly() }

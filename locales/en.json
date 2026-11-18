@@ -181,5 +181,26 @@
   "serverMissing": "Go to definition needs {server}",
   "serverInstall": "Install it with: {command}",
   "definitionFailed": "Could not find the definition",
+  "imageOpening": "Opening image…",
+  "imageOpenFailed": "{name} could not be shown",
+  "imageOpenFailedDetail": "It may be damaged or not a supported image.",
+  "imageTooLarge": "{name} is too large to preview",
+  "imageTooLargeDetail": "It is {size}. Perch previews images up to {limit}.",
+  "imageTooManyPixels": "{name} has too many pixels to preview",
+  "imageTooManyPixelsDetail": "It is {width} × {height} pixels. Perch previews images up to {limit} megapixels.",
+  "@imageTooManyPixelsDetail": {
+    "placeholders": {
+      "width": {
+        "type": "int"
+      },
+      "height": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "svgPreviewFailed": "This SVG cannot be shown. Fix the source to see it.",
   "readOnly": "Read only"
 }

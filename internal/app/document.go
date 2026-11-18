@@ -33,7 +33,7 @@ const codeLineHeight float32 = 1.6
 // externalPathParts is how much of a path outside the workspace shows.
 const externalPathParts int = 3
 
-// Indexes of the Markdown view switch.
+// Indexes of the preview switch of Markdown and SVG documents.
 const (
 	markdownPreview int = 0
 	markdownSource  int = 1
@@ -44,6 +44,8 @@ type document struct {
 	// path is relative to the workspace root.
 	path   string
 	editor *editor.State
+	// image is the preview of an image document, nil for text documents.
+	image *imageView
 	// external marks a read-only file outside the workspace, whose path is
 	// absolute.
 	external bool
@@ -55,6 +57,8 @@ type document struct {
 	// disk is the version on disk during a conflictChanged.
 	disk workspace.TextFile
 
+	// markdownView is the Preview/Source choice that Markdown and SVG
+	// documents share.
 	markdownView    int
 	markdownOptions *markdown.Options
 	// previewText holds the rendered source only once a preview has shown,
@@ -115,10 +119,13 @@ func (d *document) name() string {
 }
 
 func (d *document) modified() bool {
-	return d.editor.Buffer.Modified()
+	return d.editor != nil && d.editor.Buffer.Modified()
 }
 
 func (d *document) isMarkdown() bool {
+	if d.editor == nil {
+		return false
+	}
 	language := d.editor.Buffer.Language()
 	return language != nil && language.Name == "Markdown"
 }
@@ -157,6 +164,9 @@ func (d *document) htmlBlocks(source string) ([]htmlblock.Block, error) {
 // reveal shows the source with the range from start to end selected, and
 // moves the keyboard to it.
 func (d *document) reveal(start editor.Pos, end editor.Pos) {
+	if d.editor == nil {
+		return
+	}
 	d.markdownView = markdownSource
 	d.editor.GoTo(start)
 	if end != start {
@@ -192,4 +202,7 @@ func (d *document) reload(file workspace.TextFile) {
 	d.digest = file.Digest
 	d.conflict = conflictNone
 	d.disk = workspace.TextFile{}
+	if d.image != nil {
+		d.image.size = int64(len(file.Text))
+	}
 }

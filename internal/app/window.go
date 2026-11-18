@@ -53,7 +53,7 @@ func (a *App) release() {
 // source.
 func (a *App) runFind(command editor.Command) {
 	d := a.activeDocument()
-	if d == nil {
+	if d == nil || d.editor == nil {
 		return
 	}
 	d.markdownView = markdownSource
