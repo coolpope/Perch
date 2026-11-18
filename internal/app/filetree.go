@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"sync"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
@@ -86,37 +87,64 @@ func nameFailure(err error) string {
 	}
 }
 
+// fileMenuIcons are the pictures of the file tree's menu.
+type fileMenuIcons struct {
+	newFile   *mygo.MenuIcon
+	newFolder *mygo.MenuIcon
+	rename    *mygo.MenuIcon
+	trash     *mygo.MenuIcon
+	copyPath  *mygo.MenuIcon
+	copyLink  *mygo.MenuIcon
+	reveal    *mygo.MenuIcon
+}
+
+// menuIcons makes the menu's pictures the first time the menu opens.
+var menuIcons = sync.OnceValue(func() fileMenuIcons {
+	return fileMenuIcons{
+		newFile: mustMenuIcon(iconFilePlus), newFolder: mustMenuIcon(iconFolderPlus), rename: mustMenuIcon(iconPencil),
+		trash: mustMenuIcon(iconTrash), copyPath: mustMenuIcon(iconCopy), copyLink: mustMenuIcon(iconLink),
+		reveal: mustMenuIcon(iconReveal),
+	}
+})
+
+// mustMenuIcon makes a menu picture of an icon built into Perch.
+func mustMenuIcon(icon *ui.SVG) *mygo.MenuIcon {
+	made, err := mygo.NewMenuIconSVG(icon, true)
+	if err != nil {
+		panic("app: make a menu icon: " + err.Error())
+	}
+	return made
+}
+
 // fileMenu fills the context menu of a tree row, or of the project root.
 func (a *App) fileMenu(m *ui.Menu, target string) {
-	if m.Item(locales.FileMenuNewFile()).Chosen() {
+	icons := menuIcons()
+	if m.Item(locales.FileMenuNewFile()).Icon(icons.newFile).Chosen() {
 		a.startCreate(fileActionNewFile, target)
 	}
-	if m.Item(locales.FileMenuNewFolder()).Chosen() {
+	if m.Item(locales.FileMenuNewFolder()).Icon(icons.newFolder).Chosen() {
 		a.startCreate(fileActionNewFolder, target)
 	}
-	if target != "." {
-		m.Separator()
-		if m.Item(locales.FileMenuRename()).Chosen() {
-			a.startRename(target)
-		}
-		if m.Item(locales.FileMenuTrash()).Chosen() {
-			a.askTrash(target)
-		}
-	}
 	m.Separator()
-	if m.Item(locales.FileMenuCopyPath()).Chosen() {
+	if m.Item(locales.FileMenuCopyPath()).Icon(icons.copyPath).Chosen() {
 		mygo.Clipboard.WriteText(a.fullPath(target))
 	}
-	if target != "." {
-		if m.Item(locales.FileMenuCopyRelativePath()).Chosen() {
-			mygo.Clipboard.WriteText(target)
-		}
+	if target != "." && m.Item(locales.FileMenuCopyRelativePath()).Icon(icons.copyLink).Chosen() {
+		mygo.Clipboard.WriteText(target)
 	}
-	if runtime.GOOS == "darwin" {
-		m.Separator()
-		if m.Item(locales.FileMenuReveal()).Chosen() {
-			a.revealInFinder(target)
-		}
+	if runtime.GOOS == "darwin" && m.Item(locales.FileMenuReveal()).Icon(icons.reveal).Chosen() {
+		a.revealInFinder(target)
+	}
+	if target == "." {
+		return
+	}
+	m.Separator()
+	if m.Item(locales.FileMenuRename()).Icon(icons.rename).Chosen() {
+		a.startRename(target)
+	}
+	trash := m.Item(locales.FileMenuTrash()).Icon(icons.trash).IconColor(a.look.palette.danger).Danger()
+	if trash.Chosen() {
+		a.askTrash(target)
 	}
 }
 
