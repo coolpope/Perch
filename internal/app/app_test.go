@@ -1,16 +1,22 @@
 package app
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
+	"perch/internal/settings"
 	"perch/internal/workspace"
 )
 
@@ -18,6 +24,12 @@ const (
 	testWidth  int = 1100
 	testHeight int = 700
 )
+
+// TestMain runs the tests in English whatever language the machine reads.
+func TestMain(m *testing.M) {
+	i18n.SetLocaleFunc(func() string { return "en" })
+	os.Exit(m.Run())
+}
 
 func writeFile(t *testing.T, root string, name string, text string) {
 	t.Helper()
@@ -79,8 +91,8 @@ func TestOpenEditAndSaveKeepsLineEndings(t *testing.T) {
 		t.Errorf("status bar does not show unsaved edits; texts %q", tester.Texts())
 	}
 	a.saveActive()
-	if a.notice != "" {
-		t.Fatalf("save reported %q", a.notice)
+	if a.notice != (toast{}) {
+		t.Fatalf("save reported %+v", a.notice)
 	}
 	if got, want := readFile(t, root, "main.go"), "package main\r\n// edited\r\n"; got != want {
 		t.Errorf("saved %q, want %q", got, want)
@@ -452,5 +464,236 @@ func TestAFolderGoesToTheRightWindow(t *testing.T) {
 	}
 	if got := chooseDestination(windows, project, "/work/beta"); got != (folderDestination{}) {
 		t.Errorf("a project window was replaced: %+v", got)
+	}
+}
+
+func gitIn(t *testing.T, root string, args ...string) {
+	t.Helper()
+	command := exec.Command("git", append([]string{"-C", root, "-c", "user.name=t", "-c", "user.email=t@example.invalid"}, args...)...)
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("git %v: %v: %s", args, err, output)
+	}
+}
+
+func reviewedRepository(t *testing.T) string {
+	t.Helper()
+	root := t.TempDir()
+	gitIn(t, root, "init", "--quiet")
+	writeFile(t, root, "a.go", "package a\n")
+	writeFile(t, root, "b.go", "package b\n")
+	writeFile(t, root, "plan.md", "# Plan\n\nFirst step\n\nSecond step\n")
+	gitIn(t, root, "add", ".")
+	gitIn(t, root, "commit", "--quiet", "-m", "start")
+	return root
+}
+
+func settleChanges(t *testing.T, a *App, tester *ui.Tester, posted <-chan func()) {
+	t.Helper()
+	followPosts(t, posted, tester, func() bool { return a.review.loaded && !a.review.running })
+	tester.Frame()
+}
+
+func TestReviewFollowsAgentWorkToTheEnd(t *testing.T) {
+	root := reviewedRepository(t)
+	a, tester, posted := openWithPosts(t, root)
+	t.Cleanup(a.stopChanges)
+	tester.Frame()
+	a.showChanges()
+	settleChanges(t, a, tester, posted)
+
+	writeFile(t, root, "a.go", "package a\n\nfunc Agent() {}\n")
+	writeFile(t, root, "b.go", "package b\n\nvar Two = 2\n")
+	gitIn(t, root, "add", "a.go")
+	gitIn(t, root, "commit", "--quiet", "-m", "agent commit")
+	a.refreshChanges()
+	settleChanges(t, a, tester, posted)
+	if len(a.review.listing.Changes) != 2 || !tester.HasText("0 of 2 files reviewed") {
+		t.Fatalf("listing %+v; texts %q", a.review.listing, tester.Texts())
+	}
+
+	a.selectChange("a.go")
+	followPosts(t, posted, tester, func() bool { return a.review.diff != nil })
+	tester.Frame()
+	if !tester.HasText("Mark Reviewed") {
+		t.Fatalf("texts %q", tester.Texts())
+	}
+	a.markSelectedReviewed()
+	if a.review.selected != "b.go" {
+		t.Errorf("moved on to %q", a.review.selected)
+	}
+	followPosts(t, posted, tester, func() bool {
+		change, _ := a.review.change("a.go")
+		return change.Reviewed && a.review.diff != nil && !a.review.running
+	})
+
+	a.setReviewed("b.go", true)
+	settleChanges(t, a, tester, posted)
+	writeFile(t, root, "a.go", "package a\n\nfunc Agent() {}\n\nfunc More() {}\n")
+	a.refreshChanges()
+	followPosts(t, posted, tester, func() bool {
+		change, _ := a.review.change("a.go")
+		return !change.Reviewed && !a.review.running
+	})
+	if change, _ := a.review.change("a.go"); change.Added != 2 {
+		t.Errorf("a new edit shows %+v", change)
+	}
+
+	a.markAllReviewed()
+	followPosts(t, posted, tester, func() bool { return unreadCount(a.review.listing.Changes) == 0 && !a.review.running })
+	tester.Frame()
+	if err := tester.Click("Finish Review"); err != nil {
+		t.Fatalf("%v; texts %q", err, tester.Texts())
+	}
+	followPosts(t, posted, tester, func() bool { return tester.HasText("No changes since your last review.") })
+}
+
+func TestMarkdownChangeRendersAndOpensTheFile(t *testing.T) {
+	root := reviewedRepository(t)
+	writeFile(t, root, "plan.md", "# Plan\n\nFirst step\n\nSecond step changed\n")
+	a, tester, posted := openWithPosts(t, root)
+	t.Cleanup(a.stopChanges)
+	tester.Frame()
+	a.showChanges()
+	settleChanges(t, a, tester, posted)
+	a.selectChange("plan.md")
+	followPosts(t, posted, tester, func() bool { return a.review.preview != nil })
+	tester.Frame()
+	tester.Frame()
+
+	if !tester.HasText("Second step changed") || tester.HasText("# Plan") {
+		t.Fatalf("texts %q", tester.Texts())
+	}
+	if want := []lineRange{{first: 4, end: 5}}; !slices.Equal(a.review.marks, want) {
+		t.Errorf("marks %+v", a.review.marks)
+	}
+	if err := tester.Click("Open File"); err != nil {
+		t.Fatal(err)
+	}
+	tester.Frame()
+	if d := a.activeDocument(); d == nil || d.path != "plan.md" || a.showsChange() {
+		t.Errorf("document %+v, still in the diff: %v", d, a.showsChange())
+	}
+}
+
+func TestChangesExplainAFolderOutsideGit(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "a.go", "package a\n")
+	a, tester, posted := openWithPosts(t, root)
+	t.Cleanup(a.stopChanges)
+	tester.Frame()
+	a.showChanges()
+	settleChanges(t, a, tester, posted)
+	if !tester.HasText("Changes need a Git repository.") {
+		t.Errorf("texts %q", tester.Texts())
+	}
+}
+
+func TestLinesMapAcrossADiff(t *testing.T) {
+	hunks := []editor.DiffHunk{{OldStart: 2, OldEnd: 4, NewStart: 2, NewEnd: 7}}
+	cases := []struct {
+		side editor.DiffSide
+		line int
+		want int
+	}{
+		{editor.DiffNew, 5, 5},
+		{editor.DiffOld, 1, 1},
+		{editor.DiffOld, 3, 2},
+		{editor.DiffOld, 6, 9},
+	}
+	for _, test := range cases {
+		if got := newLineFor(hunks, test.side, test.line); got != test.want {
+			t.Errorf("line %d of side %d became %d, want %d", test.line, test.side, got, test.want)
+		}
+	}
+}
+
+func TestSettingsChangeTheOpenWindow(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "main.go", "package main\n")
+	writeFile(t, root, "README.md", "# Title\n")
+	a, tester := openWorkspace(t, root)
+	clickFile(t, tester, "main.go")
+
+	a.showSettings()
+	tester.Frame()
+	for _, want := range []string{"Settings", "Theme", "Font size", "Wrap long lines", "Open Markdown as"} {
+		if !tester.HasText(want) {
+			t.Fatalf("settings do not show %q; texts %q", want, tester.Texts())
+		}
+	}
+	if err := tester.Click("Source"); err != nil {
+		t.Fatal(err)
+	}
+	tester.Frame()
+	if a.settings.MarkdownView != settings.MarkdownSource {
+		t.Errorf("settings are %+v", a.settings)
+	}
+	if err := tester.Click("Close Settings"); err != nil {
+		t.Fatal(err)
+	}
+	tester.Frame()
+	if a.settingsOpen {
+		t.Error("the settings stayed open")
+	}
+
+	next := a.settings
+	next.FontSize = 18
+	next.WordWrap = true
+	next.TabSize = 2
+	a.updateSettings(next)
+	tester.Frame()
+	d := a.activeDocument()
+	if d.editor.Font.Size != 18 || !d.editor.SoftWrap || d.editor.TabSize != 2 {
+		t.Errorf("editor font %v, wrap %v, tab %d", d.editor.Font.Size, d.editor.SoftWrap, d.editor.TabSize)
+	}
+
+	a.openFile("README.md")
+	tester.Frame()
+	if a.activeDocument().showsPreview() {
+		t.Error("Markdown opened as a preview against the setting")
+	}
+}
+
+func TestSidebarTooltipStaysClearOfTheWindowControls(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "main.go", "package main\n")
+	_, tester := openWorkspace(t, root)
+	tester.Frame()
+
+	const buttonBottom float32 = (headerHeight + sidebarTabHeight) / 2
+	tester.Move(trafficLightRoom+sidebarTabWidth/2, headerHeight/2)
+	tester.Advance(2 * time.Second)
+	tester.Frame()
+	tip, shown := tester.AccessByRole(ui.RoleTooltip, "")
+	if !shown {
+		t.Fatalf("no tooltip; texts %q", tester.Texts())
+	}
+	if tip.Bounds.Y < buttonBottom {
+		t.Errorf("tooltip at y %v covers the window controls above y %v", tip.Bounds.Y, buttonBottom)
+	}
+}
+
+func TestEveryMessageIsTranslated(t *testing.T) {
+	read := func(name string) map[string]any {
+		t.Helper()
+		data, err := os.ReadFile(filepath.Join("..", "..", "locales", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var catalog map[string]any
+		if err := json.Unmarshal(data, &catalog); err != nil {
+			t.Fatal(err)
+		}
+		return catalog
+	}
+	english, chinese := read("en.json"), read("zh-Hans.json")
+	for key, text := range english {
+		if strings.HasPrefix(key, "@") {
+			continue
+		}
+		translated, found := chinese[key]
+		if !found || translated == "" || translated == text {
+			t.Errorf("%s has no Chinese text: %v", key, translated)
+		}
 	}
 }

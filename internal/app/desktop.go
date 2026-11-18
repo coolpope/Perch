@@ -3,11 +3,16 @@ package app
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"path/filepath"
 	"slices"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui/editor"
+
+	"perch/internal/settings"
+	"perch/locales"
 )
 
 const (
@@ -16,17 +21,21 @@ const (
 	cascadeOffset int = 28
 	// stateKeyBytes is how much of a folder's hash names its window state.
 	stateKeyBytes int = 12
+
+	settingsFileName = "settings.json"
 )
 
 // Desktop owns Perch's windows, one project each, and the menu they share. Its
 // methods run on the main thread.
 type Desktop struct {
-	windows []*App
+	windows      []*App
+	settings     settings.Settings
+	settingsFile string
 }
 
 // NewDesktop returns a desktop with no windows.
 func NewDesktop() *Desktop {
-	return &Desktop{}
+	return &Desktop{settings: settings.Default()}
 }
 
 // windowPlacement is where a new window opens. The state remembered under
@@ -40,9 +49,65 @@ type windowPlacement struct {
 // Start opens the first window, with the folder named by args, the command
 // line after the program's name, and takes the folders of later launches.
 func (d *Desktop) Start(args []string) {
+	loadErr := d.loadSettings()
 	mygo.App.SetMenu(d.menu())
 	mygo.App.OnSecondInstance(d.openLaunch)
+	mygo.App.OnLocaleChanged(func(string) { mygo.App.SetMenu(d.menu()) })
 	d.openWindow(folderArgument(args, ""))
+	if loadErr != nil {
+		d.reportSettingsFailure(locales.SettingsReadFailed(), loadErr)
+	}
+}
+
+// loadSettings reads the saved settings and applies their appearance. Perch
+// runs on the defaults when they cannot be read.
+func (d *Desktop) loadSettings() error {
+	dir, err := mygo.App.Path(mygo.PathUserData)
+	if err != nil {
+		return fmt.Errorf("find the settings folder: %w", err)
+	}
+	d.settingsFile = filepath.Join(dir, settingsFileName)
+	loaded, err := settings.Load(d.settingsFile)
+	d.settings = loaded
+	applyAppearance(loaded.Appearance)
+	return err
+}
+
+func applyAppearance(appearance settings.Appearance) {
+	switch appearance {
+	case settings.AppearanceLight:
+		mygo.Theme.SetSource(mygo.ThemeLight)
+	case settings.AppearanceDark:
+		mygo.Theme.SetSource(mygo.ThemeDark)
+	default:
+		mygo.Theme.SetSource(mygo.ThemeSystem)
+	}
+}
+
+// settingsChanged applies new settings to every window and saves them.
+func (d *Desktop) settingsChanged(next settings.Settings) {
+	appearanceChanged := next.Appearance != d.settings.Appearance
+	d.settings = next
+	for _, a := range d.windows {
+		a.settings = next
+		a.window.Update(func() {})
+	}
+	if appearanceChanged {
+		applyAppearance(next.Appearance)
+	}
+	if d.settingsFile == "" {
+		d.reportSettingsFailure(locales.SettingsSaveFailed(), errors.New("the settings folder is unknown"))
+		return
+	}
+	if err := settings.Save(d.settingsFile, next); err != nil {
+		d.reportSettingsFailure(locales.SettingsSaveFailed(), err)
+	}
+}
+
+func (d *Desktop) reportSettingsFailure(title string, err error) {
+	if a := d.currentApp(nil); a != nil {
+		a.tell(toast{title: title, detail: err.Error()})
+	}
 }
 
 // folderArgument returns the folder that args name, relative to workingDir, or
@@ -74,6 +139,9 @@ func (d *Desktop) openLaunch(args []string, workingDir string) {
 func (d *Desktop) openWindow(root string) {
 	a := New()
 	a.desktop = d
+	a.settings = d.settings
+	a.chosenLanguage = mygo.App.ChosenLocale
+	a.setLanguage = mygo.App.SetLocale
 	a.show(root, d.placementFor(root))
 	a.window.OnClosed(func() { d.windowClosed(a) })
 	d.windows = append(d.windows, a)
@@ -151,7 +219,7 @@ func (d *Desktop) openFolder(from *App, folder string) {
 
 func (d *Desktop) reportOpenFailure(from *App, err error) {
 	if a := d.currentApp(from); a != nil {
-		a.tell(toast{title: "Could not open this folder", detail: err.Error()})
+		a.tell(toast{title: locales.FolderOpenFailed(), detail: err.Error()})
 	}
 }
 
@@ -192,25 +260,40 @@ func (d *Desktop) appOf(window *mygo.Window) *App {
 
 func (d *Desktop) menu() *mygo.Menu {
 	return mygo.NewMenu([]*mygo.MenuItem{
-		{Role: mygo.RoleAppMenu},
-		{Label: "File", Submenu: []*mygo.MenuItem{
-			{Label: "New Window", Accelerator: "CmdOrCtrl+Shift+N", Click: func(*mygo.MenuItem, *mygo.Window) { d.newWindow() }},
-			d.menuItem("Open Folder…", "CmdOrCtrl+O", (*App).chooseFolder),
-			d.menuItem("Go to File…", "CmdOrCtrl+P", (*App).showQuickOpen),
+		{Label: "Perch", Submenu: []*mygo.MenuItem{
+			{Role: mygo.RoleAbout},
 			mygo.Separator(),
-			d.menuItem("Save", "CmdOrCtrl+S", (*App).saveActive),
-			d.menuItem("Close Tab", "CmdOrCtrl+W", (*App).closeActiveTab),
-			d.menuItem("Close Window", "CmdOrCtrl+Shift+W", func(a *App) { a.window.Close() }),
+			d.menuItem(locales.MenuSettings(), "CmdOrCtrl+,", (*App).showSettings),
+			mygo.Separator(),
+			{Role: mygo.RoleServices},
+			mygo.Separator(),
+			{Role: mygo.RoleHide},
+			{Role: mygo.RoleHideOthers},
+			{Role: mygo.RoleUnhide},
+			mygo.Separator(),
+			{Role: mygo.RoleQuit},
+		}},
+		{Label: locales.MenuFile(), Submenu: []*mygo.MenuItem{
+			{Label: locales.MenuNewWindow(), Accelerator: "CmdOrCtrl+Shift+N", Click: func(*mygo.MenuItem, *mygo.Window) { d.newWindow() }},
+			d.menuItem(locales.MenuOpenFolder(), "CmdOrCtrl+O", (*App).chooseFolder),
+			d.menuItem(locales.MenuGoToFile(), "CmdOrCtrl+P", (*App).showQuickOpen),
+			mygo.Separator(),
+			d.menuItem(locales.Save(), "CmdOrCtrl+S", (*App).saveActive),
+			d.menuItem(locales.CloseTab(), "CmdOrCtrl+W", (*App).closeActiveTab),
+			d.menuItem(locales.MenuCloseWindow(), "CmdOrCtrl+Shift+W", func(a *App) { a.window.Close() }),
 		}},
 		{Role: mygo.RoleEditMenu},
-		{Label: "Find", Submenu: []*mygo.MenuItem{
-			d.menuItem("Find…", "CmdOrCtrl+F", func(a *App) { a.runFind(editor.Find) }),
-			d.menuItem("Find and Replace…", "CmdOrCtrl+Alt+F", func(a *App) { a.runFind(editor.FindReplace) }),
+		{Label: locales.MenuFind(), Submenu: []*mygo.MenuItem{
+			d.menuItem(locales.MenuFindInFile(), "CmdOrCtrl+F", func(a *App) { a.runFind(editor.Find) }),
+			d.menuItem(locales.MenuFindReplace(), "CmdOrCtrl+Alt+F", func(a *App) { a.runFind(editor.FindReplace) }),
 			mygo.Separator(),
-			d.menuItem("Find in Files…", "CmdOrCtrl+Shift+F", (*App).showFindInFiles),
+			d.menuItem(locales.MenuFindInFiles(), "CmdOrCtrl+Shift+F", (*App).showFindInFiles),
 		}},
-		{Label: "View", Submenu: []*mygo.MenuItem{
-			d.menuItem("Toggle Markdown Preview", "CmdOrCtrl+Shift+V", (*App).toggleMarkdownView),
+		{Label: locales.MenuView(), Submenu: []*mygo.MenuItem{
+			d.menuItem(locales.MenuToggleMarkdown(), "CmdOrCtrl+Shift+V", (*App).toggleMarkdownView),
+			mygo.Separator(),
+			d.menuItem(locales.MenuShowChanges(), "CmdOrCtrl+Shift+R", (*App).showChanges),
+			d.menuItem(locales.MenuMarkReviewed(), "CmdOrCtrl+Enter", (*App).markSelectedReviewed),
 		}},
 		{Role: mygo.RoleWindowMenu},
 	})

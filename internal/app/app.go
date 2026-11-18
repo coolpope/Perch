@@ -17,7 +17,9 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
+	"perch/internal/settings"
 	"perch/internal/workspace"
+	"perch/locales"
 )
 
 const (
@@ -25,6 +27,10 @@ const (
 	noRow               int     = -1
 	noDocument          int     = -1
 )
+
+// errUnresolvedConflict reports a save of a document that disagrees with the
+// file on disk until the person chooses a version.
+var errUnresolvedConflict = errors.New("resolve the conflict with the file on disk first")
 
 // App is the state of one window and its project. Its methods run on the main
 // thread.
@@ -40,13 +46,21 @@ type App struct {
 	sidebarWidth float32
 	sidebarTab   int
 
-	quick quickOpen
-	find  findInFiles
+	quick  quickOpen
+	find   findInFiles
+	review changesPanel
+
+	settings     settings.Settings
+	settingsOpen bool
+	// chosenLanguage and setLanguage read and change the language the person
+	// chose, empty while Perch follows the system.
+	chosenLanguage func() string
+	setLanguage    func(string)
 
 	documents []*document
 	active    int
 	// notice is a failure that stays until it is dismissed.
-	notice string
+	notice toast
 	// brief is a message that goes away by itself.
 	brief        toast
 	briefID      uint64
@@ -77,9 +91,13 @@ func New() *App {
 		treeRow:      noRow,
 		sidebarWidth: initialSidebarWidth,
 		active:       noDocument,
+		settings:     settings.Default(),
 	}
 	a.post = func(action func()) { a.window.Update(action) }
 	a.after = func(time.Duration, func()) {}
+	language := ""
+	a.chosenLanguage = func() string { return language }
+	a.setLanguage = func(tag string) { language = tag }
 	return a
 }
 
@@ -94,6 +112,7 @@ func (a *App) loadFolder(root string) error {
 	}
 	a.hideQuickOpen()
 	a.stopSearch()
+	a.stopChanges()
 	a.find = findInFiles{chosen: noRow}
 	a.sidebarTab = sidebarFiles
 	a.root = absolute
@@ -103,7 +122,7 @@ func (a *App) loadFolder(root string) error {
 	a.treeRow = noRow
 	a.documents = nil
 	a.active = noDocument
-	a.notice = ""
+	a.notice = toast{}
 	a.brief = toast{}
 	return nil
 }
@@ -119,7 +138,7 @@ func (a *App) childPaths(dir string) []string {
 	}
 	entries, err := workspace.ListDir(a.root, dir)
 	if err != nil {
-		a.notice = err.Error()
+		a.notice = toast{title: locales.FolderReadFailed(), detail: err.Error()}
 		a.children[dir] = nil
 		return nil
 	}
@@ -134,6 +153,7 @@ func (a *App) childPaths(dir string) []string {
 
 // openFile shows a file in a tab, reusing the tab it already has.
 func (a *App) openFile(relPath string) {
+	a.closeChange()
 	index := slices.IndexFunc(a.documents, func(d *document) bool { return d.path == relPath })
 	if index != noDocument {
 		a.active = index
@@ -148,6 +168,9 @@ func (a *App) openFile(relPath string) {
 	a.brief = toast{}
 	d := newDocument(a.root, relPath, file)
 	a.attachMarkdownActions(d)
+	if a.settings.MarkdownView == settings.MarkdownSource {
+		d.markdownView = markdownSource
+	}
 	a.documents = append(a.documents, d)
 	a.active = len(a.documents) - 1
 }
@@ -173,7 +196,7 @@ func (a *App) activeDocument() *document {
 // save writes a document, refusing to replace a version it has not seen.
 func (a *App) save(d *document) error {
 	if d.conflict != conflictNone {
-		return fmt.Errorf("save %q: resolve the conflict with the file on disk first", d.path)
+		return fmt.Errorf("save %q: %w", d.path, errUnresolvedConflict)
 	}
 	data, err := d.content()
 	if err != nil {
@@ -197,7 +220,7 @@ func (a *App) saveActive() {
 		return
 	}
 	if err := a.save(d); err != nil {
-		a.notice = err.Error()
+		a.notice = saveFailure(d.name(), err)
 	}
 }
 
@@ -209,7 +232,7 @@ func (a *App) saveAll() bool {
 			continue
 		}
 		if err := a.save(d); err != nil {
-			a.notice = err.Error()
+			a.notice = saveFailure(d.name(), err)
 			saved = false
 		}
 	}
@@ -257,12 +280,12 @@ func activeAfterClose(active int, closed int, remaining int) int {
 func (a *App) keepMine(d *document) {
 	data, err := d.content()
 	if err != nil {
-		a.notice = err.Error()
+		a.notice = saveFailure(d.name(), err)
 		return
 	}
 	digest, err := workspace.OverwriteText(a.root, d.path, data)
 	if err != nil {
-		a.notice = err.Error()
+		a.notice = saveFailure(d.name(), err)
 		return
 	}
 	d.markSaved(digest)
@@ -287,6 +310,7 @@ func (a *App) applyFileEvents(events []mygo.FileEvent) {
 	for _, d := range a.documents {
 		a.reconcile(d)
 	}
+	a.scheduleChangesRefresh()
 }
 
 func changesTree(event mygo.FileEvent) bool {
@@ -303,7 +327,7 @@ func (a *App) reconcile(d *document) {
 		return
 	}
 	if err != nil {
-		a.notice = err.Error()
+		a.notice = toast{title: locales.FileReadFailed(d.name()), detail: err.Error()}
 		return
 	}
 	if file.Digest == d.digest {
@@ -313,7 +337,7 @@ func (a *App) reconcile(d *document) {
 	}
 	data, err := d.content()
 	if err != nil {
-		a.notice = err.Error()
+		a.notice = toast{title: locales.FileReadFailed(d.name()), detail: err.Error()}
 		return
 	}
 	switch {
@@ -368,6 +392,6 @@ func (a *App) watchEnded(ctx context.Context, root string, err error) {
 		return
 	}
 	a.window.Update(func() {
-		a.notice = fmt.Sprintf("Live updates stopped for %s: %v", root, err)
+		a.notice = toast{title: locales.LiveUpdatesStopped(), detail: fmt.Sprintf("%s: %v", root, err)}
 	})
 }

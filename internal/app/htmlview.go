@@ -10,6 +10,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"perch/internal/htmlblock"
+	"perch/locales"
 )
 
 const (
@@ -32,7 +33,7 @@ func (a *App) attachMarkdownActions(d *document) {
 func (a *App) openLink(d *document, target string) {
 	address, err := url.Parse(target)
 	if err != nil {
-		a.tell(toast{title: "Could not open this link", detail: target})
+		a.tell(toast{title: locales.LinkFailed(), detail: target})
 		return
 	}
 	switch address.Scheme {
@@ -41,14 +42,14 @@ func (a *App) openLink(d *document, target string) {
 	case "":
 		a.openRelativeLink(d, address.Path)
 	default:
-		a.tell(toast{title: "Perch does not open " + address.Scheme + " links", detail: target})
+		a.tell(toast{title: locales.LinkUnsupported(address.Scheme), detail: target})
 	}
 }
 
 // openExternal runs off the main thread, which the system call needs free.
 func (a *App) openExternal(target string) {
 	if err := mygo.Shell.OpenExternal(target); err != nil {
-		a.post(func() { a.tell(toast{title: "Could not open this link", detail: err.Error()}) })
+		a.post(func() { a.tell(toast{title: locales.LinkFailed(), detail: err.Error()}) })
 	}
 }
 
@@ -214,7 +215,7 @@ func (a *App) imagePillView(c *ui.Context, image htmlblock.Image, linked bool) {
 	colors := a.look.palette
 	label := image.Alt
 	if label == "" {
-		label = "Image"
+		label = locales.ImageFallback()
 	}
 	color := colors.muted
 	if linked {

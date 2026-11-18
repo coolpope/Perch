@@ -1,0 +1,174 @@
+{
+  "@@locale": "en",
+  "appTagline": "A quiet place to read code while your agents work.",
+  "openFolder": "Open Folder",
+  "menuOpenFolder": "Open Folder…",
+  "tabFiles": "Files",
+  "tabSearch": "Search",
+  "tabChanges": "Changes",
+  "settingsTitle": "Settings",
+  "menuSettings": "Settings…",
+  "chooseFileToRead": "Choose a file to read",
+  "closePath": "Close {path}",
+  "markdownPreview": "Preview",
+  "markdownEdit": "Edit",
+  "conflictRemoved": "This file was deleted on disk.",
+  "conflictChanged": "This file changed on disk while you were editing it.",
+  "restoreFile": "Restore File",
+  "closeTab": "Close Tab",
+  "keepMine": "Keep Mine",
+  "useDiskVersion": "Use Disk Version",
+  "plainText": "Plain Text",
+  "statusSaved": "Saved",
+  "statusEdited": "Edited",
+  "cursorPosition": "Ln {line}, Col {column}",
+  "@cursorPosition": {
+    "placeholders": {
+      "line": {
+        "type": "int"
+      },
+      "column": {
+        "type": "int"
+      }
+    }
+  },
+  "lineCount": "{count, plural, one {# line} other {# lines}}",
+  "@lineCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "unsavedDetail": "Your changes will be lost if you don't save them.",
+  "saveChangesTo": "Save changes to {name}?",
+  "saveBeforeClosing": "Save changes before closing?",
+  "cancel": "Cancel",
+  "dontSave": "Don't Save",
+  "save": "Save",
+  "saveAll": "Save All",
+  "goToFilePlaceholder": "Go to file, or file:line",
+  "goToFile": "Go to file",
+  "menuGoToFile": "Go to File…",
+  "pressEnterForLine": "Press Enter to go to line {line}",
+  "@pressEnterForLine": {
+    "placeholders": {
+      "line": {
+        "type": "int"
+      }
+    }
+  },
+  "openFileForLine": "Open a file to go to a line",
+  "listingFiles": "Listing files…",
+  "noMatchingFiles": "No matching files",
+  "listFilesFailed": "Could not list the files of this folder",
+  "fileTooLarge": "{name} is too large to open",
+  "fileTooLargeDetail": "It is {size}. Perch opens files up to {limit}.",
+  "notTextFile": "{name} is not a text file",
+  "notTextFileDetail": "Perch opens UTF-8 text files.",
+  "fileGone": "{name} no longer exists",
+  "fileGoneDetail": "It may have been moved or deleted.",
+  "cannotRead": "Perch cannot read {name}",
+  "checkPermissions": "Check the file's permissions.",
+  "couldNotOpen": "Could not open {name}",
+  "dismiss": "Dismiss",
+  "invalidRegexp": "Invalid regular expression",
+  "searchInFiles": "Search in files",
+  "matchCase": "Match case",
+  "regularExpression": "Regular expression",
+  "searching": "Searching…",
+  "noResults": "No results",
+  "firstResults": "First {count} results",
+  "@firstResults": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resultsInFiles": "{hits, plural, one {# result} other {# results}} in {files, plural, one {# file} other {# files}}",
+  "@resultsInFiles": {
+    "placeholders": {
+      "hits": {
+        "type": "int"
+      },
+      "files": {
+        "type": "int"
+      }
+    }
+  },
+  "searchFailed": "Search failed",
+  "folderDialogFailed": "Could not show the folder picker",
+  "linkFailed": "Could not open this link",
+  "linkUnsupported": "Perch does not open {scheme} links",
+  "imageFallback": "Image",
+  "changesNeedGit": "Changes need a Git repository.",
+  "readingChanges": "Reading changes…",
+  "noChanges": "No changes since your last review.",
+  "changesFailed": "Could not read the changes",
+  "reviewProgress": "{read} of {total, plural, one {# file} other {# files}} reviewed",
+  "@reviewProgress": {
+    "placeholders": {
+      "read": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "markAllReviewed": "Mark All Reviewed",
+  "finishReview": "Finish Review",
+  "markPathReviewed": "Mark {path} reviewed",
+  "markPathUnread": "Mark {path} unread",
+  "binaryFile": "binary",
+  "cannotShowAsText": "This file cannot be shown as text.",
+  "readingChange": "Reading the change…",
+  "changeRendered": "Rendered",
+  "changeDiff": "Diff",
+  "openFile": "Open File",
+  "markUnread": "Mark Unread",
+  "markReviewed": "Mark Reviewed",
+  "kindAdded": "New file",
+  "kindDeleted": "Deleted",
+  "kindModified": "Modified",
+  "reviewUpdateFailed": "Could not update the review",
+  "sectionAppearance": "Appearance",
+  "settingLanguage": "Language",
+  "settingTheme": "Theme",
+  "sectionEditor": "Editor",
+  "settingFontSize": "Font size",
+  "settingTabSize": "Tab size",
+  "settingWrap": "Wrap long lines",
+  "sectionReading": "Reading",
+  "settingMarkdown": "Open Markdown as",
+  "settingDiff": "Show changes",
+  "followSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "tabSizeAuto": "Auto",
+  "markdownSource": "Source",
+  "diffUnified": "Unified",
+  "diffSideBySide": "Side by Side",
+  "closeSettings": "Close Settings",
+  "settingsReadFailed": "Could not read your settings",
+  "settingsSaveFailed": "Could not save your settings",
+  "folderOpenFailed": "Could not open this folder",
+  "folderReadFailed": "Could not read this folder",
+  "liveUpdatesStopped": "Live updates stopped",
+  "saveFailed": "Could not save {name}",
+  "changedOnDisk": "{name} changed on disk",
+  "chooseVersion": "Choose which version to keep.",
+  "fileReadFailed": "Could not read {name}",
+  "menuFile": "File",
+  "menuFind": "Find",
+  "menuView": "View",
+  "menuNewWindow": "New Window",
+  "menuCloseWindow": "Close Window",
+  "menuFindInFile": "Find…",
+  "menuFindReplace": "Find and Replace…",
+  "menuFindInFiles": "Find in Files…",
+  "menuToggleMarkdown": "Toggle Markdown Preview",
+  "menuShowChanges": "Show Changes",
+  "menuMarkReviewed": "Mark File Reviewed"
+}

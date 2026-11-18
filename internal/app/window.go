@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"slices"
 	"time"
@@ -10,6 +9,8 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
+
+	"perch/locales"
 )
 
 // show opens the window, with the project at root when root is not empty.
@@ -44,6 +45,7 @@ func (a *App) release() {
 	}
 	a.stopSearch()
 	a.hideQuickOpen()
+	a.stopChanges()
 }
 
 // runFind opens the find bar of the current file, which shows over its
@@ -75,12 +77,12 @@ func (a *App) chooseFolder() {
 	go func() {
 		paths, err := mygo.Dialog.Open(mygo.OpenDialogOptions{
 			Parent:    a.window,
-			Title:     "Open Folder",
+			Title:     locales.OpenFolder(),
 			Directory: true,
 		})
 		a.window.Update(func() {
 			if err != nil {
-				a.notice = fmt.Sprintf("Open folder dialog failed: %v", err)
+				a.notice = toast{title: locales.FolderDialogFailed(), detail: err.Error()}
 				return
 			}
 			if len(paths) > 0 {
@@ -93,15 +95,16 @@ func (a *App) chooseFolder() {
 // openFolder makes root this window's project and follows its changes.
 func (a *App) openFolder(root string) {
 	if err := a.loadFolder(root); err != nil {
-		a.notice = err.Error()
+		a.notice = toast{title: locales.FolderOpenFailed(), detail: err.Error()}
 		return
 	}
 	a.window.SetTitle(filepath.Base(a.root))
 	ctx, cancel := context.WithCancel(context.Background())
 	a.stopWatch = cancel
 	if err := a.watch(ctx, a.root); err != nil {
-		a.notice = err.Error()
+		a.notice = toast{title: locales.LiveUpdatesStopped(), detail: err.Error()}
 	}
+	a.beginReview()
 }
 
 // handleWindowClose keeps the window open while unsaved edits need an answer.

@@ -1,13 +1,14 @@
 package app
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/egoist/mygo/ui/markdown"
+
+	"perch/locales"
 )
 
 const (
@@ -22,6 +23,8 @@ const (
 	sidebarTabWidth    float32 = 34
 	sidebarTabHeight   float32 = 28
 	sidebarTabIconSize float32 = 16
+	projectNameHeight  float32 = 30
+	minSidebarWidth    float32 = 232
 )
 
 // view builds the window.
@@ -31,12 +34,15 @@ func (a *App) view(c *ui.Context) {
 	a.toastsView(c)
 	if a.root == "" {
 		a.welcomeView(c)
+		a.settingsView(c)
 		return
 	}
+	a.sidebarWidth = max(a.sidebarWidth, minSidebarWidth)
 	ui.Split(c, &a.sidebarWidth, func() { a.sidebarView(c) }, func() { a.mainView(c) }).Fill()
 	a.closeTabAlert(c)
 	a.closeWindowAlert(c)
 	a.quickOpenView(c)
+	a.settingsView(c)
 }
 
 func (a *App) welcomeView(c *ui.Context) {
@@ -46,9 +52,9 @@ func (a *App) welcomeView(c *ui.Context) {
 		ui.Column(c).Grow(1).FillWidth().Center().Gap(10).Padding(0, 0, headerHeight, 0).Children(func() {
 			ui.Icon(c, iconPerch).FontSize(44).TextColor(colors.accent)
 			ui.Text(c, "Perch").FontSize(26).FontWeight(600).LetterSpacing(-0.3)
-			ui.Text(c, "A quiet place to read code while your agents work.").TextColor(colors.muted)
+			ui.Text(c, locales.AppTagline()).TextColor(colors.muted)
 			ui.Box(c).Height(8)
-			if ui.PrimaryButton(c, "Open Folder").Clicked() {
+			if ui.PrimaryButton(c, locales.OpenFolder()).Clicked() {
 				a.chooseFolder()
 			}
 			ui.Text(c, "⌘O").FontSize(smallFontSize).TextColor(colors.muted)
@@ -59,29 +65,55 @@ func (a *App) welcomeView(c *ui.Context) {
 func (a *App) sidebarView(c *ui.Context) {
 	colors := a.look.palette
 	ui.Column(c).Fill().Background(colors.sidebar).Children(func() {
-		ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).PaddingStart(trafficLightRoom).PaddingEnd(12).AlignItems(ui.Center).DragWindow().Children(func() {
-			ui.Text(c, filepath.Base(a.root)).FontWeight(600).TextColor(colors.muted).MaxLines(1)
-		})
-		ui.Row(c).FillWidth().Shrink(0).Gap(2).Padding(0, 10, 6, 10).Children(func() {
-			if a.sidebarTabView(c, iconFiles, "Files", a.sidebarTab == sidebarFiles) {
-				a.sidebarTab = sidebarFiles
-			}
-			if a.sidebarTabView(c, iconSearch, "Search", a.sidebarTab == sidebarSearch) {
-				a.showFindInFiles()
-			}
-		})
-		if a.sidebarTab == sidebarSearch {
+		a.sidebarHeaderView(c)
+		a.projectNameView(c)
+		switch a.sidebarTab {
+		case sidebarSearch:
 			a.findInFilesView(c)
+			return
+		case sidebarChanges:
+			a.changesPanelView(c)
 			return
 		}
 		a.fileTreeView(c)
 	})
 }
 
+// sidebarHeaderView puts the sidebar's views beside the window's controls.
+func (a *App) sidebarHeaderView(c *ui.Context) {
+	ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).Gap(2).PaddingStart(trafficLightRoom).PaddingEnd(8).
+		AlignItems(ui.Center).DragWindow().Children(func() {
+		if a.sidebarTabView(c, iconFiles, locales.TabFiles(), a.sidebarTab == sidebarFiles) {
+			a.sidebarTab = sidebarFiles
+		}
+		if a.sidebarTabView(c, iconSearch, locales.TabSearch(), a.sidebarTab == sidebarSearch) {
+			a.showFindInFiles()
+		}
+		if a.sidebarTabView(c, iconChanges, locales.TabChanges(), a.sidebarTab == sidebarChanges) {
+			a.showChanges()
+		}
+		ui.Spacer(c)
+		if a.sidebarTabView(c, iconSettings, locales.SettingsTitle(), false) {
+			a.showSettings()
+		}
+	})
+}
+
+// projectNameView names the project on a line of its own, with room for a long
+// name, and shows where it is when the pointer rests on it.
+func (a *App) projectNameView(c *ui.Context) {
+	colors := a.look.palette
+	ui.Row(c).FillWidth().Height(projectNameHeight).Shrink(0).Padding(0, 14).AlignItems(ui.Center).Children(func() {
+		name := ui.Text(c, filepath.Base(a.root)).FontWeight(600).MaxLines(1).Shrink(1)
+		sidebarTooltip(c, name, a.root, colors)
+	})
+}
+
 // sidebarTabView builds a button of the sidebar's views and reports a click.
 func (a *App) sidebarTabView(c *ui.Context, icon *ui.SVG, label string, active bool) bool {
 	colors := a.look.palette
-	button := ui.Box(c).Size(sidebarTabWidth, sidebarTabHeight).Center().Radius(6).Label(label).Tooltip(label)
+	button := ui.Box(c).Size(sidebarTabWidth, sidebarTabHeight).Center().Radius(6).Label(label)
+	sidebarTooltip(c, button, label, colors)
 	color := colors.muted
 	switch {
 	case active:
@@ -98,12 +130,22 @@ func (a *App) sidebarTabView(c *ui.Context, icon *ui.SVG, label string, active b
 	return clicked
 }
 
+// sidebarTooltip names a sidebar button below it, clear of the window's controls
+// above the sidebar.
+func sidebarTooltip(c *ui.Context, button ui.Element, label string, colors palette) {
+	ui.TooltipBase(c, button, func(tip ui.Element) {
+		tip.AttachTo(button, ui.AnchorBottom, ui.AnchorTop).Margin(6, 0, 0, 0).Padding(4, 8).Radius(5).
+			Background(colors.text).TextColor(colors.background).FontSize(smallFontSize)
+		tip.Children(func() { ui.Text(c, label) })
+	})
+}
+
 func (a *App) fileTreeView(c *ui.Context) {
 	ui.Themed(c, a.look.tree).Grow(1).FillWidth().Children(func() {
 		a.tree.List.Selected = &a.treeRow
 		tree := ui.Outline(c, &a.tree, a.childPaths("."), a.childPaths, func(item string) {
 			a.treeRowView(c, item)
-		}).Grow(1).FillWidth().Label("Files")
+		}).Grow(1).FillWidth().Label(locales.TabFiles())
 		if tree.Changed() {
 			a.chooseTreeRow()
 		}
@@ -147,6 +189,7 @@ func toggleOpen(open *ui.Selection[string], item string) {
 
 // chooseTab shows a tab and marks its file in the tree when the row shows.
 func (a *App) chooseTab(index int) {
+	a.closeChange()
 	a.active = index
 	a.treeRow = noRow
 	for row := range a.tree.Rows() {
@@ -160,11 +203,15 @@ func (a *App) chooseTab(index int) {
 func (a *App) mainView(c *ui.Context) {
 	ui.Column(c).Fill().Background(a.look.palette.background).Children(func() {
 		a.tabsView(c)
+		if a.showsChange() {
+			a.changeView(c)
+			return
+		}
 		d := a.activeDocument()
 		if d == nil {
 			ui.Column(c).Grow(1).FillWidth().Center().Gap(8).Children(func() {
 				ui.Icon(c, iconPerch).FontSize(32).TextColor(a.look.palette.border)
-				ui.Text(c, "Choose a file to read").TextColor(a.look.palette.muted)
+				ui.Text(c, locales.ChooseFileToRead()).TextColor(a.look.palette.muted)
 			})
 			return
 		}
@@ -229,7 +276,7 @@ func (a *App) tabView(c *ui.Context, d *document, active bool, index int) bool {
 // the tab, and then its close button.
 func (a *App) tabCloseView(c *ui.Context, d *document, showClose bool) bool {
 	colors := a.look.palette
-	button := ui.Box(c).Size(18, 18).Center().Radius(4).Label("Close " + d.path)
+	button := ui.Box(c).Size(18, 18).Center().Radius(4).Label(locales.ClosePath(d.path))
 	if button.Hovered() {
 		button.Background(colors.hover)
 	}
@@ -245,22 +292,28 @@ func (a *App) tabCloseView(c *ui.Context, d *document, showClose bool) bool {
 	return clicked
 }
 
+// pathCrumbsView shows a file's path, its folders quieter than its name.
+func (a *App) pathCrumbsView(c *ui.Context, relPath string) {
+	colors := a.look.palette
+	parts := strings.Split(relPath, "/")
+	for i, part := range parts {
+		if i > 0 {
+			ui.Text(c, "›").FontSize(smallFontSize).TextColor(colors.muted)
+		}
+		text := ui.Text(c, part).FontSize(smallFontSize).MaxLines(1)
+		if i < len(parts)-1 {
+			text.TextColor(colors.muted)
+		}
+	}
+}
+
 func (a *App) pathBarView(c *ui.Context, d *document) {
 	colors := a.look.palette
-	parts := strings.Split(d.path, "/")
 	ui.Row(c).FillWidth().Height(pathBarHeight).Shrink(0).Gap(5).Padding(0, 14).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(colors.border).Children(func() {
-		for i, part := range parts {
-			if i > 0 {
-				ui.Text(c, "›").FontSize(smallFontSize).TextColor(colors.muted)
-			}
-			text := ui.Text(c, part).FontSize(smallFontSize).MaxLines(1)
-			if i < len(parts)-1 {
-				text.TextColor(colors.muted)
-			}
-		}
+		a.pathCrumbsView(c, d.path)
 		ui.Spacer(c)
 		if d.isMarkdown() {
-			ui.Segmented(c, &d.markdownView, "Preview", "Edit")
+			ui.Segmented(c, &d.markdownView, locales.MarkdownPreview(), locales.MarkdownEdit())
 		}
 	})
 }
@@ -292,9 +345,9 @@ func (a *App) conflictView(c *ui.Context, d *document) {
 
 func conflictWording(kind conflict) (message string, keep string, drop string) {
 	if kind == conflictRemoved {
-		return "This file was deleted on disk.", "Restore File", "Close Tab"
+		return locales.ConflictRemoved(), locales.RestoreFile(), locales.CloseTab()
 	}
-	return "This file changed on disk while you were editing it.", "Keep Mine", "Use Disk Version"
+	return locales.ConflictChanged(), locales.KeepMine(), locales.UseDiskVersion()
 }
 
 func (a *App) documentView(c *ui.Context, d *document) {
@@ -306,19 +359,20 @@ func (a *App) documentView(c *ui.Context, d *document) {
 		return
 	}
 	d.editor.Theme = a.look.code
+	a.applyEditorSettings(d.editor)
 	editor.View(c, d.editor).Bind(&d.focus).Grow(1).FillWidth()
 }
 
 func (a *App) statusView(c *ui.Context, d *document) {
 	colors := a.look.palette
 	position := d.editor.CursorPos()
-	language := "Plain Text"
+	language := locales.PlainText()
 	if l := d.editor.Buffer.Language(); l != nil {
 		language = l.Name
 	}
-	state := "Saved"
+	state := locales.StatusSaved()
 	if d.modified() {
-		state = "Edited"
+		state = locales.StatusEdited()
 	}
 	item := func(text string) {
 		ui.Text(c, text).FontSize(smallFontSize - 1).TextColor(colors.muted)
@@ -326,16 +380,15 @@ func (a *App) statusView(c *ui.Context, d *document) {
 	ui.Row(c).FillWidth().Height(statusBarHeight).Shrink(0).Gap(16).Padding(0, 14).AlignItems(ui.Center).Background(colors.sidebar).Children(func() {
 		item(state)
 		ui.Spacer(c)
-		item(fmt.Sprintf("Ln %d, Col %d", position.Line+1, position.Col+1))
-		item(fmt.Sprintf("%d lines", d.editor.Buffer.LineCount()))
+		item(locales.CursorPosition(position.Line+1, position.Col+1))
+		item(locales.LineCount(d.editor.Buffer.LineCount()))
 		item(language)
 	})
 }
 
 const (
-	alertDiscard  int = 1
-	alertSave     int = 2
-	unsavedDetail     = "Your changes will be lost if you don't save them."
+	alertDiscard int = 1
+	alertSave    int = 2
 )
 
 func (a *App) closeTabAlert(c *ui.Context) {
@@ -343,13 +396,13 @@ func (a *App) closeTabAlert(c *ui.Context) {
 		return
 	}
 	d := a.closingDocument
-	title := fmt.Sprintf("Save changes to %s?", d.name())
-	switch ui.AlertDialog(c, &a.askCloseTab, title, unsavedDetail, "Cancel", "Don't Save", "Save") {
+	title := locales.SaveChangesTo(d.name())
+	switch ui.AlertDialog(c, &a.askCloseTab, title, locales.UnsavedDetail(), locales.Cancel(), locales.DontSave(), locales.Save()) {
 	case alertDiscard:
 		a.closeTab(d)
 	case alertSave:
 		if err := a.save(d); err != nil {
-			a.notice = err.Error()
+			a.notice = saveFailure(d.name(), err)
 		} else {
 			a.closeTab(d)
 		}
@@ -363,7 +416,7 @@ func (a *App) closeWindowAlert(c *ui.Context) {
 	if !a.askCloseWindow {
 		return
 	}
-	switch ui.AlertDialog(c, &a.askCloseWindow, "Save changes before closing?", unsavedDetail, "Cancel", "Don't Save", "Save All") {
+	switch ui.AlertDialog(c, &a.askCloseWindow, locales.SaveBeforeClosing(), locales.UnsavedDetail(), locales.Cancel(), locales.DontSave(), locales.SaveAll()) {
 	case alertDiscard:
 		a.confirmCloseWindow()
 	case alertSave:

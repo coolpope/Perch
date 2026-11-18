@@ -2,13 +2,14 @@ package app
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"path"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
 	"perch/internal/search"
+	"perch/locales"
 )
 
 const (
@@ -61,7 +62,8 @@ func (a *App) showQuickOpen() {
 func (a *App) quickOpenListed(listing search.Listing, err error) {
 	a.quick.loaded = true
 	if err != nil {
-		a.quick.failure = err.Error()
+		slog.Warn("list files", "root", a.root, "error", err)
+		a.quick.failure = locales.ListFilesFailed()
 		return
 	}
 	a.quick.listing = listing
@@ -160,7 +162,7 @@ func (a *App) quickOpenContent(c *ui.Context) {
 	ui.Column(c).FillWidth().Children(func() {
 		ui.Row(c).FillWidth().Padding(13, 16).Children(func() {
 			input := ui.TextInputBase(c, &a.quick.query).Bind(&a.quick.input).Grow(1).FontSize(15).
-				Placeholder("Go to file, or file:line").Label("Go to file")
+				Placeholder(locales.GoToFilePlaceholder()).Label(locales.GoToFile())
 			if input.Changed() {
 				a.rankQuickOpen()
 			}
@@ -208,13 +210,13 @@ func (a *App) quickOpenMessage() string {
 	case q.failure != "":
 		return q.failure
 	case target.Path == "" && target.Line > 0 && a.activeDocument() != nil:
-		return fmt.Sprintf("Press Enter to go to line %d", target.Line)
+		return locales.PressEnterForLine(target.Line)
 	case target.Path == "" && target.Line > 0:
-		return "Open a file to go to a line"
+		return locales.OpenFileForLine()
 	case !q.loaded:
-		return "Listing files…"
+		return locales.ListingFiles()
 	case len(q.matches) == 0:
-		return "No matching files"
+		return locales.NoMatchingFiles()
 	default:
 		return ""
 	}

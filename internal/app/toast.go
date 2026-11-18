@@ -10,6 +10,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"perch/internal/workspace"
+	"perch/locales"
 )
 
 const (
@@ -56,18 +57,26 @@ func openFailure(relPath string, err error) toast {
 	switch {
 	case errors.As(err, &tooLarge):
 		return toast{
-			title:  name + " is too large to open",
-			detail: fmt.Sprintf("It is %s. Perch opens files up to %s.", sizeInMB(tooLarge.Size), sizeInMB(tooLarge.Limit)),
+			title:  locales.FileTooLarge(name),
+			detail: locales.FileTooLargeDetail(sizeInMB(tooLarge.Size), sizeInMB(tooLarge.Limit)),
 		}
 	case errors.Is(err, workspace.ErrBinaryFile):
-		return toast{title: name + " is not a text file", detail: "Perch opens UTF-8 text files."}
+		return toast{title: locales.NotTextFile(name), detail: locales.NotTextFileDetail()}
 	case errors.Is(err, fs.ErrNotExist):
-		return toast{title: name + " no longer exists", detail: "It may have been moved or deleted."}
+		return toast{title: locales.FileGone(name), detail: locales.FileGoneDetail()}
 	case errors.Is(err, fs.ErrPermission):
-		return toast{title: "Perch cannot read " + name, detail: "Check the file's permissions."}
+		return toast{title: locales.CannotRead(name), detail: locales.CheckPermissions()}
 	default:
-		return toast{title: "Could not open " + name, detail: err.Error()}
+		return toast{title: locales.CouldNotOpen(name), detail: err.Error()}
 	}
+}
+
+// saveFailure says in plain words why a file was not saved.
+func saveFailure(name string, err error) toast {
+	if errors.Is(err, workspace.ErrChangedOnDisk) || errors.Is(err, errUnresolvedConflict) {
+		return toast{title: locales.ChangedOnDisk(name), detail: locales.ChooseVersion()}
+	}
+	return toast{title: locales.SaveFailed(name), detail: err.Error()}
 }
 
 func sizeInMB(size int64) string {
@@ -77,16 +86,16 @@ func sizeInMB(size int64) string {
 // toastsView floats the current messages over the bottom corner of the window,
 // where they cover no controls and move nothing.
 func (a *App) toastsView(c *ui.Context) {
-	if a.brief == (toast{}) && a.notice == "" {
+	if a.brief == (toast{}) && a.notice == (toast{}) {
 		a.briefHovered = false
 		return
 	}
 	ui.Overlay(c, func() {
 		ui.Column(c).Absolute().Right(toastEdgeSpace).Bottom(statusBarHeight + toastEdgeSpace).Width(toastWidth).Gap(8).Children(func() {
-			if a.notice != "" {
+			if a.notice != (toast{}) {
 				c.Key("notice")
-				if a.toastView(c, toast{title: a.notice}) {
-					a.notice = ""
+				if a.toastView(c, a.notice) {
+					a.notice = toast{}
 				}
 			}
 			if a.brief != (toast{}) {
@@ -116,7 +125,7 @@ func (a *App) toastView(c *ui.Context, message toast) bool {
 				ui.Text(c, message.detail).FontSize(smallFontSize).TextColor(colors.muted)
 			}
 		})
-		button := ui.Box(c).Size(20, 20).Center().Radius(5).Shrink(0).Label("Dismiss")
+		button := ui.Box(c).Size(20, 20).Center().Radius(5).Shrink(0).Label(locales.Dismiss())
 		if button.Hovered() {
 			button.Background(colors.hover)
 		}

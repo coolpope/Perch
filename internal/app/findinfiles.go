@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"path"
 	"regexp"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 
 	"perch/internal/search"
+	"perch/locales"
 )
 
 const (
@@ -22,8 +24,9 @@ const (
 
 // Indexes of the sidebar's switch.
 const (
-	sidebarFiles  int = 0
-	sidebarSearch int = 1
+	sidebarFiles   int = 0
+	sidebarSearch  int = 1
+	sidebarChanges int = 2
 )
 
 // resultRow is a row of the search results: a file, or a match in one.
@@ -92,7 +95,7 @@ func (a *App) startSearch() {
 	query := search.Query{Text: a.find.query, CaseSensitive: a.find.caseSensitive, Regexp: a.find.regexp}
 	pattern, err := query.Compile()
 	if err != nil {
-		a.find.failure = "Invalid regular expression"
+		a.find.failure = locales.InvalidRegexp()
 		return
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -162,7 +165,8 @@ func (a *App) finishSearch(ctx context.Context, summary search.Summary, err erro
 		a.find.finished = true
 		a.find.summary = summary
 		if err != nil && !errors.Is(err, context.Canceled) {
-			a.find.failure = err.Error()
+			slog.Warn("search files", "root", a.root, "error", err)
+			a.find.failure = locales.SearchFailed()
 		}
 	})
 }
@@ -207,7 +211,7 @@ func (a *App) findInFilesView(c *ui.Context) {
 	ui.Column(c).Grow(1).FillWidth().Children(func() {
 		ui.Column(c).FillWidth().Shrink(0).Gap(7).Padding(4, 10, 8, 10).Children(func() {
 			field := ui.SearchField(c, &a.find.query).Bind(&a.find.input).FillWidth().
-				Placeholder("Search in files").Label("Search in files").
+				Placeholder(locales.SearchInFiles()).Label(locales.SearchInFiles()).
 				OnShortcut(0, ui.KeyDown, func() { a.moveSearchChoice(1) }).
 				OnShortcut(0, ui.KeyUp, func() { a.moveSearchChoice(-1) })
 			if field.Changed() {
@@ -217,10 +221,10 @@ func (a *App) findInFilesView(c *ui.Context) {
 				a.openSearchRow(a.find.chosen)
 			}
 			ui.Row(c).FillWidth().Gap(4).AlignItems(ui.Center).Children(func() {
-				if ui.Toggle(c, &a.find.caseSensitive, "Aa").Label("Match case").Changed() {
+				if ui.Toggle(c, &a.find.caseSensitive, "Aa").Label(locales.MatchCase()).Changed() {
 					a.startSearch()
 				}
-				if ui.Toggle(c, &a.find.regexp, ".*").Label("Regular expression").Changed() {
+				if ui.Toggle(c, &a.find.regexp, ".*").Label(locales.RegularExpression()).Changed() {
 					a.startSearch()
 				}
 				ui.Spacer(c)
@@ -238,24 +242,16 @@ func searchStatus(find *findInFiles) string {
 	case find.failure != "":
 		return find.failure
 	case find.running:
-		return "Searching…"
+		return locales.Searching()
 	case !find.finished:
 		return ""
 	case find.summary.Hits == 0:
-		return "No results"
+		return locales.NoResults()
 	case find.summary.Truncated:
-		return fmt.Sprintf("First %d results", find.summary.Hits)
+		return locales.FirstResults(find.summary.Hits)
 	default:
-		return fmt.Sprintf("%s in %s", countOf(find.summary.Hits, "result"), countOf(find.summary.Files, "file"))
+		return locales.ResultsInFiles(find.summary.Hits, find.summary.Files)
 	}
-}
-
-// countOf spells a count with its noun, as "1 file" or "3 files".
-func countOf(count int, noun string) string {
-	if count == 1 {
-		return "1 " + noun
-	}
-	return fmt.Sprintf("%d %ss", count, noun)
 }
 
 func (a *App) searchResultsView(c *ui.Context) {
