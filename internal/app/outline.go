@@ -123,11 +123,11 @@ func (a *App) showOutline() {
 		registry := a.languageRegistry()
 		known, language, supported := registry.Match(file)
 		if !supported {
-			a.outline.notice = outlineNotice{message: locales.DefinitionUnsupported(d.name())}
+			a.outline.notice = outlineNotice{message: locales.SymbolsUnsupported(d.name())}
 			return
 		}
 		if !registry.Enabled(known.ID) {
-			a.outline.notice = outlineNotice{message: locales.DefinitionTurnedOff(known.Name), detail: locales.DefinitionTurnOnHint()}
+			a.outline.notice = outlineNotice{message: locales.SymbolsTurnedOff(known.Name), detail: locales.DefinitionTurnOnHint()}
 			return
 		}
 		a.requestOutlineSymbols(d, known.Server, language, request)

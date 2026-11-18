@@ -137,6 +137,8 @@
   "symbolsForImage": "图片没有符号",
   "openFileForSymbols": "请先打开一个文件，再查看符号",
   "symbolsFailed": "无法读取符号",
+  "symbolsUnsupported": "暂不支持读取 {name} 的符号",
+  "symbolsTurnedOff": "{language} 的符号功能已关闭",
   "symbolFunction": "函数",
   "symbolMethod": "方法",
   "symbolType": "类型",

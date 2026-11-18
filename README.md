@@ -28,7 +28,7 @@ It is built in Go with [MyGo](https://github.com/egoist/mygo). The interface is 
 - **Review what changed.** Perch remembers how far you have read, even after an agent commits. It lists the files left to read, shows their diffs, and marks unread lines beside the line numbers as they are written. It never touches your index, `HEAD` or branches.
 - **Read comfortably.** Syntax highlighting, rendered Markdown including the HTML in READMEs, and previews of PNG, JPEG, GIF, WebP and SVG.
 - **Edit safely.** If an agent rewrites a file you are editing, Perch asks which version to keep instead of overwriting either one.
-- **Find your way.** Quick open, project search, find and replace, and go to definition through language servers.
+- **Find your way.** Quick open, project search, find and replace, plus go to definition and a symbol list for the current file through language servers.
 - **Manage files.** Create, rename and move files to the Trash from the file tree. Open tabs follow a rename and keep their unsaved edits, and files Git ignores are dimmed.
 - **Pick up where you left off.** Each project reopens with its tabs, caret, scroll position and layout, and each project gets its own window.
 - **Stay light.** Language servers start only when needed and exit when idle. Perch idles at about 52 MB on macOS.
@@ -58,6 +58,7 @@ golangci-lint run
 | Find in file | `⌘F` |
 | Find and replace | `⌥⌘F` |
 | Search the project | `⇧⌘F` |
+| Go to symbol in file | `⇧⌘O` |
 | Go to definition | `F12` or `⌘`-click |
 | Go back / forward | `⌃-` / `⌃⇧-` |
 | Next / previous tab | `⌃Tab` or `⇧⌘]` / `⌃⇧Tab` or `⇧⌘[` |

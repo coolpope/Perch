@@ -188,6 +188,8 @@
   "symbolsForImage": "An image has no symbols",
   "openFileForSymbols": "Open a file to see its symbols",
   "symbolsFailed": "Could not read the symbols",
+  "symbolsUnsupported": "Symbols are not available for {name}",
+  "symbolsTurnedOff": "Symbols are turned off for {language}",
   "symbolFunction": "func",
   "symbolMethod": "method",
   "symbolType": "type",

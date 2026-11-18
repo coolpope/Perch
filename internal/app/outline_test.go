@@ -209,13 +209,13 @@ func TestOutlineTurnedOffLanguageStartsNoServer(t *testing.T) {
 	if a.outline.loading {
 		t.Error("a turned-off language is still loading")
 	}
-	if want := locales.DefinitionTurnedOff("Go"); a.outline.notice.message != want {
+	if want := locales.SymbolsTurnedOff("Go"); a.outline.notice.message != want {
 		t.Errorf("message %q, want %q", a.outline.notice.message, want)
 	}
 	if want := locales.DefinitionTurnOnHint(); a.outline.notice.detail != want {
 		t.Errorf("hint %q, want %q", a.outline.notice.detail, want)
 	}
-	if !slices.Contains(tester.Texts(), locales.DefinitionTurnedOff("Go")) {
+	if !slices.Contains(tester.Texts(), locales.SymbolsTurnedOff("Go")) {
 		t.Errorf("texts %q", tester.Texts())
 	}
 }

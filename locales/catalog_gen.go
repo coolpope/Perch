@@ -1408,6 +1408,26 @@ func (msgs Messages) SymbolsFailed() string {
 	return Catalog.Format(msgs.locale, "symbolsFailed", nil)
 }
 
+// SymbolsUnsupported says "Symbols are not available for {name}"
+// in the language the app shows.
+func SymbolsUnsupported(name string) string { return In(i18n.Locale()).SymbolsUnsupported(name) }
+
+// SymbolsUnsupported says "Symbols are not available for {name}"
+// in the language of msgs.
+func (msgs Messages) SymbolsUnsupported(name string) string {
+	return Catalog.Format(msgs.locale, "symbolsUnsupported", map[string]any{"name": name})
+}
+
+// SymbolsTurnedOff says "Symbols are turned off for {language}"
+// in the language the app shows.
+func SymbolsTurnedOff(language string) string { return In(i18n.Locale()).SymbolsTurnedOff(language) }
+
+// SymbolsTurnedOff says "Symbols are turned off for {language}"
+// in the language of msgs.
+func (msgs Messages) SymbolsTurnedOff(language string) string {
+	return Catalog.Format(msgs.locale, "symbolsTurnedOff", map[string]any{"language": language})
+}
+
 // SymbolFunction says "func"
 // in the language the app shows.
 func SymbolFunction() string { return In(i18n.Locale()).SymbolFunction() }
