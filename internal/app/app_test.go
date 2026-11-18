@@ -987,6 +987,69 @@ func TestDefinitionExplainsAFileWithoutAServer(t *testing.T) {
 	}
 }
 
+func TestTurnedOffLanguageSaysWhereToTurnItOn(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "main.go", "package main\n")
+	a, tester := openWorkspace(t, root)
+	clickFile(t, tester, "main.go")
+	a.setLanguageEnabled("go", false)
+	a.goToDefinition(a.activeDocument(), 1)
+	if want := "Go to definition is turned off for Go"; a.brief.title != want {
+		t.Errorf("message %+v", a.brief)
+	}
+	if a.definition.pool != nil {
+		t.Error("a server was prepared for a language turned off")
+	}
+}
+
+func TestCustomLanguageNamesItsInstallCommand(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "main.perchlang", "hello\n")
+	config := filepath.Join(t.TempDir(), "language-servers.json")
+	text := `{"languageServers":{"perchlang":{"name":"Perch Lang","command":"perch-no-such-server","extensions":[".perchlang"],"install":"brew install perch-lang"}}}`
+	if err := os.WriteFile(config, []byte(text), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a, tester, posted := openWithPosts(t, root)
+	t.Cleanup(a.stopDefinitions)
+	a.languageFile = config
+	clickFile(t, tester, "main.perchlang")
+	a.goToDefinition(a.activeDocument(), 1)
+	followPosts(t, posted, tester, func() bool { return !a.definition.pending })
+	if a.brief.detail != "Install it with: brew install perch-lang" {
+		t.Errorf("message %+v", a.brief)
+	}
+}
+
+func TestBrokenLanguageConfigurationKeepsBuiltInLanguages(t *testing.T) {
+	root := t.TempDir()
+	config := filepath.Join(t.TempDir(), "language-servers.json")
+	if err := os.WriteFile(config, []byte(`{"languageServers":{"x":{"command":"./evil","extensions":[".go"]}}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	a, _ := openWorkspace(t, root)
+	a.languageFile = config
+	language, _, found := a.languageRegistry().Match("main.go")
+	if !found || language.Server.Program != "gopls" || a.notice.title != "The language server configuration has a problem" {
+		t.Errorf("matched %+v; message %+v", language, a.notice)
+	}
+}
+
+func TestLanguageSettingsListEveryServer(t *testing.T) {
+	root := t.TempDir()
+	a, tester, posted := openWithPosts(t, root)
+	a.showSettings()
+	tester.Frame()
+	if err := tester.Click("Manage"); err != nil {
+		t.Fatalf("%v; texts %q", err, tester.Texts())
+	}
+	followPosts(t, posted, tester, func() bool { return a.languages.checked })
+	tester.Frame()
+	if !tester.HasText("Language Servers") || !tester.HasText("Zig") {
+		t.Errorf("texts %q", tester.Texts())
+	}
+}
+
 func TestQuickOpenStillWorksAfterAJump(t *testing.T) {
 	a, tester, posted := definitionProject(t)
 	start := a.activeDocument()

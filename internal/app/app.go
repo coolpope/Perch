@@ -53,6 +53,10 @@ type App struct {
 
 	settings     settings.Settings
 	settingsOpen bool
+	languages    languagesPage
+	// languageFile is the person's configuration of language servers, empty
+	// when there is no place for one.
+	languageFile string
 	// chosenLanguage and setLanguage read and change the language the person
 	// chose, empty while Perch follows the system.
 	chosenLanguage func() string

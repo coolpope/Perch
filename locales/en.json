@@ -203,5 +203,23 @@
     }
   },
   "svgPreviewFailed": "This SVG cannot be shown. Fix the source to see it.",
+  "sectionNavigation": "Code Navigation",
+  "settingLanguageServers": "Language servers",
+  "manageLanguages": "Manage",
+  "languageServersTitle": "Language Servers",
+  "languagesBack": "Back to Settings",
+  "languageInstalled": "Installed",
+  "languageNotInstalled": "Not installed",
+  "languageChecking": "Checking…",
+  "languageCustom": "Custom",
+  "copyInstallCommand": "Copy Install Command",
+  "copiedToClipboard": "Copied",
+  "copyExample": "Copy Example",
+  "openLanguageConfig": "Open Configuration File",
+  "languageConfigHint": "Add other languages in the configuration file. Perch reads only this file, never settings inside a project.",
+  "languageConfigInvalid": "The language server configuration has a problem",
+  "languageConfigWriteFailed": "Could not create the configuration file",
+  "definitionTurnedOff": "Go to definition is turned off for {language}",
+  "definitionTurnOnHint": "Turn it on in Settings, under Language servers.",
   "readOnly": "Read only"
 }

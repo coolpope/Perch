@@ -3,6 +3,7 @@ package settings
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -19,14 +20,14 @@ func TestSettingsSurviveARestart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got != want {
+	if !reflect.DeepEqual(got, want) {
 		t.Errorf("loaded %+v, want %+v", got, want)
 	}
 }
 
 func TestLoadKeepsWhatItCanUse(t *testing.T) {
 	dir := t.TempDir()
-	if got, err := Load(filepath.Join(dir, "missing.json")); err != nil || got != Default() {
+	if got, err := Load(filepath.Join(dir, "missing.json")); err != nil || !reflect.DeepEqual(got, Default()) {
 		t.Errorf("a missing file gave %+v, %v", got, err)
 	}
 
@@ -38,14 +39,14 @@ func TestLoadKeepsWhatItCanUse(t *testing.T) {
 	want := Default()
 	want.WordWrap = true
 	want.DiffLayout = DiffSplit
-	if got, err := Load(file); err != nil || got != want {
+	if got, err := Load(file); err != nil || !reflect.DeepEqual(got, want) {
 		t.Errorf("loaded %+v, %v; want %+v", got, err, want)
 	}
 
 	if err := os.WriteFile(file, []byte("{broken"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := Load(file); err == nil || got != Default() {
+	if got, err := Load(file); err == nil || !reflect.DeepEqual(got, Default()) {
 		t.Errorf("a broken file gave %+v, %v", got, err)
 	}
 }

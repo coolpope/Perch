@@ -70,11 +70,17 @@ func (a *App) definitionAtCaret() {
 // stopDefinitions cancels it.
 func (a *App) goToDefinition(d *document, offset int) {
 	file := d.absolutePath(a.root)
-	server, language, supported := lsp.ServerFor(file)
+	registry := a.languageRegistry()
+	known, language, supported := registry.Match(file)
 	if !supported {
 		a.tell(toast{title: locales.DefinitionUnsupported(d.name())})
 		return
 	}
+	if !registry.Enabled(known.ID) {
+		a.tell(toast{title: locales.DefinitionTurnedOff(known.Name), detail: locales.DefinitionTurnOnHint()})
+		return
+	}
+	server := known.Server
 	s := &a.definition
 	if s.cancel != nil {
 		s.cancel()

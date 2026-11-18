@@ -57,6 +57,8 @@ type Settings struct {
 	WordWrap     bool         `json:"wordWrap"`
 	MarkdownView MarkdownView `json:"markdownView"`
 	DiffLayout   DiffLayout   `json:"diffLayout"`
+	// DisabledLanguages are the IDs of the language servers turned off.
+	DisabledLanguages []string `json:"disabledLanguages,omitempty"`
 }
 
 // Default returns the settings of a first launch.

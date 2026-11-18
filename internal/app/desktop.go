@@ -23,6 +23,7 @@ const (
 	stateKeyBytes int = 12
 
 	settingsFileName = "settings.json"
+	languageFileName = "language-servers.json"
 )
 
 // Desktop owns Perch's windows, one project each, and the menu they share. Its
@@ -31,6 +32,7 @@ type Desktop struct {
 	windows      []*App
 	settings     settings.Settings
 	settingsFile string
+	languageFile string
 }
 
 // NewDesktop returns a desktop with no windows.
@@ -67,6 +69,7 @@ func (d *Desktop) loadSettings() error {
 		return fmt.Errorf("find the settings folder: %w", err)
 	}
 	d.settingsFile = filepath.Join(dir, settingsFileName)
+	d.languageFile = filepath.Join(dir, languageFileName)
 	loaded, err := settings.Load(d.settingsFile)
 	d.settings = loaded
 	applyAppearance(loaded.Appearance)
@@ -140,6 +143,7 @@ func (d *Desktop) openWindow(root string) {
 	a := New()
 	a.desktop = d
 	a.settings = d.settings
+	a.languageFile = d.languageFile
 	a.chosenLanguage = mygo.App.ChosenLocale
 	a.setLanguage = mygo.App.SetLocale
 	a.show(root, d.placementFor(root))

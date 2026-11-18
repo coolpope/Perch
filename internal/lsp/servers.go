@@ -5,6 +5,7 @@ package lsp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -28,55 +29,12 @@ type Server struct {
 	Args    []string
 	// Install is the command that installs the server.
 	Install string
-}
-
-var (
-	goServer         = Server{Name: "gopls", Program: "gopls", Install: "go install golang.org/x/tools/gopls@latest"}
-	typescriptServer = Server{
-		Name: "typescript-language-server", Program: "typescript-language-server", Args: []string{"--stdio"},
-		Install: "npm install -g typescript typescript-language-server",
-	}
-	pythonServer = Server{
-		Name: "pyright", Program: "pyright-langserver", Args: []string{"--stdio"}, Install: "npm install -g pyright",
-	}
-	rustServer = Server{Name: "rust-analyzer", Program: "rust-analyzer", Install: "rustup component add rust-analyzer"}
-	cServer    = Server{Name: "clangd", Program: "clangd", Install: "brew install llvm"}
-)
-
-// language is how a kind of file is served.
-type language struct {
-	id     string
-	server Server
-}
-
-var languages = map[string]language{
-	".go":  {"go", goServer},
-	".ts":  {"typescript", typescriptServer},
-	".tsx": {"typescriptreact", typescriptServer},
-	".mts": {"typescript", typescriptServer},
-	".cts": {"typescript", typescriptServer},
-	".js":  {"javascript", typescriptServer},
-	".jsx": {"javascriptreact", typescriptServer},
-	".mjs": {"javascript", typescriptServer},
-	".cjs": {"javascript", typescriptServer},
-	".py":  {"python", pythonServer},
-	".pyi": {"python", pythonServer},
-	".rs":  {"rust", rustServer},
-	".c":   {"c", cServer},
-	".h":   {"c", cServer},
-	".cc":  {"cpp", cServer},
-	".cpp": {"cpp", cServer},
-	".cxx": {"cpp", cServer},
-	".hpp": {"cpp", cServer},
-	".hh":  {"cpp", cServer},
-	".m":   {"objective-c", cServer},
-	".mm":  {"objective-cpp", cServer},
-}
-
-// ServerFor returns the server of a file and the language it knows the file as.
-func ServerFor(file string) (Server, string, bool) {
-	found, ok := languages[strings.ToLower(filepath.Ext(file))]
-	return found.server, found.id, ok
+	// RootMarkers are files that mark the folder a server works from: the
+	// nearest one above a file, inside the project. Without any, the server
+	// works from the project.
+	RootMarkers []string
+	// InitializationOptions are passed to the server as it starts.
+	InitializationOptions json.RawMessage
 }
 
 // toolPath is the search path of programs. An app opened from the Dock inherits
@@ -123,11 +81,44 @@ func uniqueFolders(folders []string) []string {
 
 // findProgram returns the full path of a server's program.
 func findProgram(server Server) (string, error) {
+	if filepath.IsAbs(server.Program) {
+		if isProgram(server.Program) {
+			return server.Program, nil
+		}
+		return "", fmt.Errorf("find %s: %w", server.Program, ErrServerMissing)
+	}
 	for _, folder := range filepath.SplitList(toolPath()) {
-		candidate := filepath.Join(folder, server.Program)
-		if info, err := os.Stat(candidate); err == nil && !info.IsDir() && info.Mode()&0o111 != 0 {
+		// A relative folder of the search path would name a file of the project.
+		if candidate := filepath.Join(folder, server.Program); filepath.IsAbs(folder) && isProgram(candidate) {
 			return candidate, nil
 		}
 	}
 	return "", fmt.Errorf("find %s: %w", server.Program, ErrServerMissing)
+}
+
+func isProgram(file string) bool {
+	info, err := os.Stat(file)
+	return err == nil && !info.IsDir() && info.Mode()&0o111 != 0
+}
+
+// Installed reports whether a server's program can be found.
+func Installed(server Server) bool {
+	_, err := findProgram(server)
+	return err == nil
+}
+
+// serverRoot returns the folder a server works from for a file of the project.
+func serverRoot(project string, file string, markers []string) string {
+	relative, err := filepath.Rel(project, filepath.Dir(file))
+	if len(markers) == 0 || err != nil || !filepath.IsLocal(relative) {
+		return project
+	}
+	for dir := filepath.Dir(file); dir != project; dir = filepath.Dir(dir) {
+		for _, marker := range markers {
+			if _, err := os.Stat(filepath.Join(dir, marker)); err == nil {
+				return dir
+			}
+		}
+	}
+	return project
 }
