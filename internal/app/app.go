@@ -26,10 +26,12 @@ const (
 	noDocument          int     = -1
 )
 
-// App is the state of Perch's window. Its methods run on the main thread.
+// App is the state of one window and its project. Its methods run on the main
+// thread.
 type App struct {
-	window *mygo.Window
-	root   string
+	desktop *Desktop
+	window  *mygo.Window
+	root    string
 
 	entries      map[string]workspace.Entry
 	children     map[string][]string

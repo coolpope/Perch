@@ -12,63 +12,38 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 )
 
-// Start shows the window, opening initialFolder when it is not empty.
-func (a *App) Start(initialFolder string) {
-	mygo.App.SetMenu(a.menu())
+// show opens the window, with the project at root when root is not empty.
+func (a *App) show(root string, placement windowPlacement) {
 	a.after = func(delay time.Duration, action func()) {
 		time.AfterFunc(delay, func() { a.post(action) })
 	}
 	a.window = mygo.NewWindow(mygo.WindowOptions{
 		Title:     "Perch",
-		Width:     1180,
-		Height:    780,
+		X:         placement.x,
+		Y:         placement.y,
+		Width:     windowWidth,
+		Height:    windowHeight,
 		MinWidth:  640,
 		MinHeight: 420,
-		StateKey:  "main",
+		StateKey:  placement.stateKey,
 		// The sidebar and the tabs run under the window's controls.
 		TitleBarStyle:        mygo.TitleBarHidden,
 		TrafficLightPosition: &mygo.Point{X: 16, Y: 13},
 		Content:              ui.View(a.view),
 	})
 	a.window.OnClose(a.handleWindowClose)
-	if initialFolder != "" {
-		a.openFolder(initialFolder)
+	if root != "" {
+		a.openFolder(root)
 	}
 }
 
-func (a *App) menu() *mygo.Menu {
-	return mygo.NewMenu([]*mygo.MenuItem{
-		{Role: mygo.RoleAppMenu},
-		{Label: "File", Submenu: []*mygo.MenuItem{
-			a.menuItem("Open Folder…", "CmdOrCtrl+O", a.chooseFolder),
-			a.menuItem("Go to File…", "CmdOrCtrl+P", a.showQuickOpen),
-			mygo.Separator(),
-			a.menuItem("Save", "CmdOrCtrl+S", a.saveActive),
-			a.menuItem("Close Tab", "CmdOrCtrl+W", a.closeActiveTab),
-		}},
-		{Role: mygo.RoleEditMenu},
-		{Label: "Find", Submenu: []*mygo.MenuItem{
-			a.menuItem("Find…", "CmdOrCtrl+F", func() { a.runFind(editor.Find) }),
-			a.menuItem("Find and Replace…", "CmdOrCtrl+Alt+F", func() { a.runFind(editor.FindReplace) }),
-			mygo.Separator(),
-			a.menuItem("Find in Files…", "CmdOrCtrl+Shift+F", a.showFindInFiles),
-		}},
-		{Label: "View", Submenu: []*mygo.MenuItem{
-			a.menuItem("Toggle Markdown Preview", "CmdOrCtrl+Shift+V", a.toggleMarkdownView),
-		}},
-		{Role: mygo.RoleWindowMenu},
-	})
-}
-
-// menuItem runs action as an update of the window, so that it redraws.
-func (a *App) menuItem(label string, accelerator string, action func()) *mygo.MenuItem {
-	return &mygo.MenuItem{
-		Label:       label,
-		Accelerator: accelerator,
-		Click: func(*mygo.MenuItem, *mygo.Window) {
-			a.window.Update(action)
-		},
+// release stops the work that belongs to the window once it has closed.
+func (a *App) release() {
+	if a.stopWatch != nil {
+		a.stopWatch()
 	}
+	a.stopSearch()
+	a.hideQuickOpen()
 }
 
 // runFind opens the find bar of the current file, which shows over its
@@ -109,27 +84,19 @@ func (a *App) chooseFolder() {
 				return
 			}
 			if len(paths) > 0 {
-				a.openFolder(paths[0])
+				a.desktop.openFolder(a, paths[0])
 			}
 		})
 	}()
 }
 
-// openFolder switches the window to root and follows its changes. Unsaved
-// edits keep the current folder open.
+// openFolder makes root this window's project and follows its changes.
 func (a *App) openFolder(root string) {
-	if slices.ContainsFunc(a.documents, (*document).modified) {
-		a.tell(toast{title: "Unsaved changes", detail: "Save or close modified files before opening another folder."})
-		return
-	}
 	if err := a.loadFolder(root); err != nil {
 		a.notice = err.Error()
 		return
 	}
 	a.window.SetTitle(filepath.Base(a.root))
-	if a.stopWatch != nil {
-		a.stopWatch()
-	}
 	ctx, cancel := context.WithCancel(context.Background())
 	a.stopWatch = cancel
 	if err := a.watch(ctx, a.root); err != nil {

@@ -117,7 +117,14 @@ func (a *App) openQuickOpenMatch(index int) {
 		return
 	}
 	a.openFile(relPath)
+	d := a.activeDocument()
+	if d == nil || d.path != relPath {
+		return
+	}
 	a.chooseTab(a.active)
+	if !d.showsPreview() {
+		d.focus.Focus()
+	}
 }
 
 // lineStart returns the start of a line counted from 1.

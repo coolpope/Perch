@@ -12,20 +12,15 @@ import (
 )
 
 func main() {
-	perch := app.New()
+	if !mygo.App.RequestSingleInstanceLock() {
+		return
+	}
+	desktop := app.NewDesktop()
 	mygo.App.WhenReady(func() {
-		perch.Start(initialFolder(os.Args))
+		desktop.Start(os.Args[1:])
 	})
 	if err := mygo.App.Run(); err != nil {
 		slog.Error("perch stopped", "error", err)
 		os.Exit(1)
 	}
-}
-
-// initialFolder returns the folder named on the command line, if any.
-func initialFolder(args []string) string {
-	if len(args) < 2 {
-		return ""
-	}
-	return args[1]
 }

@@ -426,3 +426,31 @@ func TestFindBarOpensOverMarkdownSource(t *testing.T) {
 		t.Error("find left the document on its preview")
 	}
 }
+
+func TestLaterLaunchesNameFoldersFromTheirOwnDirectory(t *testing.T) {
+	if got := folderArgument([]string{"beta"}, "/work"); got != "/work/beta" {
+		t.Errorf("relative folder became %q", got)
+	}
+	if got := folderArgument([]string{"/other/beta"}, "/work"); got != "/other/beta" {
+		t.Errorf("absolute folder became %q", got)
+	}
+	if got := folderArgument(nil, "/work"); got != "" {
+		t.Errorf("no argument became %q", got)
+	}
+}
+
+func TestAFolderGoesToTheRightWindow(t *testing.T) {
+	empty := &App{}
+	project := &App{root: "/work/alpha"}
+	windows := []*App{project, empty}
+
+	if got := chooseDestination(windows, empty, "/work/alpha"); got.existing != project {
+		t.Errorf("an open project went to %+v", got)
+	}
+	if got := chooseDestination(windows, empty, "/work/beta"); got.empty != empty {
+		t.Errorf("the empty window was passed over: %+v", got)
+	}
+	if got := chooseDestination(windows, project, "/work/beta"); got != (folderDestination{}) {
+		t.Errorf("a project window was replaced: %+v", got)
+	}
+}
