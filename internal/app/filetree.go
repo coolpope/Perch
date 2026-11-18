@@ -43,6 +43,9 @@ type fileTreeState struct {
 	name    string
 	failure string
 	input   ui.Handle
+	// selectName selects the prefilled name once the field has the keyboard,
+	// so that typing replaces it.
+	selectName bool
 	// unsaved counts the open tabs with edits that a trash would discard.
 	unsaved int
 }
@@ -163,12 +166,10 @@ func (a *App) startRename(target string) {
 // openNameDialog opens the name dialog for action.
 func (a *App) openNameDialog(action fileAction, target string, isDir bool, name string) {
 	input := a.files.input
-	a.files = fileTreeState{action: action, target: target, isDir: isDir, open: true, name: name, input: input}
-	if name == "" {
-		a.files.input.Focus()
-		return
+	a.files = fileTreeState{
+		action: action, target: target, isDir: isDir, open: true, name: name, input: input, selectName: name != "",
 	}
-	a.files.input.SelectAll()
+	a.files.input.Focus()
 }
 
 // askTrash confirms moving a file or folder to the Trash, naming the tabs whose
@@ -238,6 +239,10 @@ func (a *App) nameDialogView(c *ui.Context) {
 			input := ui.TextInput(c, &a.files.name).Bind(&a.files.input).
 				Placeholder(locales.FileNameLabel()).Label(locales.FileNameLabel())
 			submitted = input.Submitted()
+			if a.files.selectName && a.files.input.Focused(c) {
+				a.files.selectName = false
+				a.files.input.SelectAll()
+			}
 			if a.files.failure != "" {
 				ui.Text(c, a.files.failure).FontSize(smallFontSize).TextColor(colors.danger)
 			}

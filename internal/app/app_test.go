@@ -451,6 +451,21 @@ func TestRootMenuCreatesAtTheWorkspaceRoot(t *testing.T) {
 	}
 }
 
+func TestRowMenuCoversTheWholeRow(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "notes.txt", "keep\n")
+	_, tester := openWorkspace(t, root)
+	tester.Frame()
+	row, found := tester.AccessByRole(ui.RoleTreeItem, "notes.txt")
+	if !found {
+		t.Fatalf("no row; texts %q", tester.Texts())
+	}
+	tester.RightClickAt(row.Bounds.X+row.Bounds.W-20, row.Bounds.Y+row.Bounds.H/2)
+	if !slices.Contains(tester.Menu(), "Rename…") {
+		t.Errorf("the end of the row opened the menu %q", tester.Menu())
+	}
+}
+
 func TestNewFolderUsesTheClickedFolder(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, root, "docs/keep.txt", "keep\n")
@@ -611,6 +626,28 @@ func TestRenameFolderMovesItsTabs(t *testing.T) {
 	}
 	if !a.tree.Open.Has("lib") || a.tree.Open.Has("src") {
 		t.Errorf("the tree's open folders are %q", a.openTreePaths())
+	}
+}
+
+func TestTypingInTheRenameDialogReplacesTheName(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "notes.txt", "kept\n")
+	_, tester := openWorkspace(t, root)
+	tester.Frame()
+	if err := tester.RightClick("notes.txt"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tester.ChooseMenuItem("Rename…"); err != nil {
+		t.Fatalf("%v; menu %q", err, tester.Menu())
+	}
+	tester.Frame()
+	tester.Frame()
+	tester.Frame()
+	tester.Type("plan.txt")
+	tester.Key(0, ui.KeyEnter)
+	tester.Frame()
+	if got := readFile(t, root, "plan.txt"); got != "kept\n" {
+		t.Errorf("renamed file holds %q", got)
 	}
 }
 

@@ -158,7 +158,7 @@ func (a *App) fileTreeView(c *ui.Context) {
 func (a *App) treeRowView(c *ui.Context, item string) {
 	entry := a.entries[item]
 	colors := a.look.palette
-	ui.Row(c).Gap(7).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Grow(1).FillWidth().Gap(7).AlignItems(ui.Center).Children(func() {
 		if entry.IsDir {
 			ui.Icon(c, iconFolder).FontSize(iconFontSize).TextColor(colors.muted)
 		} else {
