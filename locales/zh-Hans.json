@@ -68,6 +68,7 @@
   "reviewProgress": "已审阅 {read} / {total} 个文件",
   "markAllReviewed": "全部标记为已审",
   "finishReview": "完成审阅",
+  "reopenReview": "撤销完成审阅",
   "markPathReviewed": "将 {path} 标记为已审",
   "markPathUnread": "将 {path} 标记为未审",
   "binaryFile": "二进制",

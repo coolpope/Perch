@@ -119,6 +119,7 @@
   },
   "markAllReviewed": "Mark All Reviewed",
   "finishReview": "Finish Review",
+  "reopenReview": "Undo Finish Review",
   "markPathReviewed": "Mark {path} reviewed",
   "markPathUnread": "Mark {path} unread",
   "binaryFile": "binary",

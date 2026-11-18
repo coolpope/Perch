@@ -159,7 +159,7 @@ func TestFinishStartsANewReviewThatOutlivesTheStore(t *testing.T) {
 	store := openStore(t, root)
 	ctx := context.Background()
 	write(t, root, "a.go", "changed\n")
-	if err := store.Finish(ctx, listing(t, store).Version); err != nil {
+	if _, err := store.Finish(ctx, listing(t, store).Version); err != nil {
 		t.Fatal(err)
 	}
 	if got := list(t, store); len(got) != 0 {

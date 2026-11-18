@@ -718,6 +718,16 @@ func (msgs Messages) FinishReview() string {
 	return Catalog.Format(msgs.locale, "finishReview", nil)
 }
 
+// ReopenReview says "Undo Finish Review"
+// in the language the app shows.
+func ReopenReview() string { return In(i18n.Locale()).ReopenReview() }
+
+// ReopenReview says "Undo Finish Review"
+// in the language of msgs.
+func (msgs Messages) ReopenReview() string {
+	return Catalog.Format(msgs.locale, "reopenReview", nil)
+}
+
 // MarkPathReviewed says "Mark {path} reviewed"
 // in the language the app shows.
 func MarkPathReviewed(path string) string { return In(i18n.Locale()).MarkPathReviewed(path) }

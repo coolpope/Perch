@@ -65,6 +65,8 @@ type changesPanel struct {
 	lineStarts   []int
 	marks        []lineRange
 	list         ui.ListState
+	// reopen is where the last finished review stood, to undo finishing it.
+	reopen *review.Checkpoint
 }
 
 // showChanges turns the sidebar to the review and brings it up to date.
@@ -492,7 +494,33 @@ func (a *App) finishReview() {
 	a.closeChange()
 	a.review.listing.Changes = nil
 	a.runReviewAction(func(ctx context.Context, store *review.Store) error {
-		return store.Finish(ctx, version)
+		checkpoint, err := store.Finish(ctx, version)
+		if err != nil {
+			return err
+		}
+		a.post(func() {
+			if ctx.Err() == nil {
+				a.review.reopen = &checkpoint
+			}
+		})
+		return nil
+	})
+}
+
+// reopenReview undoes finishing the last review, keeping the offer until the
+// review is back.
+func (a *App) reopenReview() {
+	checkpoint := a.review.reopen
+	a.runReviewAction(func(ctx context.Context, store *review.Store) error {
+		if err := store.Reopen(ctx, *checkpoint); err != nil {
+			return err
+		}
+		a.post(func() {
+			if ctx.Err() == nil && a.review.reopen == checkpoint {
+				a.review.reopen = nil
+			}
+		})
+		return nil
 	})
 }
 
@@ -511,8 +539,9 @@ func (a *App) changesPanelView(c *ui.Context) {
 	colors := a.look.palette
 	ui.Column(c).Grow(1).FillWidth().Children(func() {
 		if message := changesMessage(r); message != "" {
-			ui.Column(c).Grow(1).FillWidth().Center().Padding(0, 20).Children(func() {
+			ui.Column(c).Grow(1).FillWidth().Center().Gap(12).Padding(0, 20).Children(func() {
 				ui.Text(c, message).TextColor(colors.muted).TextAlign(ui.Center)
+				a.reopenReviewView(c)
 			})
 			return
 		}
@@ -550,17 +579,25 @@ func (a *App) changesHeaderView(c *ui.Context) {
 }
 
 func (a *App) changesFooterView(c *ui.Context) {
-	ui.Row(c).FillWidth().Shrink(0).Padding(8, 10).BorderWidth(1, 0, 0, 0).BorderColor(a.look.palette.border).Children(func() {
+	ui.Column(c).FillWidth().Shrink(0).Gap(6).Padding(8, 10).BorderWidth(1, 0, 0, 0).BorderColor(a.look.palette.border).Children(func() {
+		a.reopenReviewView(c)
 		if unreadCount(a.review.listing.Changes) > 0 {
-			if ui.Button(c, locales.MarkAllReviewed()).Grow(1).Clicked() {
+			if ui.Button(c, locales.MarkAllReviewed()).FillWidth().Clicked() {
 				a.markAllReviewed()
 			}
 			return
 		}
-		if ui.PrimaryButton(c, locales.FinishReview()).Grow(1).Clicked() {
+		if ui.PrimaryButton(c, locales.FinishReview()).FillWidth().Clicked() {
 			a.finishReview()
 		}
 	})
+}
+
+// reopenReviewView offers to undo finishing the last review.
+func (a *App) reopenReviewView(c *ui.Context) {
+	if a.review.reopen != nil && ui.Button(c, locales.ReopenReview()).FillWidth().Clicked() {
+		a.reopenReview()
+	}
 }
 
 func (a *App) changeRowView(c *ui.Context, change review.Change) {
