@@ -1,0 +1,332 @@
+// Package app is Perch's window: a file tree, tabs of code and rendered
+// Markdown, and the rules that keep edits safe while agents change the same
+// files.
+package app
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"io/fs"
+	"path/filepath"
+	"slices"
+
+	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/ui"
+
+	"perch/internal/workspace"
+)
+
+const (
+	initialSidebarWidth float32 = 248
+	noRow               int     = -1
+	noDocument          int     = -1
+)
+
+// App is the state of Perch's window. Its methods run on the main thread.
+type App struct {
+	window *mygo.Window
+	root   string
+
+	entries      map[string]workspace.Entry
+	children     map[string][]string
+	tree         ui.OutlineState[string]
+	treeRow      int
+	sidebarWidth float32
+
+	documents []*document
+	active    int
+	notice    string
+
+	look      *look
+	lightLook *look
+	darkLook  *look
+
+	closingDocument *document
+	askCloseTab     bool
+	askCloseWindow  bool
+	closeConfirmed  bool
+
+	stopWatch context.CancelFunc
+}
+
+// New returns the app with no folder open.
+func New() *App {
+	return &App{
+		entries:      map[string]workspace.Entry{},
+		children:     map[string][]string{},
+		treeRow:      noRow,
+		sidebarWidth: initialSidebarWidth,
+		active:       noDocument,
+	}
+}
+
+// loadFolder makes root the workspace, closing the documents of the last one.
+func (a *App) loadFolder(root string) error {
+	absolute, err := filepath.Abs(root)
+	if err != nil {
+		return fmt.Errorf("open folder %q: %w", root, err)
+	}
+	if _, err := workspace.ListDir(absolute, "."); err != nil {
+		return fmt.Errorf("open folder %q: %w", absolute, err)
+	}
+	a.root = absolute
+	a.entries = map[string]workspace.Entry{}
+	a.children = map[string][]string{}
+	a.tree = ui.OutlineState[string]{}
+	a.treeRow = noRow
+	a.documents = nil
+	a.active = noDocument
+	a.notice = ""
+	return nil
+}
+
+// childPaths returns the paths inside a directory of the tree, listing it
+// the first time it is asked for. It returns nil for a file.
+func (a *App) childPaths(dir string) []string {
+	if dir != "." && !a.entries[dir].IsDir {
+		return nil
+	}
+	if paths, listed := a.children[dir]; listed {
+		return paths
+	}
+	entries, err := workspace.ListDir(a.root, dir)
+	if err != nil {
+		a.notice = err.Error()
+		a.children[dir] = nil
+		return nil
+	}
+	paths := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		a.entries[entry.Path] = entry
+		paths = append(paths, entry.Path)
+	}
+	a.children[dir] = paths
+	return paths
+}
+
+// openFile shows a file in a tab, reusing the tab it already has.
+func (a *App) openFile(relPath string) {
+	index := slices.IndexFunc(a.documents, func(d *document) bool { return d.path == relPath })
+	if index != noDocument {
+		a.active = index
+		return
+	}
+	file, err := workspace.ReadText(a.root, relPath)
+	if err != nil {
+		a.notice = err.Error()
+		return
+	}
+	a.documents = append(a.documents, newDocument(a.root, relPath, file))
+	a.active = len(a.documents) - 1
+}
+
+func (a *App) activeDocument() *document {
+	if a.active == noDocument {
+		return nil
+	}
+	return a.documents[a.active]
+}
+
+// save writes a document, refusing to replace a version it has not seen.
+func (a *App) save(d *document) error {
+	if d.conflict != conflictNone {
+		return fmt.Errorf("save %q: resolve the conflict with the file on disk first", d.path)
+	}
+	data, err := d.content()
+	if err != nil {
+		return err
+	}
+	digest, err := workspace.WriteText(a.root, d.path, data, d.digest)
+	if errors.Is(err, workspace.ErrChangedOnDisk) {
+		a.reconcile(d)
+		return err
+	}
+	if err != nil {
+		return err
+	}
+	d.markSaved(digest)
+	return nil
+}
+
+func (a *App) saveActive() {
+	d := a.activeDocument()
+	if d == nil {
+		return
+	}
+	if err := a.save(d); err != nil {
+		a.notice = err.Error()
+	}
+}
+
+// saveAll saves every modified document and reports whether all were saved.
+func (a *App) saveAll() bool {
+	saved := true
+	for _, d := range a.documents {
+		if !d.modified() {
+			continue
+		}
+		if err := a.save(d); err != nil {
+			a.notice = err.Error()
+			saved = false
+		}
+	}
+	return saved
+}
+
+// requestCloseTab closes a document, asking first when it has unsaved edits.
+func (a *App) requestCloseTab(d *document) {
+	if d.modified() {
+		a.closingDocument = d
+		a.askCloseTab = true
+		return
+	}
+	a.closeTab(d)
+}
+
+func (a *App) closeActiveTab() {
+	if d := a.activeDocument(); d != nil {
+		a.requestCloseTab(d)
+	}
+}
+
+func (a *App) closeTab(d *document) {
+	index := slices.Index(a.documents, d)
+	if index == noDocument {
+		return
+	}
+	a.documents = slices.Delete(slices.Clone(a.documents), index, index+1)
+	a.active = activeAfterClose(a.active, index, len(a.documents))
+	a.treeRow = noRow
+}
+
+// activeAfterClose returns the tab to show after the tab at closed went away.
+func activeAfterClose(active int, closed int, remaining int) int {
+	if remaining == 0 {
+		return noDocument
+	}
+	if closed < active {
+		return active - 1
+	}
+	return min(active, remaining-1)
+}
+
+// keepMine resolves a conflict by writing the buffer over the file on disk.
+func (a *App) keepMine(d *document) {
+	data, err := d.content()
+	if err != nil {
+		a.notice = err.Error()
+		return
+	}
+	digest, err := workspace.OverwriteText(a.root, d.path, data)
+	if err != nil {
+		a.notice = err.Error()
+		return
+	}
+	d.markSaved(digest)
+}
+
+// useDisk resolves a conflict by dropping the buffer's edits for the file on
+// disk, or closing the tab when the file is gone.
+func (a *App) useDisk(d *document) {
+	if d.conflict == conflictRemoved {
+		a.closeTab(d)
+		return
+	}
+	d.reload(d.disk)
+}
+
+// applyFileEvents brings the tree and the open documents up to date with
+// changes on disk.
+func (a *App) applyFileEvents(events []mygo.FileEvent) {
+	if slices.ContainsFunc(events, changesTree) {
+		a.children = map[string][]string{}
+	}
+	for _, d := range a.documents {
+		a.reconcile(d)
+	}
+}
+
+func changesTree(event mygo.FileEvent) bool {
+	return event.Op != mygo.FileWrite
+}
+
+// reconcile compares a document with its file: a document without unsaved
+// edits follows the file, and one with unsaved edits shows a conflict rather
+// than losing either version.
+func (a *App) reconcile(d *document) {
+	file, err := workspace.ReadText(a.root, d.path)
+	if errors.Is(err, fs.ErrNotExist) {
+		d.conflict = conflictRemoved
+		return
+	}
+	if err != nil {
+		a.notice = err.Error()
+		return
+	}
+	if file.Digest == d.digest {
+		d.conflict = conflictNone
+		d.disk = workspace.TextFile{}
+		return
+	}
+	data, err := d.content()
+	if err != nil {
+		a.notice = err.Error()
+		return
+	}
+	switch {
+	case workspace.DigestOf(data) == file.Digest:
+		d.markSaved(file.Digest)
+	case d.modified():
+		d.conflict = conflictChanged
+		d.disk = file
+	default:
+		d.reload(file)
+	}
+}
+
+// watch follows the workspace until ctx ends. It asks only for hints, which
+// keep no snapshot of the tree in memory: any hint re-reads the open documents
+// and the directories shown. The goroutine it starts is owned by the open
+// folder: opening another folder cancels ctx, and quitting the app stops the
+// watcher.
+func (a *App) watch(ctx context.Context, root string) error {
+	watcher, err := mygo.WatchFiles(ctx, root, mygo.FileWatchOptions{
+		Recursive: true,
+		HintsOnly: true,
+		Ignore: func(relPath string, _ bool) bool {
+			return workspace.IsIgnored(relPath)
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("watch folder %q: %w", root, err)
+	}
+	go a.followWatcher(ctx, watcher)
+	return nil
+}
+
+func (a *App) followWatcher(ctx context.Context, watcher *mygo.FileWatcher) {
+	for {
+		events, err := watcher.Next(ctx)
+		if err != nil {
+			a.watchEnded(ctx, watcher.Root(), err)
+			return
+		}
+		a.window.Update(func() {
+			if ctx.Err() == nil {
+				a.applyFileEvents(events)
+			}
+		})
+	}
+}
+
+// watchEnded reports a watch that stopped while its folder is still open.
+func (a *App) watchEnded(ctx context.Context, root string, err error) {
+	if ctx.Err() != nil || errors.Is(err, io.EOF) {
+		return
+	}
+	a.window.Update(func() {
+		a.notice = fmt.Sprintf("Live updates stopped for %s: %v", root, err)
+	})
+}
