@@ -301,5 +301,14 @@
   "themeGrokBotAbout": "Black and white with a blue accent",
   "themePaperAbout": "Neutral sheet with a fine grain",
   "themePerchAbout": "Warm paper and graphite",
-  "clearSearch": "Clear Search"
+  "clearSearch": "Clear Search",
+  "menuGoToProjectSymbol": "Go to Symbol in Project…",
+  "projectSymbolsPlaceholder": "Search symbols in the project",
+  "projectSymbolsHint": "Type a name to find it anywhere in the project",
+  "projectSymbolsNeedFile": "Open a file in the language you want to search",
+  "menuNextChange": "Next Change",
+  "menuPreviousChange": "Previous Change",
+  "noChangesInFile": "This file has no changes to read",
+  "lastChange": "This is the last change",
+  "firstChange": "This is the first change"
 }

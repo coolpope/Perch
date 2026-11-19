@@ -2353,3 +2353,93 @@ func ClearSearch() string { return In(i18n.Locale()).ClearSearch() }
 func (msgs Messages) ClearSearch() string {
 	return Catalog.Format(msgs.locale, "clearSearch", nil)
 }
+
+// MenuGoToProjectSymbol says "Go to Symbol in Project…"
+// in the language the app shows.
+func MenuGoToProjectSymbol() string { return In(i18n.Locale()).MenuGoToProjectSymbol() }
+
+// MenuGoToProjectSymbol says "Go to Symbol in Project…"
+// in the language of msgs.
+func (msgs Messages) MenuGoToProjectSymbol() string {
+	return Catalog.Format(msgs.locale, "menuGoToProjectSymbol", nil)
+}
+
+// ProjectSymbolsPlaceholder says "Search symbols in the project"
+// in the language the app shows.
+func ProjectSymbolsPlaceholder() string { return In(i18n.Locale()).ProjectSymbolsPlaceholder() }
+
+// ProjectSymbolsPlaceholder says "Search symbols in the project"
+// in the language of msgs.
+func (msgs Messages) ProjectSymbolsPlaceholder() string {
+	return Catalog.Format(msgs.locale, "projectSymbolsPlaceholder", nil)
+}
+
+// ProjectSymbolsHint says "Type a name to find it anywhere in the project"
+// in the language the app shows.
+func ProjectSymbolsHint() string { return In(i18n.Locale()).ProjectSymbolsHint() }
+
+// ProjectSymbolsHint says "Type a name to find it anywhere in the project"
+// in the language of msgs.
+func (msgs Messages) ProjectSymbolsHint() string {
+	return Catalog.Format(msgs.locale, "projectSymbolsHint", nil)
+}
+
+// ProjectSymbolsNeedFile says "Open a file in the language you want to search"
+// in the language the app shows.
+func ProjectSymbolsNeedFile() string { return In(i18n.Locale()).ProjectSymbolsNeedFile() }
+
+// ProjectSymbolsNeedFile says "Open a file in the language you want to search"
+// in the language of msgs.
+func (msgs Messages) ProjectSymbolsNeedFile() string {
+	return Catalog.Format(msgs.locale, "projectSymbolsNeedFile", nil)
+}
+
+// MenuNextChange says "Next Change"
+// in the language the app shows.
+func MenuNextChange() string { return In(i18n.Locale()).MenuNextChange() }
+
+// MenuNextChange says "Next Change"
+// in the language of msgs.
+func (msgs Messages) MenuNextChange() string {
+	return Catalog.Format(msgs.locale, "menuNextChange", nil)
+}
+
+// MenuPreviousChange says "Previous Change"
+// in the language the app shows.
+func MenuPreviousChange() string { return In(i18n.Locale()).MenuPreviousChange() }
+
+// MenuPreviousChange says "Previous Change"
+// in the language of msgs.
+func (msgs Messages) MenuPreviousChange() string {
+	return Catalog.Format(msgs.locale, "menuPreviousChange", nil)
+}
+
+// NoChangesInFile says "This file has no changes to read"
+// in the language the app shows.
+func NoChangesInFile() string { return In(i18n.Locale()).NoChangesInFile() }
+
+// NoChangesInFile says "This file has no changes to read"
+// in the language of msgs.
+func (msgs Messages) NoChangesInFile() string {
+	return Catalog.Format(msgs.locale, "noChangesInFile", nil)
+}
+
+// LastChange says "This is the last change"
+// in the language the app shows.
+func LastChange() string { return In(i18n.Locale()).LastChange() }
+
+// LastChange says "This is the last change"
+// in the language of msgs.
+func (msgs Messages) LastChange() string {
+	return Catalog.Format(msgs.locale, "lastChange", nil)
+}
+
+// FirstChange says "This is the first change"
+// in the language the app shows.
+func FirstChange() string { return In(i18n.Locale()).FirstChange() }
+
+// FirstChange says "This is the first change"
+// in the language of msgs.
+func (msgs Messages) FirstChange() string {
+	return Catalog.Format(msgs.locale, "firstChange", nil)
+}

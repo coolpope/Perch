@@ -46,6 +46,16 @@ func (p *Pool) DocumentSymbols(ctx context.Context, server Server, document Docu
 	return client.DocumentSymbols(ctx, document)
 }
 
+// WorkspaceSymbols asks the server of file for the project's symbols that
+// match query, starting the server when it is not running.
+func (p *Pool) WorkspaceSymbols(ctx context.Context, server Server, file string, query string) ([]ProjectSymbol, error) {
+	client, err := p.client(ctx, server, serverRoot(p.root, file, server.RootMarkers))
+	if err != nil {
+		return nil, err
+	}
+	return client.WorkspaceSymbols(ctx, query)
+}
+
 // clientKey tells apart servers by what runs and where it works from.
 func clientKey(server Server, root string) string {
 	return strings.Join(append([]string{root, server.Program}, server.Args...), "\x00")

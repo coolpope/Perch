@@ -71,6 +71,8 @@ type changesPanel struct {
 	// names the text the shown document is compared with.
 	readGeneration uint64
 	baselineKey    lineBaselineKey
+	// landing is where the next file shown by moving between changes lands.
+	landing changeLanding
 }
 
 // showChanges turns the sidebar to the review and brings it up to date.
@@ -256,6 +258,7 @@ func (a *App) closeChange() {
 	r.unreadable = false
 	r.lineStarts, r.marks = nil, nil
 	r.view = changeRendered
+	r.landing = landNowhere
 }
 
 func (a *App) showsChange() bool {
@@ -679,6 +682,7 @@ func (a *App) changeView(c *ui.Context) {
 	if !found {
 		return
 	}
+	a.landOnChange()
 	a.changeBarView(c, change)
 	c.Key(r.selected)
 	switch {

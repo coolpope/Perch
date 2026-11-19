@@ -75,6 +75,63 @@ func (c *Client) DocumentSymbols(ctx context.Context, document Document) ([]Symb
 	return parseSymbols(result)
 }
 
+// ProjectSymbol is a symbol found anywhere in a server's workspace.
+type ProjectSymbol struct {
+	Name      string
+	Kind      SymbolKind
+	Container string
+	// Path is absolute, and Range the symbol's place in the file, empty when
+	// the server names the file alone.
+	Path  string
+	Range Range
+}
+
+// wireProjectSymbol reads both reply shapes of workspace/symbol:
+// SymbolInformation, and WorkspaceSymbol, whose location may lack a range.
+type wireProjectSymbol struct {
+	Name          string     `json:"name"`
+	Kind          SymbolKind `json:"kind"`
+	ContainerName string     `json:"containerName"`
+	Location      struct {
+		URI   string `json:"uri"`
+		Range *Range `json:"range"`
+	} `json:"location"`
+}
+
+// WorkspaceSymbols asks the server for the symbols of its workspace that
+// match query.
+func (c *Client) WorkspaceSymbols(ctx context.Context, query string) ([]ProjectSymbol, error) {
+	result, err := c.call(ctx, "workspace/symbol", mustRaw(map[string]string{"query": query}))
+	if err != nil {
+		return nil, err
+	}
+	return parseProjectSymbols(result)
+}
+
+func parseProjectSymbols(result json.RawMessage) ([]ProjectSymbol, error) {
+	trimmed := bytes.TrimSpace(result)
+	if len(trimmed) == 0 || bytes.Equal(trimmed, []byte("null")) {
+		return nil, nil
+	}
+	var wire []wireProjectSymbol
+	if err := json.Unmarshal(trimmed, &wire); err != nil {
+		return nil, fmt.Errorf("read workspace symbols: %w", err)
+	}
+	symbols := make([]ProjectSymbol, 0, len(wire))
+	for _, symbol := range wire {
+		path, err := uriToPath(symbol.Location.URI)
+		if err != nil {
+			return nil, fmt.Errorf("read workspace symbol %q: %w", symbol.Name, err)
+		}
+		found := ProjectSymbol{Name: symbol.Name, Kind: symbol.Kind, Container: symbol.ContainerName, Path: path}
+		if symbol.Location.Range != nil {
+			found.Range = *symbol.Location.Range
+		}
+		symbols = append(symbols, found)
+	}
+	return symbols, nil
+}
+
 // parseSymbols reads a documentSymbol reply of either shape, flattening the
 // descendants after their container.
 func parseSymbols(result json.RawMessage) ([]Symbol, error) {

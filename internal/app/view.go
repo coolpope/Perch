@@ -61,6 +61,7 @@ func (a *App) view(c *ui.Context) {
 	a.closeWindowAlert(c)
 	a.quickOpenView(c)
 	a.outlineView(c)
+	a.projectSymbolsView(c)
 	a.settingsView(c)
 	a.fileDialogView(c)
 	a.trackSession()

@@ -59,6 +59,7 @@ golangci-lint run
 | Find and replace | `⌥⌘F` |
 | Search the project | `⇧⌘F` |
 | Go to symbol in file | `⇧⌘O` |
+| Go to symbol in project | `⌘T` |
 | Go to definition | `F12` or `⌘`-click |
 | Go back / forward | `⌃-` / `⌃⇧-` |
 | Next / previous tab | `⌃Tab` or `⇧⌘]` / `⌃⇧Tab` or `⇧⌘[` |
@@ -66,6 +67,7 @@ golangci-lint run
 | Toggle Markdown preview | `⇧⌘V` |
 | Show changes | `⇧⌘R` |
 | Mark file reviewed | `⌘↩` |
+| Next / previous change | `⌥F5` / `⌥⇧F5` |
 | Save / close tab | `⌘S` / `⌘W` |
 | New window / open folder | `⇧⌘N` / `⌘O` |
 | Settings | `⌘,` |

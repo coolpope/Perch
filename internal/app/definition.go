@@ -158,6 +158,16 @@ func (a *App) definitionAnswered(origin place, server lsp.Server, word string, f
 }
 
 func (a *App) showDefinition(origin place, target lsp.Location) {
+	if !a.openLocation(target) {
+		return
+	}
+	a.definition.back = appendPlace(a.definition.back, origin)
+	a.definition.forward = nil
+}
+
+// openLocation shows a place in a file, read-only when it is outside the
+// project, and reports whether it opened.
+func (a *App) openLocation(target lsp.Location) bool {
 	relPath, inside := insideProject(a.root, target.Path)
 	path, external := target.Path, true
 	if inside {
@@ -165,11 +175,10 @@ func (a *App) showDefinition(origin place, target lsp.Location) {
 	}
 	d := a.openPlaceDocument(path, external)
 	if d == nil {
-		return
+		return false
 	}
-	a.definition.back = appendPlace(a.definition.back, origin)
-	a.definition.forward = nil
 	d.reveal(editorPos(d, target.Range.Start), editorPos(d, target.Range.End))
+	return true
 }
 
 // editorPos converts a position of the protocol to one of the document.

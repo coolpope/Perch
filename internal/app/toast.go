@@ -20,10 +20,19 @@ const (
 	bytesPerMB     int64         = 1 << 20
 )
 
+// toastTone says whether a message reports a problem or only informs.
+type toastTone uint8
+
+const (
+	toneProblem toastTone = iota
+	toneInfo
+)
+
 // toast is a short message that floats over the window.
 type toast struct {
 	title  string
 	detail string
+	tone   toastTone
 }
 
 // tell shows a message that goes away by itself, replacing the last one.
@@ -118,7 +127,11 @@ func (a *App) toastView(c *ui.Context, message toast) bool {
 		a.briefHovered = card.Hovered()
 	}
 	card.Children(func() {
-		ui.Icon(c, iconAlert).FontSize(16).TextColor(colors.danger).Shrink(0)
+		icon, tint := iconAlert, colors.danger
+		if message.tone == toneInfo {
+			icon, tint = iconInfo, colors.muted
+		}
+		ui.Icon(c, icon).FontSize(16).TextColor(tint).Shrink(0)
 		ui.Column(c).Grow(1).Shrink(1).Gap(2).Children(func() {
 			ui.Text(c, message.title).FontWeight(600)
 			if message.detail != "" {

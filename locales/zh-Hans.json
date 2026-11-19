@@ -230,5 +230,14 @@
   "themeGrokBotAbout": "黑白为主，配一抹蓝",
   "themePaperAbout": "中性灰白，带细腻纸纹",
   "themePerchAbout": "暖色纸张与石墨",
-  "clearSearch": "清除搜索"
+  "clearSearch": "清除搜索",
+  "menuGoToProjectSymbol": "在项目中查找符号…",
+  "projectSymbolsPlaceholder": "在项目中搜索符号",
+  "projectSymbolsHint": "输入名称，在整个项目里查找",
+  "projectSymbolsNeedFile": "先打开一个要搜索的语言的文件",
+  "menuNextChange": "下一处改动",
+  "menuPreviousChange": "上一处改动",
+  "noChangesInFile": "这个文件没有待读的改动",
+  "lastChange": "已经是最后一处改动",
+  "firstChange": "已经是第一处改动"
 }

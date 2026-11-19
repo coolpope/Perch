@@ -61,8 +61,10 @@ type App struct {
 	recentChecked bool
 	review        changesPanel
 	definition    definitionState
-	agentTour     agentTour
-	agents        agentsPage
+	// projectSymbols is the finder of symbols across the project.
+	projectSymbols projectSymbolsState
+	agentTour      agentTour
+	agents         agentsPage
 
 	settings     settings.Settings
 	settingsOpen bool
@@ -137,6 +139,7 @@ func (a *App) loadFolder(root string) error {
 	a.prepareSessionForFolder()
 	a.hideQuickOpen()
 	a.closeOutline()
+	a.closeProjectSymbols()
 	a.stopSearch()
 	a.stopChanges()
 	a.stopDefinitions()

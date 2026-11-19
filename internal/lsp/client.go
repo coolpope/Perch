@@ -192,7 +192,7 @@ func (c *Client) initialize(ctx context.Context, root string, options json.RawMe
 				"definition": {"linkSupport": true},
 				"documentSymbol": {"hierarchicalDocumentSymbolSupport": true}
 			},
-			"workspace": {"configuration": true, "workspaceFolders": true}
+			"workspace": {"configuration": true, "workspaceFolders": true, "symbol": {}}
 		}`),
 	}
 	if len(options) > 0 {

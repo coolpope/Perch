@@ -306,6 +306,7 @@ func (d *Desktop) menu() *mygo.Menu {
 		}},
 		{Label: locales.MenuGo(), Submenu: []*mygo.MenuItem{
 			d.menuItem(locales.MenuGoToSymbol(), "CmdOrCtrl+Shift+O", (*App).showOutline),
+			d.menuItem(locales.MenuGoToProjectSymbol(), "CmdOrCtrl+T", (*App).showProjectSymbols),
 			d.menuItem(locales.MenuGoToDefinition(), "F12", (*App).definitionAtCaret),
 			mygo.Separator(),
 			d.menuItem(locales.MenuGoBack(), "Ctrl+-", (*App).goBack),
@@ -322,6 +323,9 @@ func (d *Desktop) menu() *mygo.Menu {
 			mygo.Separator(),
 			d.menuItem(locales.MenuShowChanges(), "CmdOrCtrl+Shift+R", (*App).showChanges),
 			d.menuItem(locales.MenuMarkReviewed(), "CmdOrCtrl+Enter", (*App).markSelectedReviewed),
+			mygo.Separator(),
+			d.menuItem(locales.MenuNextChange(), "Alt+F5", func(a *App) { a.moveToChange(1) }),
+			d.menuItem(locales.MenuPreviousChange(), "Alt+Shift+F5", func(a *App) { a.moveToChange(-1) }),
 		}},
 		{Role: mygo.RoleWindowMenu},
 	})

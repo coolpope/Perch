@@ -190,6 +190,7 @@ var (
 	iconCheck      = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>`))
 	iconSettings   = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M21 7h-9"/><path d="M14 17H3"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>`))
 	iconAlert      = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`))
+	iconInfo       = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>`))
 	iconClose      = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`))
 	iconFilePlus   = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M9 15h6"/><path d="M12 18v-6"/></svg>`))
 	iconFolderPlus = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M12 10v6"/><path d="M9 13h6"/><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`))
