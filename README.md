@@ -93,6 +93,18 @@ To add another language, choose **Open Configuration File** on that page and add
 
 `command` must be a program name on your `PATH` or an absolute path. Perch reads this file only from your own settings folder and never runs a command named by an opened project.
 
+## Work with your agent
+
+Perch can be the screen for the coding agent in your terminal. The agent opens the code it is talking about, reads what you have selected, and walks you through a change one stop at a time. The conversation stays in your terminal.
+
+Turn on what you want in **Settings → Agents → Manage**, or install everything for Claude Code with one line:
+
+```sh
+/Applications/Perch.app/Contents/MacOS/Perch setup
+```
+
+Use `--only tools,skill,command` to choose parts, `--status` to see what is installed, and `--remove` to take them away. During a walkthrough, `F8` and `⇧F8` move between stops.
+
 ## License
 
 [MIT](LICENSE)

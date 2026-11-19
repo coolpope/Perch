@@ -61,6 +61,8 @@ type App struct {
 	recentChecked bool
 	review        changesPanel
 	definition    definitionState
+	agentTour     agentTour
+	agents        agentsPage
 
 	settings     settings.Settings
 	settingsOpen bool
@@ -154,6 +156,7 @@ func (a *App) loadFolder(root string) error {
 	a.active = noDocument
 	a.notice = toast{}
 	a.brief = toast{}
+	a.agentTour = agentTour{}
 	a.restoreSession()
 	return nil
 }

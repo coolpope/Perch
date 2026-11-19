@@ -23,6 +23,7 @@ const (
 // showSettings opens the settings over the window.
 func (a *App) showSettings() {
 	a.languages = languagesPage{}
+	a.agents = agentsPage{}
 	a.settingsOpen = true
 }
 
@@ -75,6 +76,10 @@ func (a *App) settingsContent(c *ui.Context) {
 		a.languagesContent(c)
 		return
 	}
+	if a.agents.open {
+		a.agentsContent(c)
+		return
+	}
 	colors := a.look.palette
 	ui.Column(c).FillWidth().Padding(6, 20, 16, 20).Children(func() {
 		ui.Row(c).FillWidth().Height(48).AlignItems(ui.Center).Children(func() {
@@ -106,6 +111,13 @@ func (a *App) settingsContent(c *ui.Context) {
 			a.settingRow(c, locales.SettingLanguageServers(), func() {
 				if ui.Button(c, locales.ManageLanguages()).Clicked() {
 					a.showLanguages()
+				}
+			})
+		})
+		a.settingsSection(c, locales.SectionAgents(), func() {
+			a.settingRow(c, locales.SettingCodingAgents(), func() {
+				if ui.Button(c, locales.ManageAgents()).Clicked() {
+					a.showAgents()
 				}
 			})
 		})

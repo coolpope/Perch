@@ -93,6 +93,18 @@ golangci-lint run
 
 `command` 必须是 `PATH` 中的程序名或绝对路径。Perch 只从你自己的设置目录读取这个文件，不会运行所打开项目指定的命令。
 
+## 和 agent 协作
+
+Perch 可以成为终端里编程 agent 的屏幕。Agent 能打开它正在讲的代码，读取你选中的内容，并一处一处带你读完改动，对话始终留在终端里。
+
+可以在**设置 → Agent → 管理**里按需打开，也可以用一行命令为 Claude Code 装好全部内容：
+
+```sh
+/Applications/Perch.app/Contents/MacOS/Perch setup
+```
+
+用 `--only tools,skill,command` 选择要装的部分，`--status` 查看安装情况，`--remove` 卸载。带读时按 `F8` 和 `⇧F8` 切换下一处和上一处。
+
 ## 许可证
 
 [MIT](LICENSE)

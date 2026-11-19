@@ -59,6 +59,7 @@ func (d *Desktop) Start(args []string) {
 	mygo.App.SetMenu(d.menu())
 	mygo.App.OnSecondInstance(d.openLaunch)
 	mygo.App.OnLocaleChanged(func(string) { mygo.App.SetMenu(d.menu()) })
+	d.startAgentLink()
 	d.openWindow(folderArgument(args, ""))
 	if loadErr != nil {
 		d.reportSettingsFailure(locales.SettingsReadFailed(), loadErr)
@@ -309,6 +310,9 @@ func (d *Desktop) menu() *mygo.Menu {
 			mygo.Separator(),
 			d.menuItem(locales.MenuGoBack(), "Ctrl+-", (*App).goBack),
 			d.menuItem(locales.MenuGoForward(), "Ctrl+Shift+-", (*App).goForward),
+			mygo.Separator(),
+			d.menuItem(locales.MenuNextStop(), "F8", func(a *App) { a.moveTour(1) }),
+			d.menuItem(locales.MenuPreviousStop(), "Shift+F8", func(a *App) { a.moveTour(-1) }),
 			mygo.Separator(),
 			d.menuItem(locales.MenuNextTab(), "CmdOrCtrl+Shift+]", (*App).nextTab),
 			d.menuItem(locales.MenuPreviousTab(), "CmdOrCtrl+Shift+[", (*App).previousTab),
