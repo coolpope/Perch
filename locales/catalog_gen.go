@@ -114,16 +114,6 @@ func (msgs Messages) TabSearch() string {
 	return Catalog.Format(msgs.locale, "tabSearch", nil)
 }
 
-// TabChanges says "Changes"
-// in the language the app shows.
-func TabChanges() string { return In(i18n.Locale()).TabChanges() }
-
-// TabChanges says "Changes"
-// in the language of msgs.
-func (msgs Messages) TabChanges() string {
-	return Catalog.Format(msgs.locale, "tabChanges", nil)
-}
-
 // SettingsTitle says "Settings"
 // in the language the app shows.
 func SettingsTitle() string { return In(i18n.Locale()).SettingsTitle() }
@@ -2232,4 +2222,256 @@ func FirstChange() string { return In(i18n.Locale()).FirstChange() }
 // in the language of msgs.
 func (msgs Messages) FirstChange() string {
 	return Catalog.Format(msgs.locale, "firstChange", nil)
+}
+
+// NoOtherBranch says "There is no other branch to compare with."
+// in the language the app shows.
+func NoOtherBranch() string { return In(i18n.Locale()).NoOtherBranch() }
+
+// NoOtherBranch says "There is no other branch to compare with."
+// in the language of msgs.
+func (msgs Messages) NoOtherBranch() string {
+	return Catalog.Format(msgs.locale, "noOtherBranch", nil)
+}
+
+// NothingUncommitted says "Everything is committed."
+// in the language the app shows.
+func NothingUncommitted() string { return In(i18n.Locale()).NothingUncommitted() }
+
+// NothingUncommitted says "Everything is committed."
+// in the language of msgs.
+func (msgs Messages) NothingUncommitted() string {
+	return Catalog.Format(msgs.locale, "nothingUncommitted", nil)
+}
+
+// NoChangesSinceBranch says "No changes since {branch}."
+// in the language the app shows.
+func NoChangesSinceBranch(branch string) string {
+	return In(i18n.Locale()).NoChangesSinceBranch(branch)
+}
+
+// NoChangesSinceBranch says "No changes since {branch}."
+// in the language of msgs.
+func (msgs Messages) NoChangesSinceBranch(branch string) string {
+	return Catalog.Format(msgs.locale, "noChangesSinceBranch", map[string]any{"branch": branch})
+}
+
+// KindUntracked says "Untracked file"
+// in the language the app shows.
+func KindUntracked() string { return In(i18n.Locale()).KindUntracked() }
+
+// KindUntracked says "Untracked file"
+// in the language of msgs.
+func (msgs Messages) KindUntracked() string {
+	return Catalog.Format(msgs.locale, "kindUntracked", nil)
+}
+
+// DetachedAt says "Detached at {commit}"
+// in the language the app shows.
+func DetachedAt(commit string) string { return In(i18n.Locale()).DetachedAt(commit) }
+
+// DetachedAt says "Detached at {commit}"
+// in the language of msgs.
+func (msgs Messages) DetachedAt(commit string) string {
+	return Catalog.Format(msgs.locale, "detachedAt", map[string]any{"commit": commit})
+}
+
+// UncommittedCount says "{count} uncommitted"
+// in the language the app shows.
+func UncommittedCount(count int) string { return In(i18n.Locale()).UncommittedCount(count) }
+
+// UncommittedCount says "{count} uncommitted"
+// in the language of msgs.
+func (msgs Messages) UncommittedCount(count int) string {
+	return Catalog.Format(msgs.locale, "uncommittedCount", map[string]any{"count": count})
+}
+
+// CompareReview says "Review"
+// in the language the app shows.
+func CompareReview() string { return In(i18n.Locale()).CompareReview() }
+
+// CompareReview says "Review"
+// in the language of msgs.
+func (msgs Messages) CompareReview() string {
+	return Catalog.Format(msgs.locale, "compareReview", nil)
+}
+
+// CompareUncommitted says "Uncommitted"
+// in the language the app shows.
+func CompareUncommitted() string { return In(i18n.Locale()).CompareUncommitted() }
+
+// CompareUncommitted says "Uncommitted"
+// in the language of msgs.
+func (msgs Messages) CompareUncommitted() string {
+	return Catalog.Format(msgs.locale, "compareUncommitted", nil)
+}
+
+// CompareBranch says "Branch"
+// in the language the app shows.
+func CompareBranch() string { return In(i18n.Locale()).CompareBranch() }
+
+// CompareBranch says "Branch"
+// in the language of msgs.
+func (msgs Messages) CompareBranch() string {
+	return Catalog.Format(msgs.locale, "compareBranch", nil)
+}
+
+// History says "History"
+// in the language the app shows.
+func History() string { return In(i18n.Locale()).History() }
+
+// History says "History"
+// in the language of msgs.
+func (msgs Messages) History() string {
+	return Catalog.Format(msgs.locale, "history", nil)
+}
+
+// ReadingHistory says "Reading history…"
+// in the language the app shows.
+func ReadingHistory() string { return In(i18n.Locale()).ReadingHistory() }
+
+// ReadingHistory says "Reading history…"
+// in the language of msgs.
+func (msgs Messages) ReadingHistory() string {
+	return Catalog.Format(msgs.locale, "readingHistory", nil)
+}
+
+// NoCommits says "No commits yet."
+// in the language the app shows.
+func NoCommits() string { return In(i18n.Locale()).NoCommits() }
+
+// NoCommits says "No commits yet."
+// in the language of msgs.
+func (msgs Messages) NoCommits() string {
+	return Catalog.Format(msgs.locale, "noCommits", nil)
+}
+
+// HistoryFailed says "Could not read the history"
+// in the language the app shows.
+func HistoryFailed() string { return In(i18n.Locale()).HistoryFailed() }
+
+// HistoryFailed says "Could not read the history"
+// in the language of msgs.
+func (msgs Messages) HistoryFailed() string {
+	return Catalog.Format(msgs.locale, "historyFailed", nil)
+}
+
+// JustNow says "just now"
+// in the language the app shows.
+func JustNow() string { return In(i18n.Locale()).JustNow() }
+
+// JustNow says "just now"
+// in the language of msgs.
+func (msgs Messages) JustNow() string {
+	return Catalog.Format(msgs.locale, "justNow", nil)
+}
+
+// MinutesAgo says "{count, plural, one {# minute ago} other {# minutes ago}}"
+// in the language the app shows.
+func MinutesAgo(count int) string { return In(i18n.Locale()).MinutesAgo(count) }
+
+// MinutesAgo says "{count, plural, one {# minute ago} other {# minutes ago}}"
+// in the language of msgs.
+func (msgs Messages) MinutesAgo(count int) string {
+	return Catalog.Format(msgs.locale, "minutesAgo", map[string]any{"count": count})
+}
+
+// HoursAgo says "{count, plural, one {# hour ago} other {# hours ago}}"
+// in the language the app shows.
+func HoursAgo(count int) string { return In(i18n.Locale()).HoursAgo(count) }
+
+// HoursAgo says "{count, plural, one {# hour ago} other {# hours ago}}"
+// in the language of msgs.
+func (msgs Messages) HoursAgo(count int) string {
+	return Catalog.Format(msgs.locale, "hoursAgo", map[string]any{"count": count})
+}
+
+// DaysAgo says "{count, plural, one {# day ago} other {# days ago}}"
+// in the language the app shows.
+func DaysAgo(count int) string { return In(i18n.Locale()).DaysAgo(count) }
+
+// DaysAgo says "{count, plural, one {# day ago} other {# days ago}}"
+// in the language of msgs.
+func (msgs Messages) DaysAgo(count int) string {
+	return Catalog.Format(msgs.locale, "daysAgo", map[string]any{"count": count})
+}
+
+// CloseCommit says "Close"
+// in the language the app shows.
+func CloseCommit() string { return In(i18n.Locale()).CloseCommit() }
+
+// CloseCommit says "Close"
+// in the language of msgs.
+func (msgs Messages) CloseCommit() string {
+	return Catalog.Format(msgs.locale, "closeCommit", nil)
+}
+
+// CommitChangesNothingHere says "This commit changes nothing in this folder."
+// in the language the app shows.
+func CommitChangesNothingHere() string { return In(i18n.Locale()).CommitChangesNothingHere() }
+
+// CommitChangesNothingHere says "This commit changes nothing in this folder."
+// in the language of msgs.
+func (msgs Messages) CommitChangesNothingHere() string {
+	return Catalog.Format(msgs.locale, "commitChangesNothingHere", nil)
+}
+
+// BlameLines says "Blame Lines"
+// in the language the app shows.
+func BlameLines() string { return In(i18n.Locale()).BlameLines() }
+
+// BlameLines says "Blame Lines"
+// in the language of msgs.
+func (msgs Messages) BlameLines() string {
+	return Catalog.Format(msgs.locale, "blameLines", nil)
+}
+
+// FileHistory says "File History"
+// in the language the app shows.
+func FileHistory() string { return In(i18n.Locale()).FileHistory() }
+
+// FileHistory says "File History"
+// in the language of msgs.
+func (msgs Messages) FileHistory() string {
+	return Catalog.Format(msgs.locale, "fileHistory", nil)
+}
+
+// ViewCommit says "View Commit"
+// in the language the app shows.
+func ViewCommit() string { return In(i18n.Locale()).ViewCommit() }
+
+// ViewCommit says "View Commit"
+// in the language of msgs.
+func (msgs Messages) ViewCommit() string {
+	return Catalog.Format(msgs.locale, "viewCommit", nil)
+}
+
+// NotCommittedYet says "Not committed yet"
+// in the language the app shows.
+func NotCommittedYet() string { return In(i18n.Locale()).NotCommittedYet() }
+
+// NotCommittedYet says "Not committed yet"
+// in the language of msgs.
+func (msgs Messages) NotCommittedYet() string {
+	return Catalog.Format(msgs.locale, "notCommittedYet", nil)
+}
+
+// BlameFailed says "Could not read who changed these lines"
+// in the language the app shows.
+func BlameFailed() string { return In(i18n.Locale()).BlameFailed() }
+
+// BlameFailed says "Could not read who changed these lines"
+// in the language of msgs.
+func (msgs Messages) BlameFailed() string {
+	return Catalog.Format(msgs.locale, "blameFailed", nil)
+}
+
+// NoFileHistory says "No commit has changed this file yet."
+// in the language the app shows.
+func NoFileHistory() string { return In(i18n.Locale()).NoFileHistory() }
+
+// NoFileHistory says "No commit has changed this file yet."
+// in the language of msgs.
+func (msgs Messages) NoFileHistory() string {
+	return Catalog.Format(msgs.locale, "noFileHistory", nil)
 }

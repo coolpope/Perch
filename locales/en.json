@@ -8,7 +8,6 @@
   "noRecentProjects": "No Recent Projects",
   "tabFiles": "Files",
   "tabSearch": "Search",
-  "tabChanges": "Changes",
   "settingsTitle": "Settings",
   "menuSettings": "Settings…",
   "chooseFileToRead": "Choose a file to read",
@@ -289,5 +288,58 @@
   "menuPreviousChange": "Previous Change",
   "noChangesInFile": "This file has no changes to read",
   "lastChange": "This is the last change",
-  "firstChange": "This is the first change"
+  "firstChange": "This is the first change",
+  "noOtherBranch": "There is no other branch to compare with.",
+  "nothingUncommitted": "Everything is committed.",
+  "noChangesSinceBranch": "No changes since {branch}.",
+  "kindUntracked": "Untracked file",
+  "detachedAt": "Detached at {commit}",
+  "uncommittedCount": "{count} uncommitted",
+  "@uncommittedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "compareReview": "Review",
+  "compareUncommitted": "Uncommitted",
+  "compareBranch": "Branch",
+  "history": "History",
+  "readingHistory": "Reading history…",
+  "noCommits": "No commits yet.",
+  "historyFailed": "Could not read the history",
+  "justNow": "just now",
+  "minutesAgo": "{count, plural, one {# minute ago} other {# minutes ago}}",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "closeCommit": "Close",
+  "commitChangesNothingHere": "This commit changes nothing in this folder.",
+  "blameLines": "Blame Lines",
+  "fileHistory": "File History",
+  "viewCommit": "View Commit",
+  "notCommittedYet": "Not committed yet",
+  "blameFailed": "Could not read who changed these lines",
+  "noFileHistory": "No commit has changed this file yet."
 }

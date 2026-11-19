@@ -1,7 +1,7 @@
-// Package review remembers how far a person has read the changes in a Git work
-// tree. It keeps its snapshots as Git trees under refs/perch, which survive an
-// agent's commits, and never touches the index, HEAD, branches or the files of
-// the work tree.
+// Package review reads the changes and history of a Git work tree, and
+// remembers how far a person has read its changes. It keeps its snapshots as
+// Git trees under refs/perch, which survive an agent's commits, and never
+// touches the index, HEAD, branches or the files of the work tree.
 package review
 
 import (
@@ -47,6 +47,8 @@ const (
 	Modified Kind = iota
 	Added
 	Deleted
+	// Untracked is a new file Git does not follow yet.
+	Untracked
 )
 
 // Change is a file that differs from the last finished review.
@@ -402,19 +404,19 @@ func belongsInSnapshot(top string, name string) bool {
 
 // listChanges compares the trees. A file differing from seen is unread.
 func (s *Store) listChanges(ctx context.Context, base string, seen string, current string) ([]Change, error) {
-	whole, err := s.kinds(ctx, base, current)
+	whole, err := treeKinds(ctx, s.root, base, current)
 	if err != nil {
 		return nil, err
 	}
-	unread, err := s.kinds(ctx, seen, current)
+	unread, err := treeKinds(ctx, s.root, seen, current)
 	if err != nil {
 		return nil, err
 	}
-	wholeCounts, err := s.counts(ctx, base, current)
+	wholeCounts, err := treeCounts(ctx, s.root, base, current)
 	if err != nil {
 		return nil, err
 	}
-	unreadCounts, err := s.counts(ctx, seen, current)
+	unreadCounts, err := treeCounts(ctx, s.root, seen, current)
 	if err != nil {
 		return nil, err
 	}
@@ -433,12 +435,18 @@ func (s *Store) listChanges(ctx context.Context, base string, seen string, curre
 	return changes, nil
 }
 
-// kinds returns the files of the opened folder that differ between two trees.
-func (s *Store) kinds(ctx context.Context, from string, to string) (map[string]Kind, error) {
-	output, err := git(ctx, s.root, nil, "diff-tree", "-r", "-z", "--no-renames", "--relative", "--name-status", from, to)
+// treeKinds returns the files of the opened folder that differ between two
+// trees or commits.
+func treeKinds(ctx context.Context, root string, from string, to string) (map[string]Kind, error) {
+	output, err := git(ctx, root, nil, "diff-tree", "-r", "-z", "--no-renames", "--relative", "--name-status", from, to)
 	if err != nil {
 		return nil, fmt.Errorf("compare %s with %s: %w", from, to, err)
 	}
+	return parseKinds(output), nil
+}
+
+// parseKinds reads the output of --name-status -z.
+func parseKinds(output []byte) map[string]Kind {
 	fields := strings.Split(strings.TrimSuffix(string(output), "\x00"), "\x00")
 	kinds := make(map[string]Kind, len(fields)/2)
 	for index := 0; index+1 < len(fields); index += 2 {
@@ -446,7 +454,7 @@ func (s *Store) kinds(ctx context.Context, from string, to string) (map[string]K
 			kinds[fields[index+1]] = kindOf(fields[index])
 		}
 	}
-	return kinds, nil
+	return kinds
 }
 
 func kindOf(status string) Kind {
@@ -467,11 +475,16 @@ type lineCount struct {
 	binary  bool
 }
 
-func (s *Store) counts(ctx context.Context, from string, to string) (map[string]lineCount, error) {
-	output, err := git(ctx, s.root, nil, "diff-tree", "-r", "-z", "--no-renames", "--relative", "--numstat", from, to)
+func treeCounts(ctx context.Context, root string, from string, to string) (map[string]lineCount, error) {
+	output, err := git(ctx, root, nil, "diff-tree", "-r", "-z", "--no-renames", "--relative", "--numstat", from, to)
 	if err != nil {
 		return nil, fmt.Errorf("count changes between %s and %s: %w", from, to, err)
 	}
+	return parseCounts(output), nil
+}
+
+// parseCounts reads the output of --numstat -z.
+func parseCounts(output []byte) map[string]lineCount {
 	counts := map[string]lineCount{}
 	for record := range strings.SplitSeq(string(output), "\x00") {
 		fields := strings.SplitN(record, "\t", 3)
@@ -482,15 +495,20 @@ func (s *Store) counts(ctx context.Context, from string, to string) (map[string]
 		removed, removedErr := strconv.Atoi(fields[1])
 		counts[fields[2]] = lineCount{added: added, removed: removed, binary: addedErr != nil || removedErr != nil}
 	}
-	return counts, nil
+	return counts
 }
 
 func (s *Store) readSides(ctx context.Context, from string, to string, path string) (Sides, error) {
-	old, oldReadable, err := s.readBlob(ctx, from, path)
+	return objectSides(ctx, s.root, from+":"+s.prefix+path, to+":"+s.prefix+path)
+}
+
+// objectSides reads the texts of two objects, as "rev:path", to compare.
+func objectSides(ctx context.Context, root string, from string, to string) (Sides, error) {
+	old, oldReadable, err := readObject(ctx, root, from)
 	if err != nil {
 		return Sides{}, err
 	}
-	updated, newReadable, err := s.readBlob(ctx, to, path)
+	updated, newReadable, err := readObject(ctx, root, to)
 	if err != nil {
 		return Sides{}, err
 	}
@@ -503,8 +521,13 @@ func (s *Store) readSides(ctx context.Context, from string, to string, path stri
 // readBlob returns a file's text in a tree, empty for a file the tree lacks, and
 // reports whether it can be shown as text.
 func (s *Store) readBlob(ctx context.Context, tree string, path string) (string, bool, error) {
-	object := tree + ":" + s.prefix + path
-	size, err := git(ctx, s.root, nil, "cat-file", "-s", object)
+	return readObject(ctx, s.root, tree+":"+s.prefix+path)
+}
+
+// readObject returns the text of an object named as "rev:path", empty for a
+// path the revision lacks, and reports whether it can be shown as text.
+func readObject(ctx context.Context, root string, object string) (string, bool, error) {
+	size, err := git(ctx, root, nil, "cat-file", "-s", object)
 	var exit *exec.ExitError
 	if errors.As(err, &exit) {
 		return "", true, nil
@@ -519,14 +542,20 @@ func (s *Store) readBlob(ctx context.Context, tree string, path string) (string,
 	if bytesLong > MaxSnapshotFileBytes {
 		return "", false, nil
 	}
-	data, err := git(ctx, s.root, nil, "cat-file", "blob", object)
+	data, err := git(ctx, root, nil, "cat-file", "blob", object)
 	if err != nil {
 		return "", false, fmt.Errorf("read %s: %w", object, err)
 	}
+	text, readable := textOf(data)
+	return text, readable, nil
+}
+
+// textOf returns data as text, and reports false for binary data.
+func textOf(data []byte) (string, bool) {
 	if bytes.IndexByte(data, 0) >= 0 || !utf8.Valid(data) {
-		return "", false, nil
+		return "", false
 	}
-	return string(data), true, nil
+	return string(data), true
 }
 
 // copyEntries makes paths in the seen tree match their versions in source.

@@ -80,6 +80,8 @@ type document struct {
 	// frame, until the text changes.
 	htmlParsed map[string][]htmlblock.Block
 	images     map[string]ui.ImageSource
+	// blame is who last changed each line, while the person asks for it.
+	blame *blameState
 }
 
 func newDocument(root string, relPath string, file workspace.TextFile) *document {

@@ -60,6 +60,9 @@ type App struct {
 	recentRoots   []string
 	recentChecked bool
 	review        changesPanel
+	history       historyPanel
+	status        treeStatus
+	fileHistory   fileHistory
 	definition    definitionState
 	// projectSymbols is the finder of symbols across the project.
 	projectSymbols projectSymbolsState
@@ -142,6 +145,8 @@ func (a *App) loadFolder(root string) error {
 	a.stopChanges()
 	a.stopDefinitions()
 	a.stopIgnoreMarks()
+	a.stopTreeStatus()
+	a.stopFileHistory()
 	a.find = findInFiles{chosen: noRow}
 	a.files = fileTreeState{input: a.files.input}
 	a.sidebarWidth = initialSidebarWidth
@@ -191,7 +196,7 @@ func (a *App) childPaths(dir string) []string {
 // openFile shows a file in a tab, reusing the tab it already has.
 func (a *App) openFile(relPath string) {
 	a.closeOutline()
-	a.closeChange()
+	a.leaveGitView()
 	index := slices.IndexFunc(a.documents, func(d *document) bool { return d.path == relPath })
 	if index != noDocument {
 		a.active = index
@@ -380,6 +385,7 @@ func (a *App) applyFileEvents(events []mygo.FileEvent) {
 		a.reconcile(d)
 	}
 	a.scheduleChangesRefresh()
+	a.scheduleTreeStatus()
 }
 
 func changesTree(event mygo.FileEvent) bool {

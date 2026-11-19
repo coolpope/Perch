@@ -229,7 +229,7 @@ func (a *App) openPlaceDocument(path string, external bool) *document {
 // openExternalFile shows a file outside the workspace in a read-only tab.
 func (a *App) openExternalFile(file string) {
 	a.closeOutline()
-	a.closeChange()
+	a.leaveGitView()
 	index := slices.IndexFunc(a.documents, func(d *document) bool { return d.path == file })
 	if index != noDocument {
 		a.active = index

@@ -1173,6 +1173,123 @@ func TestMarkdownChangeRendersAndOpensTheFile(t *testing.T) {
 	}
 }
 
+func TestGitPageComparesAndShowsHistory(t *testing.T) {
+	root := reviewedRepository(t)
+	gitIn(t, root, "branch", "-M", "main")
+	gitIn(t, root, "switch", "--quiet", "-c", "feature")
+	writeFile(t, root, "a.go", "package a\n\nfunc Committed() {}\n")
+	gitIn(t, root, "commit", "--quiet", "-am", "add committed")
+	writeFile(t, root, "new.go", "package a\n")
+	a, tester, posted := openWithPosts(t, root)
+	t.Cleanup(a.stopChanges)
+	tester.Frame()
+	a.showChanges()
+	settleChanges(t, a, tester, posted)
+	followPosts(t, posted, tester, func() bool { return len(a.history.commits) == 2 })
+	tester.Frame()
+	if !tester.HasText("feature") || !tester.HasText("1 uncommitted") || !tester.HasText("add committed") {
+		t.Fatalf("texts %q", tester.Texts())
+	}
+	a.startTreeStatus()
+	t.Cleanup(a.stopTreeStatus)
+	followPosts(t, posted, tester, func() bool { return a.status.kinds != nil })
+	if kind, found := a.status.kinds["new.go"]; !found || kind != review.Untracked || len(a.status.kinds) != 1 {
+		t.Errorf("the tree colors %v", a.status.kinds)
+	}
+
+	if err := tester.Click("Uncommitted"); err != nil {
+		t.Fatal(err)
+	}
+	settleChanges(t, a, tester, posted)
+	if got := changePaths(a.review.listing.Changes); !slices.Equal(got, []string{"new.go"}) || tester.HasText("Mark All Reviewed") {
+		t.Fatalf("uncommitted %v; texts %q", got, tester.Texts())
+	}
+
+	if err := tester.Click("Branch"); err != nil {
+		t.Fatal(err)
+	}
+	settleChanges(t, a, tester, posted)
+	if got := changePaths(a.review.listing.Changes); a.review.branch != "main" || !slices.Equal(got, []string{"a.go", "new.go"}) {
+		t.Fatalf("since %q: %v", a.review.branch, got)
+	}
+	a.selectChange("a.go")
+	followPosts(t, posted, tester, func() bool { return a.review.diff != nil })
+	if got := a.review.diff.Old.String(); got != "package a\n" {
+		t.Errorf("compared with %q", got)
+	}
+
+	if err := tester.Click("add committed"); err != nil {
+		t.Fatal(err)
+	}
+	followPosts(t, posted, tester, func() bool { return a.history.diff != nil })
+	tester.Frame()
+	if a.showsChange() || !a.showsCommit() || a.history.file != "a.go" {
+		t.Fatalf("shows change %v, commit %v, file %q", a.showsChange(), a.showsCommit(), a.history.file)
+	}
+	if got := a.history.diff.New.String(); got != "package a\n\nfunc Committed() {}\n" {
+		t.Errorf("the commit's change is %q", got)
+	}
+	a.openFile("b.go")
+	if a.showsCommit() {
+		t.Error("opening a file left the commit on screen")
+	}
+}
+
+func TestFileHistoryAndBlameOpenCommits(t *testing.T) {
+	root := reviewedRepository(t)
+	writeFile(t, root, "a.go", "package a\n\nfunc Second() {}\n")
+	gitIn(t, root, "commit", "--quiet", "-am", "second")
+	a, tester, posted := openWithPosts(t, root)
+	t.Cleanup(a.stopChanges)
+	a.startTreeStatus()
+	t.Cleanup(a.stopTreeStatus)
+	followPosts(t, posted, tester, func() bool { return a.inGit() })
+	a.openFile("a.go")
+	tester.Frame()
+
+	if err := tester.Click("File History"); err != nil {
+		t.Fatalf("%v; texts %q", err, tester.Texts())
+	}
+	followPosts(t, posted, tester, func() bool { return a.fileHistory.complete })
+	tester.Frame()
+	if len(a.fileHistory.commits) != 2 || !tester.HasText("second") {
+		t.Fatalf("file history %+v; texts %q", a.fileHistory.commits, tester.Texts())
+	}
+	if err := tester.Click("start"); err != nil {
+		t.Fatal(err)
+	}
+	followPosts(t, posted, tester, func() bool { return a.history.diff != nil })
+	if !a.showsCommit() || a.history.file != "a.go" || a.fileHistory.open {
+		t.Errorf("commit %q at %q; history open %v", a.history.commit.Subject, a.history.file, a.fileHistory.open)
+	}
+
+	a.openFile("a.go")
+	d := a.activeDocument()
+	tester.Frame()
+	if err := tester.Click("Blame Lines"); err != nil {
+		t.Fatal(err)
+	}
+	followPosts(t, posted, tester, func() bool { return d.blame != nil && !d.blame.loading })
+	blame := d.blame.blame
+	if len(blame.Lines) != 3 || blame.Commits[blame.Lines[0]].Summary != "start" || blame.Commits[blame.Lines[2]].Summary != "second" {
+		t.Errorf("blame %+v", blame)
+	}
+	d.editor.Buffer.Set("// note\n" + d.editor.Buffer.String())
+	a.blameHover(d, editor.HoverRequest{Offset: 0, Version: d.editor.Buffer.Version()})
+	followPosts(t, posted, tester, func() bool { return !d.blame.loading && d.blame.pending == nil })
+	if first := d.blame.blame.Commits[d.blame.blame.Lines[0]]; !first.Uncommitted {
+		t.Errorf("an unsaved line is blamed on %+v", first)
+	}
+}
+
+func changePaths(changes []review.Change) []string {
+	paths := make([]string, 0, len(changes))
+	for _, change := range changes {
+		paths = append(paths, change.Path)
+	}
+	return paths
+}
+
 func TestChangesExplainAFolderOutsideGit(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, root, "a.go", "package a\n")

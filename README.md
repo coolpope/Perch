@@ -26,6 +26,7 @@ It is built in Go with [MyGo](https://github.com/egoist/mygo). The interface is 
 ## Features
 
 - **Review what changed.** Perch remembers how far you have read, even after an agent commits. It lists the files left to read, shows their diffs, and marks unread lines beside the line numbers as they are written. It never touches your index, `HEAD` or branches.
+- **See the Git history.** Compare the work tree with your last review, with `HEAD` or with another branch. Browse the history and open any commit's changes. The file tree marks changed files, and each file has its history and shows who last changed the line under the pointer.
 - **Read comfortably.** Syntax highlighting, rendered Markdown including the HTML in READMEs, and previews of PNG, JPEG, GIF, WebP and SVG.
 - **Edit safely.** If an agent rewrites a file you are editing, Perch asks which version to keep instead of overwriting either one.
 - **Find your way.** Quick open, project search, find and replace, plus go to definition and a symbol list for the current file through language servers.

@@ -26,7 +26,33 @@ const (
 	changeRowHeight     float32       = 28
 	changeMarkSize      float32       = 18
 	changedBlockBar     float32       = 3
+	kindLetterWidth     float32       = 10
+	// initialChangesShare is the percentage of the Git page the changes take
+	// above the history at first.
+	initialChangesShare float32 = 50
 )
+
+// What the Git page compares the work tree with, as indexes of its switch.
+const (
+	compareReview      int = 0
+	compareUncommitted int = 1
+	compareBranch      int = 2
+)
+
+// compareRequest is what one listing of the changes compares with.
+type compareRequest struct {
+	compare int
+	branch  string
+}
+
+// gitReading is what one refresh of the Git page reads.
+type gitReading struct {
+	store    *review.Store
+	listing  review.Listing
+	head     review.Head
+	branches []string
+	err      error
+}
 
 // Indexes of the switch of a Markdown file's change.
 const (
@@ -42,11 +68,21 @@ type lineRange struct {
 
 // changesPanel is the state of the review of the window's project.
 type changesPanel struct {
-	store         *review.Store
+	store *review.Store
+	// listing is the changes compared with what compare names. Its Version
+	// is the review's snapshot, or the commit the work tree is compared with.
 	listing       review.Listing
 	loaded        bool
 	notRepository bool
 	failure       string
+
+	compare int
+	// branch is the branch compareBranch compares with.
+	branch   string
+	branches []string
+	head     review.Head
+	// split is the share of the page the changes take above the history.
+	split float32
 
 	running bool
 	again   bool
@@ -124,6 +160,7 @@ func (a *App) stopChanges() {
 	}
 	closeStore(a.review.store)
 	a.review = changesPanel{}
+	a.stopHistory()
 }
 
 // closeStore removes the store's temporary files off the main thread.
@@ -152,27 +189,57 @@ func (a *App) refreshChanges() {
 	}
 	r.running = true
 	ctx, store, root := r.ctx, r.store, a.root
+	request := r.request()
 	go func() {
-		opened, listing, err := listChanges(ctx, store, root)
-		a.post(func() { a.changesListed(ctx, opened, listing, err) })
+		reading := readGitPage(ctx, store, root, request)
+		a.post(func() { a.changesListed(ctx, request, reading) })
 	}()
 }
 
-func listChanges(ctx context.Context, store *review.Store, root string) (*review.Store, review.Listing, error) {
-	if store == nil {
-		opened, err := review.Open(ctx, root)
-		if err != nil {
-			return nil, review.Listing{}, err
-		}
-		store = opened
-	}
-	listing, err := store.Changes(ctx)
-	return store, listing, err
+func (r *changesPanel) request() compareRequest {
+	return compareRequest{compare: r.compare, branch: r.branch}
 }
 
-func (a *App) changesListed(ctx context.Context, store *review.Store, listing review.Listing, err error) {
+// readGitPage lists the changes and reads the branch the work tree is on.
+func readGitPage(ctx context.Context, store *review.Store, root string, request compareRequest) gitReading {
+	reading := gitReading{store: store}
+	if reading.store == nil {
+		reading.store, reading.err = review.Open(ctx, root)
+		if reading.err != nil {
+			return reading
+		}
+	}
+	if reading.listing, reading.err = listChanges(ctx, reading.store, root, request); reading.err != nil {
+		return reading
+	}
+	if reading.head, reading.err = review.ReadHead(ctx, root); reading.err != nil {
+		return reading
+	}
+	reading.branches, reading.err = review.Branches(ctx, root)
+	return reading
+}
+
+// listChanges lists what differs from what the request compares with.
+func listChanges(ctx context.Context, store *review.Store, root string, request compareRequest) (review.Listing, error) {
+	switch request.compare {
+	case compareUncommitted:
+		comparison, err := review.CompareWithHead(ctx, root)
+		return review.Listing{Version: comparison.Base, Changes: comparison.Changes}, err
+	case compareBranch:
+		if request.branch == "" {
+			return review.Listing{}, nil
+		}
+		comparison, err := review.CompareWithBranch(ctx, root, request.branch)
+		return review.Listing{Version: comparison.Base, Changes: comparison.Changes}, err
+	default:
+		return store.Changes(ctx)
+	}
+}
+
+func (a *App) changesListed(ctx context.Context, request compareRequest, reading gitReading) {
+	store := reading.store
 	if ctx.Err() != nil {
-		if store != a.review.store {
+		if store != nil && store != a.review.store {
 			closeStore(store)
 		}
 		return
@@ -181,19 +248,30 @@ func (a *App) changesListed(ctx context.Context, store *review.Store, listing re
 	switch {
 	case r.store == nil:
 		r.store = store
-	case store != r.store:
+	case store != nil && store != r.store:
 		closeStore(store)
 	}
 	r.running = false
+	if request != r.request() {
+		// The person chose something else to compare with meanwhile.
+		a.refreshChanges()
+		return
+	}
+	err := reading.err
 	r.loaded = true
 	r.notRepository = errors.Is(err, review.ErrNotRepository)
 	r.failure = ""
 	if err != nil {
-		slog.Warn("list changes", "root", a.root, "error", err)
+		slog.Warn("list changes", "root", a.root, "compare", request.compare, "branch", request.branch, "error", err)
 		r.failure = locales.ChangesFailed()
 	} else {
-		r.listing = listing
+		r.listing = reading.listing
+		r.head = reading.head
+		r.branches = reading.branches
 		a.followSelectedChange()
+		a.followHead()
+		// Commits change what the tree shows without touching its files.
+		a.refreshTreeStatus()
 	}
 	if r.again {
 		r.again = false
@@ -246,6 +324,7 @@ func (a *App) selectChange(relPath string) {
 		return
 	}
 	a.closeChange()
+	a.closeCommit()
 	a.review.selected = relPath
 	a.loadSides(change)
 }
@@ -265,18 +344,33 @@ func (a *App) showsChange() bool {
 	return a.sidebarTab == sidebarChanges && a.review.selected != ""
 }
 
+// leaveGitView puts away the change or commit the main area shows.
+func (a *App) leaveGitView() {
+	a.closeChange()
+	a.closeCommit()
+}
+
 // loadSides reads the texts of a change off the main thread.
 func (a *App) loadSides(change review.Change) {
 	r := &a.review
-	ctx, store, version := r.ctx, r.store, r.listing.Version
+	ctx, store, root, version, request := r.ctx, r.store, a.root, r.listing.Version, r.request()
 	go func() {
-		sides, err := store.Sides(ctx, version, change)
+		sides, err := readSides(ctx, store, root, request, version, change)
 		a.post(func() {
-			if ctx.Err() == nil && a.review.selected == change.Path {
+			if ctx.Err() == nil && a.review.selected == change.Path && a.review.request() == request {
 				a.sidesLoaded(change, version, sides, err)
 			}
 		})
 	}()
+}
+
+// readSides reads the two texts of a change: what is left to read of it in the
+// review, or the file in the commit compared with and on disk.
+func readSides(ctx context.Context, store *review.Store, root string, request compareRequest, version string, change review.Change) (review.Sides, error) {
+	if request.compare == compareReview {
+		return store.Sides(ctx, version, change)
+	}
+	return review.WorkTreeSides(ctx, root, version, change.Path)
 }
 
 func (a *App) sidesLoaded(change review.Change, version string, sides review.Sides, err error) {
@@ -460,7 +554,7 @@ func (a *App) setReviewed(relPath string, reviewed bool) {
 // one.
 func (a *App) markSelectedReviewed() {
 	r := &a.review
-	if !a.showsChange() {
+	if !a.showsChange() || r.compare != compareReview {
 		return
 	}
 	next := nextUnread(r.listing.Changes, r.selected)
@@ -546,45 +640,77 @@ func unreadCount(changes []review.Change) int {
 	return count
 }
 
+// changesPanelView builds the Git page: the branch, what the work tree is
+// compared with and its changes, and the history below them.
 func (a *App) changesPanelView(c *ui.Context) {
 	r := &a.review
-	colors := a.look.palette
+	if r.notRepository {
+		a.panelMessageView(c, locales.ChangesNeedGit())
+		return
+	}
+	if r.split == 0 {
+		r.split = initialChangesShare
+	}
 	ui.Column(c).Grow(1).FillWidth().Children(func() {
-		if message := changesMessage(r); message != "" {
-			ui.Column(c).Grow(1).FillWidth().Center().Gap(12).Padding(0, 20).Children(func() {
-				ui.Text(c, message).TextColor(colors.muted).TextAlign(ui.Center)
-				a.reopenReviewView(c)
-			})
-			return
-		}
-		a.changesHeaderView(c)
-		ui.List(c, &r.list, len(r.listing.Changes), func(row int) {
-			a.changeRowView(c, r.listing.Changes[row])
-		}).Grow(1).FillWidth().Padding(2, 6)
-		a.changesFooterView(c)
+		a.headView(c)
+		a.compareView(c)
+		ui.SplitVerticalPercent(c, &r.split, func() {
+			ui.Column(c).Fill().Children(func() { a.changeListView(c) })
+		}, func() {
+			ui.Column(c).Fill().Children(func() { a.historyView(c) })
+		}).Grow(1).FillWidth()
 	})
+}
+
+// panelMessageView fills a part of the sidebar with a message.
+func (a *App) panelMessageView(c *ui.Context, message string) {
+	ui.Column(c).Grow(1).FillWidth().Center().Gap(12).Padding(0, 20).Children(func() {
+		ui.Text(c, message).TextColor(a.look.palette.muted).TextAlign(ui.Center)
+		a.reopenReviewView(c)
+	})
+}
+
+func (a *App) changeListView(c *ui.Context) {
+	r := &a.review
+	if message := changesMessage(r); message != "" {
+		a.panelMessageView(c, message)
+		return
+	}
+	if r.compare == compareReview {
+		a.changesHeaderView(c)
+	}
+	ui.List(c, &r.list, len(r.listing.Changes), func(row int) {
+		a.changeRowView(c, r.listing.Changes[row])
+	}).Grow(1).FillWidth().Padding(2, 6)
+	if r.compare == compareReview {
+		a.changesFooterView(c)
+	}
 }
 
 // changesMessage says why the panel lists no files, and is empty when it does.
 func changesMessage(r *changesPanel) string {
 	switch {
-	case r.notRepository:
-		return locales.ChangesNeedGit()
 	case r.failure != "":
 		return r.failure
 	case !r.loaded:
 		return locales.ReadingChanges()
-	case len(r.listing.Changes) == 0:
-		return locales.NoChanges()
-	default:
+	case r.compare == compareBranch && r.branch == "":
+		return locales.NoOtherBranch()
+	case len(r.listing.Changes) > 0:
 		return ""
+	case r.compare == compareUncommitted:
+		return locales.NothingUncommitted()
+	case r.compare == compareBranch:
+		return locales.NoChangesSinceBranch(r.branch)
+	default:
+		return locales.NoChanges()
 	}
 }
 
 func (a *App) changesHeaderView(c *ui.Context) {
 	changes := a.review.listing.Changes
 	read := len(changes) - unreadCount(changes)
-	ui.Row(c).FillWidth().Shrink(0).Padding(2, 14, 6, 14).Children(func() {
+	ui.Row(c).FillWidth().Shrink(0).Padding(2, 14, 4, 14).Children(func() {
 		ui.Text(c, locales.ReviewProgress(read, len(changes))).
 			FontSize(smallFontSize - 1).TextColor(a.look.palette.muted)
 	})
@@ -613,34 +739,65 @@ func (a *App) reopenReviewView(c *ui.Context) {
 }
 
 func (a *App) changeRowView(c *ui.Context, change review.Change) {
+	reviewing := a.review.compare == compareReview
+	clicks := a.fileChangeRowView(c, change, change.Path == a.review.selected, reviewing)
+	switch {
+	case clicks.mark:
+		a.setReviewed(change.Path, !change.Reviewed)
+	case clicks.row:
+		a.selectChange(change.Path)
+	}
+}
+
+// rowClicks are the clicks on a row of changed files.
+type rowClicks struct {
+	row  bool
+	mark bool
+}
+
+// fileChangeRowView builds a row of a changed file, with its review mark when
+// marked is true.
+func (a *App) fileChangeRowView(c *ui.Context, change review.Change, selected bool, marked bool) rowClicks {
 	colors := a.look.palette
 	name := path.Base(change.Path)
 	row := ui.Row(c).FillWidth().Height(changeRowHeight).Gap(7).Padding(0, 8).Radius(radiusControl).AlignItems(ui.Center)
 	switch {
-	case change.Path == a.review.selected:
+	case selected:
 		row.Background(colors.hover)
 	case row.Hovered():
 		row.Background(colors.hover.Alpha(0.5))
 	}
-	rowClicked := row.Clicked()
-	markClicked := false
+	clicks := rowClicks{row: row.Clicked()}
 	row.Children(func() {
-		markClicked = a.changeMarkView(c, change)
+		if marked {
+			clicks.mark = a.changeMarkView(c, change)
+		}
+		letter, color := kindLetter(change.Kind, colors)
+		ui.Text(c, letter).Font("monospace").FontSize(smallFontSize - 1).FontWeight(600).TextColor(color).Width(kindLetterWidth).Shrink(0)
 		text := ui.Text(c, name).MaxLines(1).Shrink(0)
-		if change.Reviewed {
+		if marked && change.Reviewed {
 			text.TextColor(colors.muted)
 		}
 		if dir := path.Dir(change.Path); dir != "." {
-			ui.Text(c, dir).FontSize(smallFontSize - 1).TextColor(colors.muted).MaxLines(1).Shrink(1)
+			ui.Text(c, dir).FontSize(smallFontSize - 1).TextColor(colors.muted).MaxLines(1).Shrink(1).MinWidth(0)
 		}
 		ui.Spacer(c)
 		a.changeCountsView(c, change)
 	})
-	switch {
-	case markClicked:
-		a.setReviewed(change.Path, !change.Reviewed)
-	case rowClicked:
-		a.selectChange(change.Path)
+	return clicks
+}
+
+// kindLetter is the letter Git shows for what happened to a file, in its color.
+func kindLetter(kind review.Kind, colors palette) (string, ui.Color) {
+	switch kind {
+	case review.Added:
+		return "A", colors.str
+	case review.Deleted:
+		return "D", colors.danger
+	case review.Untracked:
+		return "U", colors.str
+	default:
+		return "M", colors.warning
 	}
 }
 
@@ -729,6 +886,9 @@ func (a *App) changeBarView(c *ui.Context, change review.Change) {
 		if change.Kind != review.Deleted && ui.Button(c, locales.OpenFile()).Clicked() {
 			a.openSelectedChange()
 		}
+		if r.compare != compareReview {
+			return
+		}
 		if change.Reviewed {
 			if ui.Button(c, locales.MarkUnread()).Clicked() {
 				a.setReviewed(change.Path, false)
@@ -747,6 +907,8 @@ func changeKindLabel(kind review.Kind) string {
 		return locales.KindAdded()
 	case review.Deleted:
 		return locales.KindDeleted()
+	case review.Untracked:
+		return locales.KindUntracked()
 	default:
 		return locales.KindModified()
 	}

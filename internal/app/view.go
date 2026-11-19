@@ -129,7 +129,7 @@ func (a *App) sidebarHeaderView(c *ui.Context) {
 		if a.sidebarTabView(c, iconSearch, locales.TabSearch(), a.sidebarTab == sidebarSearch) {
 			a.showFindInFiles()
 		}
-		if a.sidebarTabView(c, iconChanges, locales.TabChanges(), a.sidebarTab == sidebarChanges) {
+		if a.sidebarTabView(c, iconChanges, gitTabLabel, a.sidebarTab == sidebarChanges) {
 			a.showChanges()
 		}
 		ui.Spacer(c)
@@ -208,10 +208,13 @@ func (a *App) treeRowView(c *ui.Context, item string) {
 			tint = quiet
 		}
 		ui.Icon(c, icon).FontSize(iconFontSize).TextColor(tint)
-		name := ui.Text(c, entry.Name).MaxLines(1)
-		if ignored {
+		name := ui.Text(c, entry.Name).MaxLines(1).Shrink(1)
+		if color, changed := a.treeNameColor(item); changed {
+			name.TextColor(color)
+		} else if ignored {
 			name.TextColor(quiet)
 		}
+		a.treeStatusView(c, item, entry.IsDir)
 	}).ContextMenu(func(m *ui.Menu) {
 		a.fileMenu(m, item)
 	})
@@ -242,7 +245,7 @@ func toggleOpen(open *ui.Selection[string], item string) {
 // chooseTab shows a tab and marks its file in the tree when the row shows.
 func (a *App) chooseTab(index int) {
 	a.closeOutline()
-	a.closeChange()
+	a.leaveGitView()
 	a.active = index
 	a.treeRow = noRow
 	for row := range a.tree.Rows() {
@@ -269,6 +272,10 @@ func (a *App) mainView(c *ui.Context) {
 func (a *App) panelContentView(c *ui.Context) {
 	if a.showsChange() {
 		a.changeView(c)
+		return
+	}
+	if a.showsCommit() {
+		a.commitView(c)
 		return
 	}
 	d := a.activeDocument()
@@ -378,6 +385,7 @@ func (a *App) pathBarView(c *ui.Context, d *document) {
 		case d.isSVG():
 			ui.Segmented(c, &d.markdownView, locales.MarkdownPreview(), locales.MarkdownSource())
 		}
+		a.gitButtonsView(c, d)
 	})
 }
 

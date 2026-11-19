@@ -250,6 +250,8 @@ var (
 	iconFiles      = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M20 7h-3a2 2 0 0 1-2-2V2"/><path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z"/><path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8"/></svg>`))
 	iconSearch     = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`))
 	iconChanges    = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/></svg>`))
+	iconHistory    = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>`))
+	iconBlame      = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><circle cx="12" cy="12" r="3"/><path d="M3 12h6"/><path d="M15 12h6"/></svg>`))
 	iconCircle     = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><circle cx="12" cy="12" r="9"/></svg>`))
 	iconCheck      = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>`))
 	iconSettings   = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M21 7h-9"/><path d="M14 17H3"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>`))

@@ -51,6 +51,8 @@ func (a *App) release() {
 	a.stopChanges()
 	a.stopDefinitions()
 	a.stopIgnoreMarks()
+	a.stopTreeStatus()
+	a.stopFileHistory()
 }
 
 // runFind opens the find bar of the current file, which shows over its
@@ -114,6 +116,7 @@ func (a *App) openFolder(root string) {
 	}
 	a.beginReview()
 	a.startIgnoreMarks()
+	a.startTreeStatus()
 }
 
 // handleWindowClose keeps the window open while unsaved edits need an answer.
