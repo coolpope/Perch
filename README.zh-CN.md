@@ -37,7 +37,7 @@ Perch 使用 Go 和 [MyGo](https://github.com/egoist/mygo) 构建，界面通过
 
 ## 从源码构建
 
-需要 Go 1.27.4 或更高版本，审阅功能需要 Git。目前在 Apple 芯片的 macOS 上开发和测试。
+需要 Go 1.27.4 或更高版本，审阅功能需要 Git。支持 macOS、Windows 和 Linux。目前在 Apple 芯片的 macOS 上开发和测试；Windows 和 Linux 版本能编译、测试能通过，但还没有在这两个系统上实际运行过。
 
 ```sh
 go tool mygo build
@@ -52,6 +52,8 @@ golangci-lint run
 ```
 
 ## 快捷键
+
+在 Windows 和 Linux 上，`⌘` 对应 `Ctrl`，`⌥` 对应 `Alt`，`⌃` 对应 `Ctrl`。
 
 | 操作 | 快捷键 |
 | --- | --- |

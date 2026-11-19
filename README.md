@@ -37,7 +37,7 @@ It is built in Go with [MyGo](https://github.com/egoist/mygo). The interface is 
 
 ## Build from source
 
-Perch needs Go 1.27.4 or later. Git is needed for the review features. It is developed and tested on macOS on Apple silicon.
+Perch needs Go 1.27.4 or later. Git is needed for the review features. It runs on macOS, Windows and Linux. It is developed and tested on macOS on Apple silicon; the Windows and Linux builds are compiled and pass the tests, but have not been tried on those systems yet.
 
 ```sh
 go tool mygo build
@@ -52,6 +52,8 @@ golangci-lint run
 ```
 
 ## Keyboard shortcuts
+
+On Windows and Linux, `⌘` is `Ctrl`, `⌥` is `Alt` and `⌃` is `Ctrl`.
 
 | Action | Shortcut |
 | --- | --- |

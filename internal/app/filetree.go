@@ -132,8 +132,8 @@ func (a *App) fileMenu(m *ui.Menu, target string) {
 	if target != "." && m.Item(locales.FileMenuCopyRelativePath()).Icon(icons.copyLink).Chosen() {
 		mygo.Clipboard.WriteText(target)
 	}
-	if runtime.GOOS == "darwin" && m.Item(locales.FileMenuReveal()).Icon(icons.reveal).Chosen() {
-		a.revealInFinder(target)
+	if m.Item(revealLabel(runtime.GOOS)).Icon(icons.reveal).Chosen() {
+		a.revealInFolder(target)
 	}
 	if target == "." {
 		return
@@ -156,8 +156,20 @@ func (a *App) fullPath(target string) string {
 	return filepath.Join(a.root, filepath.FromSlash(target))
 }
 
-// revealInFinder shows a file or folder in the macOS Finder.
-func (a *App) revealInFinder(target string) {
+// revealLabel names the file manager of the platform.
+func revealLabel(goos string) string {
+	switch goos {
+	case "darwin":
+		return locales.FileMenuReveal()
+	case "windows":
+		return locales.FileMenuRevealExplorer()
+	default:
+		return locales.FileMenuRevealFolder()
+	}
+}
+
+// revealInFolder shows a file or folder in the system's file manager.
+func (a *App) revealInFolder(target string) {
 	if target != "." {
 		if _, err := workspace.Stat(a.root, target); err != nil {
 			a.tell(openFailure(target, err))

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -165,5 +166,62 @@ func TestDefinitionThroughARealServer(t *testing.T) {
 	pool.CloseIdle(0)
 	if pool.Running() != 0 {
 		t.Error("an idle server stayed")
+	}
+}
+
+func TestProgramNamesOnEachPlatform(t *testing.T) {
+	cases := []struct {
+		goos    string
+		program string
+		want    []string
+	}{
+		{"darwin", "gopls", []string{"gopls"}},
+		{"linux", "gopls", []string{"gopls"}},
+		{"windows", "gopls", []string{"gopls.exe", "gopls.cmd"}},
+		{"windows", "tool.CMD", []string{"tool.CMD"}},
+	}
+	for _, test := range cases {
+		if got := programNames(test.goos, test.program, ".EXE;.CMD"); !slices.Equal(got, test.want) {
+			t.Errorf("%s %s: %v", test.goos, test.program, got)
+		}
+	}
+}
+
+func TestToolFoldersOnWindows(t *testing.T) {
+	env := map[string]string{"APPDATA": "/appdata"}
+	folders := toolFolders("windows", "/home", func(key string) string { return env[key] })
+	for _, want := range []string{filepath.Join("/appdata", "npm"), filepath.Join("/home", "scoop", "shims"), filepath.Join("/home", "go", "bin")} {
+		if !slices.Contains(folders, want) {
+			t.Errorf("%q is missing from %q", want, folders)
+		}
+	}
+	if slices.Contains(folders, "/opt/homebrew/bin") {
+		t.Errorf("Windows looks in Homebrew's folder: %q", folders)
+	}
+}
+
+func TestURIsOfWindowsPaths(t *testing.T) {
+	uri := pathToURI("C:/src/my app/main.go")
+	if uri != "file:///C:/src/my%20app/main.go" {
+		t.Errorf("URI %q", uri)
+	}
+	for _, from := range []string{uri, "file:///c%3A/src/my%20app/main.go"} {
+		path, err := uriToPath(from)
+		if err != nil || !strings.EqualFold(filepath.ToSlash(path), "C:/src/my app/main.go") {
+			t.Errorf("%q became %q, %v", from, path, err)
+		}
+	}
+	if got := pathToURI("/Users/a/main.go"); got != "file:///Users/a/main.go" {
+		t.Errorf("Unix URI %q", got)
+	}
+}
+
+func TestInstallCommandsFollowThePlatform(t *testing.T) {
+	clangd := installs{darwin: "brew install llvm", linux: "sudo apt install clangd", windows: "winget install LLVM.LLVM"}
+	if clangd.on("windows") != "winget install LLVM.LLVM" || clangd.on("freebsd") != "sudo apt install clangd" {
+		t.Errorf("clangd installs as %q on Windows", clangd.on("windows"))
+	}
+	if (installs{darwin: "brew install zls"}).on("linux") != "" {
+		t.Error("Linux is offered a Homebrew command")
 	}
 }

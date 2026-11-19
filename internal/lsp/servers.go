@@ -11,6 +11,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -37,19 +39,51 @@ type Server struct {
 	InitializationOptions json.RawMessage
 }
 
-// toolPath is the search path of programs. An app opened from the Dock inherits
-// a short PATH without the folders where developers install their tools.
+// defaultPathExt is the extensions of programs on Windows when PATHEXT is not
+// set.
+const defaultPathExt = ".COM;.EXE;.BAT;.CMD"
+
+// toolPath is the search path of programs. An app opened from the Dock or the
+// Start menu inherits a short PATH without the folders where developers
+// install their tools.
 var toolPath = sync.OnceValue(func() string {
 	folders := filepath.SplitList(os.Getenv("PATH"))
 	folders = append(folders, filepath.SplitList(loginShellPath())...)
-	if home, err := os.UserHomeDir(); err == nil {
-		for _, dir := range []string{"go/bin", ".cargo/bin", ".local/bin", ".bun/bin", ".volta/bin", ".npm-global/bin"} {
-			folders = append(folders, filepath.Join(home, dir))
-		}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = ""
 	}
-	folders = append(folders, "/opt/homebrew/bin", "/usr/local/bin", "/usr/local/go/bin")
+	folders = append(folders, toolFolders(runtime.GOOS, home, os.Getenv)...)
 	return strings.Join(uniqueFolders(folders), string(os.PathListSeparator))
 })
+
+// toolFolders are the folders where developers install tools on a platform,
+// which the PATH of an app may lack. Those under home are left out without
+// one, and those under a folder of the environment without it.
+func toolFolders(goos string, home string, getenv func(string) string) []string {
+	var folders []string
+	under := func(base string, dirs ...string) {
+		if base == "" {
+			return
+		}
+		for _, dir := range dirs {
+			folders = append(folders, filepath.Join(base, filepath.FromSlash(dir)))
+		}
+	}
+	under(home, "go/bin", ".cargo/bin", ".local/bin", ".bun/bin", ".volta/bin", ".npm-global/bin", ".dotnet/tools")
+	switch goos {
+	case "windows":
+		under(getenv("APPDATA"), "npm")
+		under(getenv("LOCALAPPDATA"), "Microsoft/WinGet/Links")
+		under(home, "scoop/shims")
+		under(getenv("ProgramFiles"), "LLVM/bin", "Go/bin")
+	case "darwin":
+		folders = append(folders, "/opt/homebrew/bin", "/usr/local/bin", "/usr/local/go/bin")
+	default:
+		folders = append(folders, "/usr/local/bin", "/usr/local/go/bin", "/snap/bin", "/home/linuxbrew/.linuxbrew/bin")
+	}
+	return folders
+}
 
 // loginShellPath asks the person's shell for its PATH, and is empty when the
 // shell does not answer in time.
@@ -87,18 +121,52 @@ func findProgram(server Server) (string, error) {
 		}
 		return "", fmt.Errorf("find %s: %w", server.Program, ErrServerMissing)
 	}
+	pathExt := os.Getenv("PATHEXT")
+	if pathExt == "" {
+		pathExt = defaultPathExt
+	}
 	for _, folder := range filepath.SplitList(toolPath()) {
 		// A relative folder of the search path would name a file of the project.
-		if candidate := filepath.Join(folder, server.Program); filepath.IsAbs(folder) && isProgram(candidate) {
-			return candidate, nil
+		if !filepath.IsAbs(folder) {
+			continue
+		}
+		for _, name := range programNames(runtime.GOOS, server.Program, pathExt) {
+			if candidate := filepath.Join(folder, name); isProgram(candidate) {
+				return candidate, nil
+			}
 		}
 	}
 	return "", fmt.Errorf("find %s: %w", server.Program, ErrServerMissing)
 }
 
+// programNames are the names a program's file may have: on Windows the name
+// with each extension of pathExt, unless it has one of them already.
+func programNames(goos string, program string, pathExt string) []string {
+	if goos != "windows" {
+		return []string{program}
+	}
+	extensions := strings.Split(strings.ToLower(pathExt), ";")
+	if slices.Contains(extensions, strings.ToLower(filepath.Ext(program))) {
+		return []string{program}
+	}
+	names := make([]string, 0, len(extensions))
+	for _, extension := range extensions {
+		if extension != "" {
+			names = append(names, program+extension)
+		}
+	}
+	return names
+}
+
+// isProgram reports whether a file can be run: one marked executable, or on
+// Windows, which has no such mark, any file, its extension having been chosen
+// from PATHEXT.
 func isProgram(file string) bool {
 	info, err := os.Stat(file)
-	return err == nil && !info.IsDir() && info.Mode()&0o111 != 0
+	if err != nil || info.IsDir() {
+		return false
+	}
+	return runtime.GOOS == "windows" || info.Mode()&0o111 != 0
 }
 
 // Installed reports whether a server's program can be found.

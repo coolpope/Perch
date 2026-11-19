@@ -243,5 +243,7 @@
   "notCommittedYet": "尚未提交",
   "blameFailed": "无法读取逐行追溯",
   "noFileHistory": "还没有提交改动过这个文件。",
-  "kindRenamed": "由 {path} 改名"
+  "kindRenamed": "由 {path} 改名",
+  "fileMenuRevealExplorer": "在资源管理器中显示",
+  "fileMenuRevealFolder": "打开所在文件夹"
 }

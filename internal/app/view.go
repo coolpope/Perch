@@ -2,6 +2,7 @@ package app
 
 import (
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
@@ -12,10 +13,12 @@ import (
 )
 
 const (
-	headerHeight     float32 = 40
-	pathBarHeight    float32 = 36
-	statusBarHeight  float32 = 24
-	trafficLightRoom float32 = 84
+	headerHeight    float32 = 40
+	pathBarHeight   float32 = 36
+	statusBarHeight float32 = 24
+	// controlsGap is the room left between the window's own controls and the
+	// first of Perch's beside them.
+	controlsGap      float32 = 8
 	markdownMaxWidth float32 = 780
 	// readingPadTop and readingPadSide are the room around rendered Markdown.
 	readingPadTop  float32 = 36
@@ -82,10 +85,19 @@ func (a *App) welcomeView(c *ui.Context) {
 			if ui.PrimaryButton(c, locales.OpenFolder()).Clicked() {
 				a.chooseFolder()
 			}
-			ui.Text(c, "⌘O").FontSize(smallFontSize).TextColor(colors.muted)
+			ui.Text(c, shortcutHint(runtime.GOOS, "O")).FontSize(smallFontSize).TextColor(colors.muted)
 			a.recentProjectsView(c)
 		})
 	})
+}
+
+// shortcutHint writes the shortcut of Command or Control with a key as the
+// platform shows it.
+func shortcutHint(goos string, key string) string {
+	if goos == "darwin" {
+		return "⌘" + key
+	}
+	return "Ctrl+" + key
 }
 
 func (a *App) sidebarView(c *ui.Context) {
@@ -121,7 +133,8 @@ func (a *App) panelView(c *ui.Context, content func()) {
 
 // sidebarHeaderView puts the sidebar's views beside the window's controls.
 func (a *App) sidebarHeaderView(c *ui.Context) {
-	ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).Gap(2).PaddingStart(trafficLightRoom).PaddingEnd(8).
+	bar := c.TitleBar()
+	ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).Gap(2).PaddingStart(bar.Left + controlsGap).PaddingEnd(8).
 		AlignItems(ui.Center).DragWindow().Children(func() {
 		if a.sidebarTabView(c, iconFiles, locales.TabFiles(), a.sidebarTab == sidebarFiles) {
 			a.sidebarTab = sidebarFiles
@@ -295,7 +308,10 @@ func (a *App) panelContentView(c *ui.Context) {
 func (a *App) tabsView(c *ui.Context) {
 	colors := a.look.palette
 	var closing *document
-	ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).PaddingStart(panelGap).PaddingEnd(panelMargin).Background(colors.sidebar).DragWindow().Children(func() {
+	// On Windows and Linux the window's controls sit at the end of the tabs.
+	bar := c.TitleBar()
+	ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).PaddingStart(panelGap).PaddingEnd(max(panelMargin, bar.Right+controlsGap)).
+		Background(colors.sidebar).DragWindow().Children(func() {
 		ui.ScrollHorizontal(c).Shrink(1).FillHeight().Children(func() {
 			ui.Row(c).FillHeight().Gap(4).AlignItems(ui.Center).Children(func() {
 				for i, d := range a.documents {

@@ -85,8 +85,19 @@ func ByteColumn(line string, character int) int {
 	return len(line)
 }
 
+// pathToURI returns the file URI of an absolute path. A Windows path starts
+// with its drive, which the URI puts after a slash: file:///C:/src.
 func pathToURI(path string) string {
-	return (&url.URL{Scheme: "file", Path: filepath.ToSlash(path)}).String()
+	slashed := filepath.ToSlash(path)
+	if hasDrive(slashed) {
+		slashed = "/" + slashed
+	}
+	return (&url.URL{Scheme: "file", Path: slashed}).String()
+}
+
+// hasDrive reports a path that starts with a Windows drive, as C:/.
+func hasDrive(path string) bool {
+	return len(path) >= 2 && path[1] == ':' && ('a' <= path[0]|0x20 && path[0]|0x20 <= 'z')
 }
 
 func uriToPath(uri string) (string, error) {
@@ -97,7 +108,11 @@ func uriToPath(uri string) (string, error) {
 	if parsed.Scheme != "file" {
 		return "", fmt.Errorf("read location %q: not a file", uri)
 	}
-	return filepath.FromSlash(parsed.Path), nil
+	path := parsed.Path
+	if strings.HasPrefix(path, "/") && hasDrive(path[1:]) {
+		path = path[1:]
+	}
+	return filepath.FromSlash(path), nil
 }
 
 // wireMessage is a message of the protocol, in either direction.

@@ -1386,7 +1386,7 @@ func TestSidebarTooltipStaysClearOfTheWindowControls(t *testing.T) {
 	tester.Frame()
 
 	const buttonBottom float32 = (headerHeight + sidebarTabHeight) / 2
-	tester.Move(trafficLightRoom+sidebarTabWidth/2, headerHeight/2)
+	tester.Move(controlsGap+sidebarTabWidth/2, headerHeight/2)
 	tester.Advance(2 * time.Second)
 	tester.Frame()
 	tip, shown := tester.AccessByRole(ui.RoleTooltip, "")

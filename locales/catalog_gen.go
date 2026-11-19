@@ -2485,3 +2485,23 @@ func KindRenamed(path string) string { return In(i18n.Locale()).KindRenamed(path
 func (msgs Messages) KindRenamed(path string) string {
 	return Catalog.Format(msgs.locale, "kindRenamed", map[string]any{"path": path})
 }
+
+// FileMenuRevealExplorer says "Show in Explorer"
+// in the language the app shows.
+func FileMenuRevealExplorer() string { return In(i18n.Locale()).FileMenuRevealExplorer() }
+
+// FileMenuRevealExplorer says "Show in Explorer"
+// in the language of msgs.
+func (msgs Messages) FileMenuRevealExplorer() string {
+	return Catalog.Format(msgs.locale, "fileMenuRevealExplorer", nil)
+}
+
+// FileMenuRevealFolder says "Open Containing Folder"
+// in the language the app shows.
+func FileMenuRevealFolder() string { return In(i18n.Locale()).FileMenuRevealFolder() }
+
+// FileMenuRevealFolder says "Open Containing Folder"
+// in the language of msgs.
+func (msgs Messages) FileMenuRevealFolder() string {
+	return Catalog.Format(msgs.locale, "fileMenuRevealFolder", nil)
+}

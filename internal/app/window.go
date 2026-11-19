@@ -30,7 +30,9 @@ func (a *App) show(root string, placement windowPlacement) {
 		// The sidebar and the tabs run under the window's controls.
 		TitleBarStyle:        mygo.TitleBarHidden,
 		TrafficLightPosition: &mygo.Point{X: 16, Y: 13},
-		Content:              ui.View(a.view),
+		// The controls of Windows and Linux fill the height of the tabs.
+		TitleBarHeight: int(headerHeight),
+		Content:        ui.View(a.view),
 	})
 	a.window.OnClose(a.handleWindowClose)
 	if root != "" {
