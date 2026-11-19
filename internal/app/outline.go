@@ -257,7 +257,9 @@ func sortOutlineSymbols(symbols []outlineSymbol) {
 // markdownOutlineSymbols reads the headings of the buffer without a language
 // server, nesting each level under the heading before it.
 func markdownOutlineSymbols(d *document) []outlineSymbol {
-	source := d.editor.Buffer.String()
+	full := d.editor.Buffer.String()
+	skipped := splitFrontMatter(full).size
+	source := full[skipped:]
 	doc := parser.Parse(source)
 	type level struct {
 		value int
@@ -284,7 +286,7 @@ func markdownOutlineSymbols(d *document) []outlineSymbol {
 		if len(stack) > 0 {
 			container = stack[len(stack)-1].name
 		}
-		line := d.editor.Buffer.Pos(block.Start).Line
+		line := d.editor.Buffer.Pos(block.Start + skipped).Line
 		span := lsp.Range{
 			Start: lsp.Position{Line: line, Character: 0},
 			End:   lsp.Position{Line: line, Character: 0},

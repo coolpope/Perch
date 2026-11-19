@@ -316,20 +316,21 @@ func (a *App) newChangePreview(change review.Change, text string) *document {
 		return nil
 	}
 	a.attachMarkdownActions(d)
-	plain := &markdown.Options{LoadImage: d.markdownOptions.LoadImage, OnLink: d.markdownOptions.OnLink, HTML: d.markdownOptions.HTML}
+	plain := &markdown.Options{Theme: a.look.markdown, LoadImage: d.markdownOptions.LoadImage, OnLink: d.markdownOptions.OnLink, HTML: d.markdownOptions.HTML}
 	d.markdownOptions.Block = func(c *ui.Context, doc *parser.Document, index int) bool {
-		return a.changedBlockView(c, doc, index, plain)
+		return a.changedBlockView(c, doc, index, plain, d.previewFront.size)
 	}
 	return d
 }
 
-// changedBlockView marks a top-level block whose lines changed.
-func (a *App) changedBlockView(c *ui.Context, doc *parser.Document, index int, plain *markdown.Options) bool {
+// changedBlockView marks a top-level block whose lines changed. Its offsets
+// count from the end of the front matter, which takes the first skipped bytes.
+func (a *App) changedBlockView(c *ui.Context, doc *parser.Document, index int, plain *markdown.Options, skipped int) bool {
 	block := doc.Block(index)
 	if block.Parent != 0 {
 		return false
 	}
-	if !touchesRanges(a.review.marks, sourceLines(a.review.lineStarts, block.Start, block.End)) {
+	if !touchesRanges(a.review.marks, sourceLines(a.review.lineStarts, block.Start+skipped, block.End+skipped)) {
 		return false
 	}
 	accent := a.look.palette.accent
@@ -709,7 +710,8 @@ func (a *App) renderedChangeView(c *ui.Context) {
 	r := &a.review
 	r.marks = changedRanges(r.diff.Hunks())
 	ui.Scroll(c).Grow(1).FillWidth().Padding(28, 32).AlignItems(ui.Center).Children(func() {
-		markdown.View(c, r.preview.markdownText(), r.preview.markdownOptions).MaxWidth(markdownMaxWidth).FillWidth()
+		r.preview.markdownOptions.Theme = a.look.markdown
+		a.markdownPreviewView(c, r.preview, func(body string) ui.Element { return markdown.View(c, body, r.preview.markdownOptions) })
 	})
 }
 

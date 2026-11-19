@@ -71,7 +71,9 @@ type document struct {
 	markdownOptions *markdown.Options
 	// previewText holds the rendered source only once a preview has shown,
 	// so that code files keep one copy of their text in memory.
-	previewText    string
+	previewText string
+	// previewFront is the front matter the rendered text starts after.
+	previewFront   frontMatter
 	previewVersion uint64
 	previewLoaded  bool
 	// htmlParsed keeps the HTML blocks of the preview, which build every
@@ -143,12 +145,15 @@ func (d *document) showsPreview() bool {
 	return d.isMarkdown() && d.markdownView == markdownPreview
 }
 
-// markdownText returns the text to render, reading the buffer only after
-// it changes rather than on every frame.
+// markdownText returns the text to render, without the front matter, which
+// previewFront keeps. It reads the buffer only after it changes rather than
+// on every frame.
 func (d *document) markdownText() string {
 	version := d.editor.Buffer.Version()
 	if !d.previewLoaded || version != d.previewVersion {
-		d.previewText = d.editor.Buffer.String()
+		full := d.editor.Buffer.String()
+		d.previewFront = splitFrontMatter(full)
+		d.previewText = full[d.previewFront.size:]
 		d.previewVersion = version
 		d.previewLoaded = true
 		d.htmlParsed = map[string][]htmlblock.Block{}

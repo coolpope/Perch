@@ -16,9 +16,12 @@ const (
 	pathBarHeight    float32 = 36
 	statusBarHeight  float32 = 24
 	trafficLightRoom float32 = 84
-	markdownMaxWidth float32 = 760
-	smallFontSize    float32 = 12
-	iconFontSize     float32 = 14
+	markdownMaxWidth float32 = 780
+	// readingPadTop and readingPadSide are the room around rendered Markdown.
+	readingPadTop  float32 = 36
+	readingPadSide float32 = 40
+	smallFontSize  float32 = 12
+	iconFontSize   float32 = 14
 
 	sidebarTabWidth    float32 = 34
 	sidebarTabHeight   float32 = 28
@@ -426,8 +429,9 @@ func (a *App) documentView(c *ui.Context, d *document) {
 		return
 	}
 	if d.showsPreview() {
-		ui.Scroll(c).TrackScroll(&d.previewScroll).Grow(1).FillWidth().Padding(28, 32).AlignItems(ui.Center).Children(func() {
-			markdown.View(c, d.markdownText(), d.markdownOptions).MaxWidth(markdownMaxWidth).FillWidth()
+		d.markdownOptions.Theme = a.look.markdown
+		ui.Scroll(c).TrackScroll(&d.previewScroll).Grow(1).FillWidth().Padding(readingPadTop, readingPadSide).AlignItems(ui.Center).Children(func() {
+			a.markdownPreviewView(c, d, func(body string) ui.Element { return markdown.View(c, body, d.markdownOptions) })
 		})
 		return
 	}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
+	"github.com/egoist/mygo/ui/markdown"
 
 	"perch/internal/settings"
 )
@@ -71,6 +72,9 @@ type look struct {
 	// that the main panel stands on its own.
 	shell *ui.Theme
 	code  *editor.Theme
+	// markdown is how rendered Markdown reads: a document's typography
+	// rather than a chat's, in the theme's colors.
+	markdown *markdown.Theme
 	// grain is the tile of the theme's paper grain, nil for a smooth theme.
 	grain *ui.Bitmap
 }
@@ -105,7 +109,8 @@ func newLook(base *ui.Theme, colors palette) *look {
 	tree.InactiveAccent = colors.hover
 	shell := theme
 	shell.Border = colors.sidebar
-	made := &look{palette: colors, theme: &theme, tree: &tree, shell: &shell, code: newCodeTheme(&theme, colors)}
+	code := newCodeTheme(&theme, colors)
+	made := &look{palette: colors, theme: &theme, tree: &tree, shell: &shell, code: code, markdown: newMarkdownTheme(colors, code)}
 	if colors.grain > 0 {
 		made.grain = ui.NewBitmap(grainImage(colors.grain, base.Dark))
 	}
@@ -148,6 +153,65 @@ func newCodeTheme(theme *ui.Theme, colors palette) *editor.Theme {
 	}
 	code.Tokens[editor.TokenComment].Italic = true
 	return code
+}
+
+// The typography of rendered Markdown, in the units markdown.Theme takes.
+const (
+	readingFontSize    float32 = 15
+	readingLineHeight  float32 = 1.65
+	readingCodeHeight  float32 = 1.5
+	readingBlockSpace  float32 = 1
+	readingItemSpace   float32 = 0.15
+	readingListIndent  float32 = 1.8
+	readingCodeSize    float32 = 0.86
+	readingCodePadding float32 = 1
+	readingQuoteBar    float32 = 3
+)
+
+// newMarkdownTheme reads like a project's documentation: larger text, room
+// between blocks, ruled top headings, links in the accent, and code in the
+// editor's own colors.
+func newMarkdownTheme(colors palette, code *editor.Theme) *markdown.Theme {
+	theme := &markdown.Theme{
+		FontSize:            readingFontSize,
+		LineHeight:          readingLineHeight,
+		CodeLineHeight:      readingCodeHeight,
+		Text:                colors.text,
+		Muted:               colors.muted,
+		Link:                colors.accent,
+		Strong:              colors.text,
+		StrongWeight:        600,
+		Code:                colors.code,
+		CodeBackground:      colors.text.Alpha(0.07),
+		CodeSize:            readingCodeSize,
+		BlockSpacing:        readingBlockSpace,
+		ItemSpacing:         readingItemSpace,
+		ListIndent:          readingListIndent,
+		QuoteBar:            colors.muted.Alpha(0.35),
+		QuoteText:           colors.muted,
+		QuoteBarWidth:       readingQuoteBar,
+		Rule:                colors.border,
+		CodeBlockBackground: colors.sidebar,
+		CodeBlockBorder:     colors.border,
+		CodeBlockRadius:     radiusControl,
+		CodeBlockPadding:    readingCodePadding,
+		CodeColors:          code,
+		TableBorder:         colors.border,
+		TableHeader:         colors.sidebar,
+		TableStripe:         colors.sidebar.Alpha(0.5),
+		TableCellPadding:    [2]float32{0.85, 0.5},
+		Checkbox:            colors.accent,
+	}
+	sizes := [6]float32{2, 1.5, 1.25, 1.05, 0.95, 0.9}
+	for level := range theme.Headings {
+		heading := markdown.HeadingStyle{Size: sizes[level], Weight: 600, Color: colors.text, Top: 1.4, Bottom: 0.5}
+		if level < 2 {
+			heading.Top, heading.Bottom, heading.Rule = 1.6, 0.7, true
+		}
+		theme.Headings[level] = heading
+	}
+	theme.Headings[5].Color = colors.muted
+	return theme
 }
 
 // lookFor returns the look of the chosen theme in the window's appearance,
