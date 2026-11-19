@@ -63,6 +63,7 @@ type App struct {
 	history       historyPanel
 	status        treeStatus
 	fileHistory   fileHistory
+	fileIcons     fileIconCache
 	definition    definitionState
 	// projectSymbols is the finder of symbols across the project.
 	projectSymbols projectSymbolsState
@@ -154,6 +155,7 @@ func (a *App) loadFolder(root string) error {
 	a.root = absolute
 	a.entries = map[string]workspace.Entry{}
 	a.children = map[string][]string{}
+	a.fileIcons = fileIconCache{}
 	a.tree = ui.OutlineState[string]{}
 	a.treeRow = noRow
 	a.closingDocument = nil

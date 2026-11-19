@@ -101,3 +101,5 @@ golangci-lint run
 ## 许可证
 
 [MIT](LICENSE)
+
+文件图标来自 Elior "Mallowigi" Boukhobza 的 [Atom Material Icons](https://github.com/AtomMaterialUI/iconGenerator)，使用 [MIT 许可证](internal/fileicons/assets/LICENSE)。

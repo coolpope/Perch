@@ -101,3 +101,5 @@ To add another language, choose **Open Configuration File** on that page and add
 ## License
 
 [MIT](LICENSE)
+
+File icons come from [Atom Material Icons](https://github.com/AtomMaterialUI/iconGenerator) by Elior "Mallowigi" Boukhobza, under the [MIT license](internal/fileicons/assets/LICENSE).

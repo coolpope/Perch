@@ -1,9 +1,6 @@
 package app
 
 import (
-	"path"
-	"strings"
-
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/egoist/mygo/ui/markdown"
@@ -224,22 +221,6 @@ func (a *App) lookFor(base *ui.Theme) *look {
 		a.looks[key] = made
 	}
 	return made
-}
-
-// fileTint colors a file's icon by the kind of file it is.
-func fileTint(name string, colors palette) ui.Color {
-	switch strings.ToLower(path.Ext(name)) {
-	case ".go", ".rs", ".py", ".rb", ".java", ".c", ".h", ".cpp", ".swift":
-		return colors.typeName
-	case ".ts", ".tsx", ".js", ".jsx", ".css", ".html", ".vue", ".svelte":
-		return colors.function
-	case ".md", ".markdown", ".mdx", ".txt":
-		return colors.accent
-	case ".json", ".yaml", ".yml", ".toml", ".mod", ".sum", ".lock":
-		return colors.number
-	default:
-		return colors.muted
-	}
 }
 
 const iconAttributes = `xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"`

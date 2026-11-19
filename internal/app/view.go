@@ -33,7 +33,11 @@ const (
 	minSidebarWidth    float32 = 232
 
 	tabHeight   float32 = 30
-	panelMargin float32 = 8
+	tabIconSize float32 = 13
+	// inactiveTabIconAlpha quiets the icons of the tabs behind the chosen one,
+	// as their names are.
+	inactiveTabIconAlpha float32 = 0.7
+	panelMargin          float32 = 8
 	// panelGap is the space each panel keeps from the divider between them.
 	panelGap     float32 = 4
 	treeRowInset float32 = 8
@@ -213,14 +217,7 @@ func (a *App) treeRowView(c *ui.Context, item string) {
 	ignored := a.treeRowIgnored(item)
 	quiet := colors.muted.Alpha(ignoredRowAlpha)
 	ui.Row(c).Grow(1).FillWidth().Gap(7).AlignItems(ui.Center).Children(func() {
-		icon, tint := iconFile, fileTint(entry.Name, colors)
-		if entry.IsDir {
-			icon, tint = iconFolder, colors.muted
-		}
-		if ignored {
-			tint = quiet
-		}
-		ui.Icon(c, icon).FontSize(iconFontSize).TextColor(tint)
+		a.treeIconView(c, item, entry.IsDir, ignored)
 		name := ui.Text(c, entry.Name).MaxLines(1).Shrink(1)
 		if color, changed := a.treeNameColor(item); changed {
 			name.TextColor(color)
@@ -343,6 +340,10 @@ func (a *App) tabView(c *ui.Context, d *document, active bool, index int) bool {
 	}
 	hovered := tab.Hovered()
 	tab.Children(func() {
+		icon := a.fileIconView(c, d.path, tabIconSize)
+		if !active {
+			icon.Opacity(inactiveTabIconAlpha)
+		}
 		name := ui.Text(c, d.name()).MaxLines(1).Padding(0, 0, tabTextLift, 0)
 		if !active {
 			name.TextColor(colors.muted)

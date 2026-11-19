@@ -208,7 +208,7 @@ func (a *App) quickOpenRow(c *ui.Context, index int) bool {
 	row := a.finderRow(c, a.quick.chosen, index)
 	clicked := row.Clicked()
 	row.Children(func() {
-		ui.Icon(c, iconFile).FontSize(iconFontSize).TextColor(fileTint(name, colors))
+		a.fileIconView(c, match.Path, iconFontSize)
 		markedText(c, name, marksFrom(match.Positions, len(match.Path)-len(name)), colors.text, colors.accent)
 		if dir != "." {
 			ui.Text(c, dir).FontSize(smallFontSize).TextColor(colors.muted).MaxLines(1).Shrink(1)

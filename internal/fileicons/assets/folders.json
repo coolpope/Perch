@@ -1,0 +1,4475 @@
+[
+ {
+  "names": [
+   ".acf",
+   "acf",
+   "_acf",
+   ".acf-json"
+  ],
+  "icon": "acf"
+ },
+ {
+  "names": [
+   ".acre",
+   "acre",
+   "_acre"
+  ],
+  "icon": "acre"
+ },
+ {
+  "names": [
+   "adapter",
+   ".adapter",
+   "_adapter",
+   "adapters",
+   ".adapters",
+   "_adapters"
+  ],
+  "icon": "adapter"
+ },
+ {
+  "names": [
+   "addon",
+   "addons",
+   "_addon",
+   "_addons",
+   ".addon",
+   ".addons",
+   ".addin",
+   ".addins"
+  ],
+  "icon": "addon"
+ },
+ {
+  "names": [
+   "admin",
+   "_admin",
+   ".admin",
+   ".admins",
+   "admins",
+   "manager",
+   "managers",
+   "_managers",
+   "moderator",
+   ".moderator",
+   "moderators",
+   "_moderators"
+  ],
+  "icon": "admin"
+ },
+ {
+  "names": [
+   "adr",
+   "adrs",
+   ".adr",
+   "decision",
+   "decisions",
+   ".decision",
+   ".decisions",
+   "_decision",
+   "_decisions"
+  ],
+  "icon": "adr"
+ },
+ {
+  "names": [
+   ".agda",
+   "_agda",
+   "agda"
+  ],
+  "icon": "agda"
+ },
+ {
+  "names": [
+   ".aiassistant",
+   "_aiassistant",
+   ".ai",
+   "ai",
+   "_ai"
+  ],
+  "icon": "ai"
+ },
+ {
+  "names": [
+   "airflow",
+   ".airflow",
+   "_airflow",
+   "dags",
+   ".dags",
+   "_dags"
+  ],
+  "icon": "airflow"
+ },
+ {
+  "names": [
+   "alacritty",
+   ".alacritty",
+   "_alacritty"
+  ],
+  "icon": "alacritty"
+ },
+ {
+  "names": [
+   "amplication",
+   ".amplication",
+   "_amplication"
+  ],
+  "icon": "amplication"
+ },
+ {
+  "names": [
+   "android",
+   "androidApp",
+   ".android",
+   "_android"
+  ],
+  "icon": "android"
+ },
+ {
+  "names": [
+   "angular",
+   ".angular",
+   "_angular",
+   "ng",
+   ".ng",
+   "_ng",
+   "ngApp",
+   ".ngApp",
+   "_ngApp"
+  ],
+  "icon": "angular"
+ },
+ {
+  "names": [
+   "animation",
+   "animations",
+   "anims",
+   "anim",
+   ".anim",
+   "_anim",
+   ".animations",
+   "_animation",
+   "animated",
+   ".animated",
+   "_animated",
+   "motions",
+   ".motions",
+   "transition",
+   ".transitions",
+   "_transitions",
+   "easings",
+   ".easing",
+   "houdini",
+   ".houdini",
+   "greensock",
+   ".greensock"
+  ],
+  "icon": "animations"
+ },
+ {
+  "names": [
+   "group_vars",
+   "host_vars",
+   "vars",
+   "roles",
+   ".group_vars",
+   "_roles",
+   "_host_vars",
+   ".vars",
+   "_playbooks",
+   "playbooks",
+   "ansible",
+   "_ansible",
+   ".ansible",
+   "collections"
+  ],
+  "icon": "ansible"
+ },
+ {
+  "names": [
+   ".api",
+   ".apis",
+   ".rest",
+   "api",
+   "apis",
+   "rest",
+   "_api",
+   "parsers",
+   ".parsers",
+   "_parsers"
+  ],
+  "icon": "api"
+ },
+ {
+  "names": [
+   "apollo",
+   ".apollo",
+   "apollo-client",
+   ".apollo-cache",
+   "_apollo-config"
+  ],
+  "icon": "apollo"
+ },
+ {
+  "names": [
+   "app",
+   "application",
+   "apps",
+   "applications",
+   ".app",
+   ".application",
+   "_app",
+   "_application",
+   "sdk",
+   "sdks",
+   ".sdk",
+   "_sdks"
+  ],
+  "icon": "app"
+ },
+ {
+  "names": [
+   "appwrite",
+   ".appwrite",
+   "_appwrite"
+  ],
+  "icon": "appwrite"
+ },
+ {
+  "names": [
+   ".xcworkspace",
+   ".xcodeproj"
+  ],
+  "icon": "appstore"
+ },
+ {
+  "names": [
+   "archetypes",
+   "archetype",
+   "_archetype",
+   "_archetypes",
+   "schematic",
+   "_schematics"
+  ],
+  "icon": "archetype"
+ },
+ {
+  "names": [
+   "archive",
+   "archives",
+   "jar",
+   "jars",
+   "zip",
+   "zips",
+   "backups",
+   "backup",
+   ".archives",
+   "_jar",
+   ".jars",
+   ".zip",
+   "_backups"
+  ],
+  "icon": "archive"
+ },
+ {
+  "names": [
+   "article",
+   "articles",
+   ".article",
+   ".articles",
+   "_articles",
+   "blog",
+   "blogs",
+   ".blog",
+   ".blogs",
+   "_blogs",
+   "news",
+   ".news",
+   "_news"
+  ],
+  "icon": "article"
+ },
+ {
+  "names": [
+   ".artx",
+   "art",
+   "arts",
+   "wordart",
+   "wordarts"
+  ],
+  "icon": "arttext"
+ },
+ {
+  "names": [
+   "assembly",
+   "asm",
+   ".asm",
+   "_assembly",
+   "_asm"
+  ],
+  "icon": "assembly"
+ },
+ {
+  "names": [
+   "astro",
+   ".astro",
+   "_astro"
+  ],
+  "icon": "astro"
+ },
+ {
+  "names": [
+   "atom",
+   "atoms",
+   ".atom",
+   ".atom-ci",
+   ".atoms",
+   "_atom",
+   "_atoms"
+  ],
+  "icon": "atom"
+ },
+ {
+  "names": [
+   ".caction",
+   ".definition",
+   ".workflow",
+   "_automations",
+   "_cactions",
+   "_definitions",
+   "_workflows"
+  ],
+  "icon": "automator"
+ },
+ {
+  "names": [
+   "mp3",
+   "wav",
+   "music",
+   "musics",
+   "audio",
+   "sound",
+   "sounds",
+   ".mp3",
+   "_wav",
+   "_musics",
+   ".audio",
+   ".sounds",
+   "bgm",
+   "bgms",
+   "_bgms",
+   "soundtrack",
+   "soundtracks",
+   "_soundtracks",
+   "ost",
+   "osts",
+   "_osts",
+   "voice",
+   ".voices",
+   "_voices",
+   "recordings",
+   ".recording",
+   "_recordings"
+  ],
+  "icon": "audio"
+ },
+ {
+  "names": [
+   "aurelia_project",
+   ".aurelia_project",
+   "_aurelia_project"
+  ],
+  "icon": "aurelia"
+ },
+ {
+  "names": [
+   "aws",
+   ".aws",
+   "_aws",
+   "amazon",
+   "_amazon",
+   ".amazon",
+   "s3",
+   "_s3",
+   ".s3",
+   "ecs",
+   ".ecs",
+   "_ecs",
+   "ecr",
+   "_ecr",
+   ".ecr",
+   "tableau",
+   ".tableau",
+   "cloudfront",
+   "_cloudfront",
+   "athena",
+   ".athena",
+   "cloudflare"
+  ],
+  "icon": "aws"
+ },
+ {
+  "names": [
+   "azure",
+   ".azure",
+   "_azure",
+   "azuredevops",
+   "azure-devops",
+   ".azuredevops",
+   "_azure-devop"
+  ],
+  "icon": "azure-devops"
+ },
+ {
+  "names": [
+   "azurepipelines",
+   "azure-pipelines",
+   ".azurepipelines",
+   "_azure-pipelines"
+  ],
+  "icon": "azure-pipelines"
+ },
+ {
+  "names": [
+   "base",
+   "abstract",
+   ".base",
+   ".abstract",
+   "_bases",
+   "_abstracts",
+   "parent",
+   ".parent",
+   "_parents"
+  ],
+  "icon": "base"
+ },
+ {
+  "names": [
+   ".bzr",
+   "_bzr",
+   "bzr"
+  ],
+  "icon": "bazaar"
+ },
+ {
+  "names": [
+   "benchmark",
+   "benchmarks",
+   ".benchmark",
+   "_benchmarks",
+   "measures",
+   ".measures",
+   "_measures",
+   "perf",
+   ".perf",
+   "_perf",
+   "performance",
+   "_performance",
+   "hprof",
+   ".hprof",
+   "performances",
+   "_performances",
+   "profiler",
+   "profilers",
+   ".profiler",
+   "_profilers"
+  ],
+  "icon": "benchmark"
+ },
+ {
+  "names": [
+   ".bitcoin"
+  ],
+  "icon": "bitcoin"
+ },
+ {
+  "names": [
+   "bloc",
+   "blocs",
+   ".bloc",
+   "_blocs"
+  ],
+  "icon": "bloc"
+ },
+ {
+  "names": [
+   "blueprint",
+   "blueprints",
+   ".blueprint",
+   "_blueprints"
+  ],
+  "icon": "blueprint"
+ },
+ {
+  "names": [
+   "bot",
+   "bots",
+   ".bot",
+   "_bots",
+   "robot",
+   "robots",
+   ".robot",
+   "_robots",
+   "agent",
+   "agents",
+   ".agent",
+   "_agents"
+  ],
+  "icon": "bot"
+ },
+ {
+  "names": [
+   "bower_components",
+   ".bower_components",
+   "_bower_components"
+  ],
+  "icon": "bower"
+ },
+ {
+  "names": [
+   ".buildkite",
+   "buildkite",
+   "_buildkite"
+  ],
+  "icon": "buildkite"
+ },
+ {
+  "names": [
+   ".cabal"
+  ],
+  "icon": "cabal"
+ },
+ {
+  "names": [
+   ".cake",
+   "cake",
+   "_cake"
+  ],
+  "icon": "cake"
+ },
+ {
+  "names": [
+   "cart",
+   "carts",
+   ".cart",
+   ".carts",
+   "_cart",
+   "shop",
+   "shops",
+   ".shop",
+   "basket",
+   "baskets",
+   "_basket",
+   ".baskets",
+   "marketing",
+   ".marketing",
+   "products",
+   ".products",
+   "sku",
+   "skus",
+   ".sku",
+   ".skus"
+  ],
+  "icon": "cart"
+ },
+ {
+  "names": [
+   "channel",
+   "channels",
+   ".channel",
+   "_channels"
+  ],
+  "icon": "channels"
+ },
+ {
+  "names": [
+   "graph",
+   "graphs",
+   ".graph",
+   "_graphs",
+   "metric",
+   "metrics",
+   ".metric",
+   "_metrics",
+   "analytics",
+   ".analytics",
+   "_analytics",
+   "d3",
+   ".d3",
+   "_d3"
+  ],
+  "icon": "charts"
+ },
+ {
+  "names": [
+   ".chef",
+   "chef",
+   "recipe",
+   "recipes",
+   "_chef",
+   ".recipes",
+   "_recipe"
+  ],
+  "icon": "chef"
+ },
+ {
+  "names": [
+   "ci",
+   "integration",
+   "integrations",
+   ".ci",
+   "_ci",
+   "_integrations",
+   ".integration"
+  ],
+  "icon": "ci"
+ },
+ {
+  "names": [
+   "client",
+   ".client",
+   "_client",
+   "clients",
+   "_clients",
+   "frontend",
+   ".frontend",
+   "pwa",
+   "_pwa",
+   ".pwa",
+   "spa",
+   ".spa"
+  ],
+  "icon": "client"
+ },
+ {
+  "names": [
+   ".circleci",
+   "circleci",
+   "_circleci"
+  ],
+  "icon": "circleci"
+ },
+ {
+  "names": [
+   "cluster",
+   "clusters",
+   "node",
+   "nodes",
+   ".cluster",
+   "_clusters",
+   ".nodes",
+   "_node"
+  ],
+  "icon": "cluster"
+ },
+ {
+  "names": [
+   "cmake",
+   ".cmake",
+   "_cmake"
+  ],
+  "icon": "cmake"
+ },
+ {
+  "names": [
+   "cnab",
+   ".cnab",
+   "_cnab"
+  ],
+  "icon": "cnab"
+ },
+ {
+  "names": [
+   "cobol",
+   ".cobol",
+   "_cobol"
+  ],
+  "icon": "cobol"
+ },
+ {
+  "names": [
+   "codesandbox",
+   ".codesandbox",
+   "_codesandbox"
+  ],
+  "icon": "codesandbox"
+ },
+ {
+  "names": [
+   "component",
+   "components",
+   "widget",
+   "widgets",
+   "element",
+   "elements",
+   "ui",
+   ".components",
+   "_widget",
+   ".widgets",
+   ".elements",
+   "directive",
+   ".directives",
+   "_directives"
+  ],
+  "icon": "components"
+ },
+ {
+  "names": [
+   "composer",
+   ".composer",
+   "_composer"
+  ],
+  "icon": "composer"
+ },
+ {
+  "names": [
+   "conductor",
+   ".conductor",
+   "_conductor",
+   "conductors",
+   ".conductors",
+   "_conductors"
+  ],
+  "icon": "conductor"
+ },
+ {
+  "names": [
+   "cfg",
+   ".cfg",
+   "_cfg",
+   "config",
+   "conf",
+   "settings",
+   ".config",
+   ".conf",
+   ".settings",
+   "_config",
+   "_conf",
+   "_settings",
+   "configuration",
+   ".configuration",
+   ".configs",
+   "_setting",
+   ".option",
+   "options",
+   "pref",
+   ".prefs",
+   "preferences",
+   "_preferences"
+  ],
+  "icon": "config"
+ },
+ {
+  "names": [
+   "connect",
+   "_connect",
+   "connection",
+   ".connections",
+   "_connections",
+   "rel",
+   ".rel",
+   "_relation",
+   "relations",
+   ".relations",
+   "link",
+   ".link",
+   "links",
+   "_links"
+  ],
+  "icon": "connection"
+ },
+ {
+  "names": [
+   "container",
+   "containers",
+   ".container",
+   "_containers",
+   "devcontainer",
+   ".devcontainers",
+   "_devcontainers"
+  ],
+  "icon": "container"
+ },
+ {
+  "names": [
+   "content",
+   "contents",
+   "cont",
+   ".cont",
+   "_contents",
+   ".contents",
+   "context",
+   ".context",
+   "_context"
+  ],
+  "icon": "content"
+ },
+ {
+  "names": [
+   "contract",
+   ".contract",
+   "_contracts",
+   "contracts",
+   "pacts",
+   ".pact",
+   "_pacts"
+  ],
+  "icon": "contract"
+ },
+ {
+  "names": [
+   "constant",
+   "constants",
+   "const",
+   ".const",
+   "_const",
+   "_constant",
+   ".constants",
+   "enum",
+   "_enum",
+   ".enums"
+  ],
+  "icon": "constants"
+ },
+ {
+  "names": [
+   "controller",
+   "controllers",
+   "ctrl",
+   "ctrls",
+   ".controller",
+   ".controllers",
+   ".ctrl",
+   "_ctrls"
+  ],
+  "icon": "controllers"
+ },
+ {
+  "names": [
+   "bin",
+   "core",
+   "support",
+   "io",
+   ".bin",
+   ".core",
+   "_support",
+   "_io",
+   "binary",
+   "_binary"
+  ],
+  "icon": "core"
+ },
+ {
+  "names": [
+   "coverage",
+   ".coverage",
+   "_coverage"
+  ],
+  "icon": "coverage"
+ },
+ {
+  "names": [
+   "crate",
+   "crates",
+   ".crate",
+   "_crates"
+  ],
+  "icon": "crates"
+ },
+ {
+  "names": [
+   "cron",
+   "scheduler",
+   ".cron",
+   "_cron",
+   ".scheduler",
+   "_scheduler",
+   "cronjobs",
+   ".cronjobs",
+   "_cronjobs"
+  ],
+  "icon": "cron"
+ },
+ {
+  "names": [
+   "crossplane",
+   ".crossplane",
+   "_crossplane"
+  ],
+  "icon": "crossplane"
+ },
+ {
+  "names": [
+   "cubit",
+   "cubits",
+   ".cubit",
+   "_cubits"
+  ],
+  "icon": "cubit"
+ },
+ {
+  "names": [
+   "cue.mod"
+  ],
+  "icon": "cue"
+ },
+ {
+  "names": [
+   "custom",
+   ".custom",
+   "_custom",
+   "random",
+   ".random",
+   "_random"
+  ],
+  "icon": "custom"
+ },
+ {
+  "names": [
+   "cursor",
+   ".cursor",
+   "_cursor"
+  ],
+  "icon": "cursor"
+ },
+ {
+  "names": [
+   "CVS"
+  ],
+  "icon": "cvs"
+ },
+ {
+  "names": [
+   "cypress",
+   ".cypress",
+   "_cypress"
+  ],
+  "icon": "cypress"
+ },
+ {
+  "names": [
+   "dapr",
+   ".dapr",
+   "_dapr"
+  ],
+  "icon": "dapr"
+ },
+ {
+  "names": [
+   "dart",
+   ".dart",
+   "_dart",
+   "dart_tools",
+   ".dart_tools",
+   "_dart_tools",
+   "dart_tool",
+   "_dart_tool"
+  ],
+  "icon": "dart"
+ },
+ {
+  "names": [
+   "db",
+   "migrate",
+   "migrations",
+   "database",
+   "repo",
+   "repos",
+   "repositories",
+   "repository",
+   ".db",
+   "_db",
+   "_migrate",
+   ".migrations",
+   ".database",
+   "_database",
+   ".repos",
+   "_repos",
+   "_repository"
+  ],
+  "icon": "db"
+ },
+ {
+  "names": [
+   "deb",
+   "debian",
+   ".deb",
+   ".debian",
+   "_deb",
+   "_debian"
+  ],
+  "icon": "debian"
+ },
+ {
+  "names": [
+   "debug",
+   "debugging",
+   "_debug",
+   ".debug",
+   "_debugging",
+   "bug",
+   "bugs",
+   ".bug",
+   ".bugs",
+   "_bugs"
+  ],
+  "icon": "debug"
+ },
+ {
+  "names": [
+   "decorators",
+   "decorator",
+   ".decorators",
+   ".decorator",
+   "_decorators",
+   "_decorator",
+   "annotations",
+   "annotation",
+   ".annotations",
+   ".annotation",
+   "_annotations",
+   "_annotation"
+  ],
+  "icon": "decorators"
+ },
+ {
+  "names": [
+   "delta",
+   "deltas",
+   "diff",
+   ".delta",
+   "_delta",
+   ".deltas",
+   "_diff",
+   ".diff"
+  ],
+  "icon": "delta"
+ },
+ {
+  "names": [
+   ".deno",
+   "deno",
+   "_deno"
+  ],
+  "icon": "deno"
+ },
+ {
+  "names": [
+   ".dependabot"
+  ],
+  "icon": "dependabot"
+ },
+ {
+  "names": [
+   "deploy",
+   ".deploy",
+   "deploys",
+   "_deploys",
+   "deployment",
+   ".deployments",
+   "_deployments"
+  ],
+  "icon": "deploy"
+ },
+ {
+  "names": [
+   ".devcontainer"
+  ],
+  "icon": "devcontainer"
+ },
+ {
+  "names": [
+   "dist",
+   "out",
+   "build",
+   "release",
+   "distributions",
+   ".distributions",
+   "_out",
+   ".out",
+   ".dist",
+   "_dist",
+   "_build",
+   ".build",
+   ".release",
+   "_release",
+   "builds",
+   "releases"
+  ],
+  "icon": "dist"
+ },
+ {
+  "names": [
+   "docker",
+   ".docker",
+   "_docker",
+   "dockerfiles",
+   ".dockerfiles",
+   "_dockerfiles",
+   "dockerhub",
+   ".dockerhub",
+   "_dockerhub"
+  ],
+  "icon": "docker"
+ },
+ {
+  "names": [
+   "doc",
+   "docs",
+   "documentation",
+   ".doc",
+   "_doc",
+   "_docs",
+   ".documentation",
+   "text",
+   "texts",
+   ".texts",
+   "_text",
+   "forms",
+   ".forms",
+   "_forms"
+  ],
+  "icon": "docs"
+ },
+ {
+  "names": [
+   "domain",
+   "domains",
+   ".domain",
+   "_domain",
+   ".domains",
+   "_domains"
+  ],
+  "icon": "domain"
+ },
+ {
+  "names": [
+   "download",
+   "downloads",
+   "dl",
+   ".dl",
+   "_dl",
+   "_downloads",
+   "downloaders",
+   ".downloaders",
+   "_downloaders"
+  ],
+  "icon": "download"
+ },
+ {
+  "names": [
+   ".drizzle",
+   "drizzle",
+   "_drizzle"
+  ],
+  "icon": "drizzle"
+ },
+ {
+  "names": [
+   "dropbox",
+   ".dropbox",
+   ".dropbox.cache",
+   "_dropbox"
+  ],
+  "icon": "dropbox"
+ },
+ {
+  "names": [
+   ".dub",
+   "dub",
+   "_dub"
+  ],
+  "icon": "dub"
+ },
+ {
+  "names": [
+   "dump",
+   "dumps",
+   "data",
+   "_dump",
+   ".dumps",
+   "_data",
+   ".data",
+   "dal",
+   ".dal",
+   "_dal"
+  ],
+  "icon": "dump"
+ },
+ {
+  "names": [
+   ".dvc",
+   "dvc",
+   "_dvc"
+  ],
+  "icon": "dvc"
+ },
+ {
+  "names": [
+   "e2e",
+   "scenario",
+   "scenarios",
+   ".e2e",
+   "_e2e",
+   ".scenarios",
+   "_scenario"
+  ],
+  "icon": "e2e"
+ },
+ {
+  "names": [
+   "elastic",
+   ".elasticbeanstalk",
+   "elasticbeanstalk",
+   "_elastic",
+   ".eb-extensions"
+  ],
+  "icon": "elastic"
+ },
+ {
+  "names": [
+   "electron",
+   ".electron",
+   "_electron"
+  ],
+  "icon": "electron"
+ },
+ {
+  "names": [
+   "elixir",
+   ".elixir",
+   "_elixir",
+   "elixir_ls",
+   ".elixir_ls",
+   "_elixir_ls",
+   "ex",
+   ".ex",
+   "_ex",
+   "eex",
+   ".eex",
+   "_eex",
+   "leex",
+   ".leex",
+   "_leex"
+  ],
+  "icon": "elixir"
+ },
+ {
+  "names": [
+   ".emacs.d"
+  ],
+  "icon": "emacs"
+ },
+ {
+  "names": [
+   "empties",
+   "empty",
+   ".empty",
+   ".empties",
+   "_empty",
+   "stocks",
+   ".stocks",
+   "_stocks"
+  ],
+  "icon": "empties"
+ },
+ {
+  "names": [
+   "encore.gen",
+   ".encore",
+   "_encore"
+  ],
+  "icon": "encore"
+ },
+ {
+  "names": [
+   "env",
+   "envs",
+   "environment",
+   "environments",
+   ".env",
+   "_env",
+   ".environment",
+   "_environments"
+  ],
+  "icon": "env"
+ },
+ {
+  "names": [
+   "error",
+   "errors",
+   "exception",
+   "exceptions",
+   ".error",
+   "_error",
+   "_errors",
+   ".exception",
+   "_exceptions",
+   "crash",
+   ".crashes",
+   "_crash"
+  ],
+  "icon": "error"
+ },
+ {
+  "names": [
+   "eslint",
+   ".eslint",
+   "_eslint",
+   "eslint-config",
+   ".eslint-config",
+   "_eslint-config",
+   "eslint-plugin",
+   ".eslint-plugin",
+   "_eslint-plugin"
+  ],
+  "icon": "eslint"
+ },
+ {
+  "names": [
+   "event",
+   "events",
+   ".event",
+   "_events",
+   ".events",
+   "signal",
+   "signals",
+   ".signal",
+   "_signals"
+  ],
+  "icon": "events"
+ },
+ {
+  "names": [
+   "example",
+   "examples",
+   ".example",
+   "_examples",
+   "demo",
+   "demos",
+   ".demos",
+   "_demos",
+   "sample",
+   "samples",
+   ".sample",
+   "_samples"
+  ],
+  "icon": "examples"
+ },
+ {
+  "names": [
+   "exclude",
+   "excludes",
+   "external",
+   "output",
+   ".exclude",
+   "_excludes",
+   ".external",
+   "_external",
+   ".output",
+   "export",
+   "exports",
+   ".exports",
+   "exported",
+   ".exported"
+  ],
+  "icon": "exclude"
+ },
+ {
+  "names": [
+   ".expo",
+   ".expo-shared"
+  ],
+  "icon": "expo"
+ },
+ {
+  "names": [
+   "fastlane",
+   ".fastlane",
+   "_fastlane"
+  ],
+  "icon": "fastlane"
+ },
+ {
+  "names": [
+   "faq",
+   "faqs",
+   ".faq",
+   "_faqs"
+  ],
+  "icon": "faq"
+ },
+ {
+  "names": [
+   "favorite",
+   "favorites",
+   ".favorite",
+   "_favorites",
+   "fav",
+   "favs",
+   ".fav",
+   "_favs",
+   "bookmark",
+   "bookmarks",
+   ".bookmark",
+   "_bookmarks"
+  ],
+  "icon": "favorites"
+ },
+ {
+  "names": [
+   "feature",
+   "features",
+   "feat",
+   "feats",
+   ".feature",
+   "_feat",
+   "_feats",
+   ".feats"
+  ],
+  "icon": "features"
+ },
+ {
+  "names": [
+   ".firebase",
+   "firebase",
+   "_firebase"
+  ],
+  "icon": "firebase"
+ },
+ {
+  "names": [
+   "fixture",
+   "fixtures",
+   "fabricator",
+   "fabricators",
+   "factory",
+   "factories",
+   ".factories",
+   ".fixtures",
+   "_fixtures",
+   "_fabricator",
+   ".factory"
+  ],
+  "icon": "fixtures"
+ },
+ {
+  "names": [
+   "flow",
+   "def",
+   "defs",
+   ".flow",
+   "_flow",
+   "_def",
+   ".defs"
+  ],
+  "icon": "flow"
+ },
+ {
+  "names": [
+   "fluig"
+  ],
+  "icon": "fluig"
+ },
+ {
+  "names": [
+   "flutter"
+  ],
+  "icon": "flutter"
+ },
+ {
+  "names": [
+   "font",
+   "fonts",
+   ".fonts",
+   "_fonts",
+   "typeface",
+   "typefaces",
+   ".typeface",
+   ".typefaces",
+   "_typeface",
+   "glyph",
+   "glyphs",
+   ".glyph",
+   ".glyphs"
+  ],
+  "icon": "fonts"
+ },
+ {
+  "names": [
+   "func",
+   ".func",
+   "funcs",
+   "_funcs",
+   "function",
+   "functions",
+   "service",
+   "services",
+   "lambda",
+   "lambdas",
+   ".functions",
+   "_functions",
+   "_lambda",
+   ".lambda",
+   ".services",
+   "_services",
+   "handler",
+   "handlers",
+   ".handlers",
+   "_handler",
+   "rpc",
+   ".rpc\n        .rpcs",
+   "_rpc",
+   ".rpcs",
+   "proc",
+   ".proc",
+   ".procs",
+   "_proc",
+   "procedure",
+   "procedures",
+   ".procedure",
+   ".procedures",
+   "_procedure",
+   "composable",
+   "composables",
+   ".composable",
+   ".composables",
+   "_composable"
+  ],
+  "icon": "functions"
+ },
+ {
+  "names": [
+   "gcp",
+   "gcloud",
+   ".gcp",
+   "_gcp",
+   ".gcloud",
+   "_gcloud"
+  ],
+  "icon": "gcloud"
+ },
+ {
+  "names": [
+   "gen",
+   "generated",
+   "auto",
+   ".gen",
+   "_gen",
+   "_generated",
+   "_auto",
+   ".auto",
+   "generator",
+   "generators",
+   ".generators"
+  ],
+  "icon": "generated"
+ },
+ {
+  "names": [
+   ".git",
+   ".submodules"
+  ],
+  "icon": "git"
+ },
+ {
+  "names": [
+   ".gitea",
+   "gitea",
+   "_gitea"
+  ],
+  "icon": "gitea"
+ },
+ {
+  "names": [
+   "github",
+   ".github",
+   "_github"
+  ],
+  "icon": "github"
+ },
+ {
+  "names": [
+   "gitlab",
+   ".gitlab",
+   "_gitlab"
+  ],
+  "icon": "gitlab"
+ },
+ {
+  "names": [
+   "global",
+   ".global",
+   "_global",
+   "globals",
+   ".globals",
+   "_globals"
+  ],
+  "icon": "global"
+ },
+ {
+  "names": [
+   ".go",
+   "go",
+   "_go",
+   "golang",
+   ".golang",
+   "_golang"
+  ],
+  "icon": "go"
+ },
+ {
+  "names": [
+   ".gradle",
+   "gradle",
+   "_gradle"
+  ],
+  "icon": "gradle"
+ },
+ {
+  "names": [
+   "graphql",
+   "gql",
+   "schema",
+   "schemas",
+   ".graphql",
+   "_graphql",
+   "_gql",
+   ".schemas",
+   "_schemas"
+  ],
+  "icon": "graphql"
+ },
+ {
+  "names": [
+   "grit",
+   ".grit",
+   "_grit"
+  ],
+  "icon": "gritql"
+ },
+ {
+  "names": [
+   "grunt",
+   ".grunt",
+   "_grunt",
+   "gruntfile",
+   ".gruntfiles",
+   "_gruntfiles"
+  ],
+  "icon": "grunt"
+ },
+ {
+  "names": [
+   "guard",
+   "guards",
+   "dev",
+   "development",
+   "_guard",
+   ".guards",
+   ".dev",
+   "_dev",
+   ".development"
+  ],
+  "icon": "guard"
+ },
+ {
+  "names": [
+   "gulp",
+   ".gulp",
+   "_gulp",
+   "gulpfile",
+   "gulpfiles",
+   ".gulpfile",
+   ".gulpfiles",
+   "_gulpfiles"
+  ],
+  "icon": "gulp"
+ },
+ {
+  "names": [
+   "hasura",
+   ".hasura",
+   "_hasura"
+  ],
+  "icon": "hasura"
+ },
+ {
+  "names": [
+   "haxe",
+   "haxelib",
+   "haxe_libraries",
+   ".haxelib",
+   "_haxe_libraries",
+   "_haxe"
+  ],
+  "icon": "haxelib"
+ },
+ {
+  "names": [
+   "helm",
+   ".helm",
+   "_helm",
+   "helmcharts",
+   ".helmcharts",
+   "_helmcharts",
+   "chart",
+   "charts",
+   ".charts",
+   "_charts",
+   "helmfile",
+   ".helmfiles",
+   "_helmfiles"
+  ],
+  "icon": "helm"
+ },
+ {
+  "names": [
+   "helper",
+   "helpers",
+   "help",
+   ".help",
+   "_help",
+   ".helpers"
+  ],
+  "icon": "helper"
+ },
+ {
+  "names": [
+   "home",
+   ".home",
+   "_home",
+   "start",
+   ".start",
+   "_start",
+   "tuto",
+   "tutos",
+   ".tutos",
+   "_tuto",
+   "tutorial",
+   "_tutorial",
+   "tutorials",
+   ".tutorials",
+   ".landing",
+   "landing"
+  ],
+  "icon": "home"
+ },
+ {
+  "names": [
+   "hooks",
+   "hook",
+   "triggers",
+   "trigger",
+   ".hook",
+   "_hooks",
+   "_triggers",
+   "composable",
+   ".composables",
+   "_composables"
+  ],
+  "icon": "hook"
+ },
+ {
+  "names": [
+   "husky",
+   ".husky",
+   "_husky"
+  ],
+  "icon": "husky"
+ },
+ {
+  "names": [
+   "i18n",
+   "lang",
+   "langs",
+   "l10n",
+   "g11n",
+   "language",
+   "languages",
+   "localization",
+   "locale",
+   "locales",
+   "translation",
+   "translations",
+   ".lang",
+   ".i18n",
+   "_languages",
+   "_localization",
+   ".locale",
+   "_locales",
+   ".translation",
+   "_translations"
+  ],
+  "icon": "i18n"
+ },
+ {
+  "names": [
+   "icon",
+   "icons",
+   "ico",
+   "glyph",
+   "glyphs",
+   ".icon",
+   "_icons",
+   ".glyphs",
+   ".ico",
+   "_glyph",
+   "favicon",
+   ".favicons"
+  ],
+  "icon": "icons"
+ },
+ {
+  "names": [
+   ".idea",
+   "_idea",
+   "idea",
+   "META-INF",
+   ".META-INF",
+   "intellijPlatform",
+   ".intellijPlatform"
+  ],
+  "icon": "idea"
+ },
+ {
+  "names": [
+   "image",
+   "images",
+   "img",
+   "medias",
+   "media",
+   ".images",
+   "_img",
+   "_media",
+   ".medias",
+   "pic",
+   ".pics",
+   "_pictures",
+   "gallery",
+   "figure",
+   ".figures",
+   "_figures",
+   "png",
+   ".pngs",
+   "_jpg",
+   ".jpgs"
+  ],
+  "icon": "images"
+ },
+ {
+  "names": [
+   "inc",
+   "includes",
+   "include",
+   "import",
+   "imported",
+   ".imported",
+   "imports",
+   "concerns",
+   "concern",
+   "dep",
+   "deps",
+   ".inc",
+   ".include",
+   "_includes",
+   ".import",
+   "_imports",
+   ".concerns",
+   "_deps",
+   ".dependencies",
+   "_input"
+  ],
+  "icon": "include"
+ },
+ {
+  "names": [
+   "info",
+   ".info",
+   "_info",
+   "infos",
+   ".infos",
+   "_infos",
+   "information",
+   ".information",
+   "_information"
+  ],
+  "icon": "info"
+ },
+ {
+  "names": [
+   "init",
+   "initializers",
+   "initializer",
+   "startup",
+   ".init",
+   "_initializers",
+   ".startup",
+   ".initializer"
+  ],
+  "icon": "init"
+ },
+ {
+  "names": [
+   "injection",
+   "_injection",
+   "injections",
+   ".injections",
+   "di",
+   ".di",
+   "_di",
+   "injector",
+   ".injector",
+   "_injector"
+  ],
+  "icon": "injection"
+ },
+ {
+  "names": [
+   "interceptor",
+   "interceptors",
+   ".interceptor",
+   "_interceptors",
+   ".interceptors"
+  ],
+  "icon": "interceptor"
+ },
+ {
+  "names": [
+   "internal",
+   ".internal",
+   "_internal",
+   "internals",
+   ".internals",
+   "_internals"
+  ],
+  "icon": "internal"
+ },
+ {
+  "names": [
+   "islands",
+   ".islands",
+   "_islands"
+  ],
+  "icon": "islands"
+ },
+ {
+  "names": [
+   ".nyc",
+   ".nyc-output",
+   ".nyc_output"
+  ],
+  "icon": "istanbul"
+ },
+ {
+  "names": [
+   "Assets.xcassets",
+   "Base.lproj"
+  ],
+  "icon": "ios"
+ },
+ {
+  "names": [
+   "ios",
+   "iosApp",
+   ".ios",
+   "_ios",
+   "_iosApp"
+  ],
+  "icon": "iosapp"
+ },
+ {
+  "names": [
+   "java",
+   "jdk",
+   ".java",
+   "_java",
+   ".jdk",
+   "_jdk"
+  ],
+  "icon": "java"
+ },
+ {
+  "names": [
+   "javascript",
+   "javascripts",
+   "js",
+   ".js",
+   "_javascript",
+   ".javascript"
+  ],
+  "icon": "js"
+ },
+ {
+  "names": [
+   "jest",
+   ".jest",
+   "_jest"
+  ],
+  "icon": "jest"
+ },
+ {
+  "names": [
+   "jinja",
+   ".jinja",
+   "_jinja",
+   ".jinja2",
+   "j2",
+   ".j2",
+   "_j2"
+  ],
+  "icon": "jinja"
+ },
+ {
+  "names": [
+   "jobs",
+   "job",
+   "resque",
+   ".jobs",
+   "_jobs",
+   ".resque",
+   "_resque"
+  ],
+  "icon": "job"
+ },
+ {
+  "names": [
+   "jsons",
+   "json",
+   "serializer",
+   "serializers",
+   ".json",
+   "_json",
+   ".serializers",
+   "_serializers"
+  ],
+  "icon": "json"
+ },
+ {
+  "names": [
+   "junie",
+   ".junie",
+   "_junie"
+  ],
+  "icon": "junie"
+ },
+ {
+  "names": [
+   "jwt",
+   ".jwt",
+   "_jwt",
+   "token",
+   "tokens",
+   "_tokens",
+   ".token"
+  ],
+  "icon": "jwt"
+ },
+ {
+  "names": [
+   "key",
+   "keys",
+   "cert",
+   "certs",
+   "_keys",
+   ".keys",
+   ".certs",
+   "_cert",
+   "certificate",
+   "certificates",
+   "_certificates",
+   "ssl",
+   ".ssl",
+   ".ssh",
+   "ssh",
+   "_ssh",
+   "secrets",
+   ".secrets",
+   "_secret",
+   ".secret",
+   ".auth",
+   "authentication"
+  ],
+  "icon": "keys"
+ },
+ {
+  "names": [
+   "kv",
+   ".kv",
+   "_kv",
+   "kivy",
+   ".kivy",
+   "_kivy"
+  ],
+  "icon": "kivy"
+ },
+ {
+  "names": [
+   "kotlin",
+   ".kotlin",
+   "_kotlin",
+   "kt",
+   "_kt"
+  ],
+  "icon": "kotlin"
+ },
+ {
+  "names": [
+   "kubernetes",
+   "k8s",
+   "kube",
+   "kuber",
+   "minikube",
+   ".kubernetes",
+   "_k8s",
+   ".minikube",
+   ".kuber",
+   "_kube"
+  ],
+  "icon": "kubernetes"
+ },
+ {
+  "names": [
+   "kustomize",
+   ".kustomize",
+   "kustomizations",
+   "_kustomization",
+   ".kustomizations"
+  ],
+  "icon": "kustomize"
+ },
+ {
+  "names": [
+   "layout",
+   "layouts",
+   "_layout",
+   "_layouts",
+   ".layout",
+   ".layouts",
+   "partial",
+   ".partial",
+   "partials",
+   "_partials",
+   "fragment",
+   "_fragment",
+   ".fragments",
+   "fragments"
+  ],
+  "icon": "layouts"
+ },
+ {
+  "names": [
+   "less",
+   ".less",
+   "_less"
+  ],
+  "icon": "less"
+ },
+ {
+  "names": [
+   "linux",
+   ".linux",
+   "_linux",
+   "nux",
+   "_nux",
+   "unix",
+   ".unix",
+   "_unix"
+  ],
+  "icon": "linux"
+ },
+ {
+  "names": [
+   "changelog",
+   "changelogs",
+   ".changelogs",
+   "_changelogs",
+   "liquibase",
+   ".liquibase"
+  ],
+  "icon": "liquibase"
+ },
+ {
+  "names": [
+   "livewire",
+   ".livewire",
+   "_livewire",
+   "livewire-hash",
+   "livewire-app"
+  ],
+  "icon": "livewire"
+ },
+ {
+  "names": [
+   "log",
+   "logs",
+   ".log",
+   "_logs"
+  ],
+  "icon": "logs"
+ },
+ {
+  "names": [
+   "lottie",
+   ".lottie",
+   "_lottie",
+   "lotties",
+   ".lotties",
+   "_lotties"
+  ],
+  "icon": "lottie"
+ },
+ {
+  "names": [
+   "lua",
+   "_lua",
+   ".lua",
+   "luau",
+   ".luau",
+   "_luau"
+  ],
+  "icon": "lua"
+ },
+ {
+  "names": [
+   "main"
+  ],
+  "icon": "main"
+ },
+ {
+  "names": [
+   "mailer",
+   "mailers",
+   "email",
+   "emails",
+   "mail",
+   "mails",
+   "_mailers",
+   "_mails",
+   ".emails",
+   ".mails"
+  ],
+  "icon": "mailers"
+ },
+ {
+  "names": [
+   "md",
+   "markdown",
+   ".md",
+   "_md",
+   "_markdown",
+   ".markdown",
+   "mdx",
+   "_mdx",
+   ".mdx"
+  ],
+  "icon": "markdown"
+ },
+ {
+  "names": [
+   "logic",
+   ".logic",
+   "_logic",
+   "math",
+   "maths",
+   ".math",
+   ".maths",
+   "_math",
+   "algo",
+   "algos",
+   ".algo",
+   "_algo",
+   "_algorithm",
+   "algorithms",
+   ".algorithms",
+   "formula",
+   "formulas",
+   ".formulas",
+   "_formula",
+   "computations",
+   ".computation",
+   "_computations",
+   "wolfram",
+   "mathjax",
+   ".mathjax",
+   "scilab",
+   "_scilab"
+  ],
+  "icon": "math"
+ },
+ {
+  "names": [
+   "maven",
+   ".maven",
+   "_maven",
+   "mvn",
+   "_mvn",
+   ".mvn",
+   "pom",
+   ".pom",
+   "_pom"
+  ],
+  "icon": "maven"
+ },
+ {
+  "names": [
+   "map",
+   "maps",
+   "mapping",
+   "mappings",
+   "mapper",
+   "mappers",
+   ".map",
+   "_maps",
+   ".mappings",
+   "_mappings",
+   "_mapper",
+   ".mappers"
+  ],
+  "icon": "maps"
+ },
+ {
+  "names": [
+   ".appex",
+   ".ccl",
+   ".ideplugin",
+   ".kext",
+   ".mdimporter",
+   ".osax",
+   ".osirixplugin",
+   ".qlgenerator"
+  ],
+  "icon": "osx"
+ },
+ {
+  "names": [
+   "mac",
+   ".mac",
+   "_mac",
+   "macos",
+   ".macos",
+   "_macos",
+   "osx",
+   ".osx",
+   "_osx"
+  ],
+  "icon": "mac"
+ },
+ {
+  "names": [
+   "mcp",
+   ".mcp",
+   "_mcp"
+  ],
+  "icon": "mcp"
+ },
+ {
+  "names": [
+   "message",
+   "messages",
+   "msg",
+   "msgs",
+   ".msg",
+   "_msgs",
+   "_messages",
+   ".messages",
+   "messaging",
+   ".messaging",
+   "_messaging",
+   "comment",
+   ".comment",
+   "comments",
+   "_comments",
+   "chat",
+   ".chat",
+   "chats",
+   ".chats",
+   "forum",
+   "_forum",
+   ".forums",
+   "_forums",
+   "thread",
+   "threads",
+   ".threads",
+   "_thread",
+   ".thread",
+   "conversation",
+   "conversations",
+   ".conversations",
+   "_conversation"
+  ],
+  "icon": "messages"
+ },
+ {
+  "names": [
+   ".hg",
+   "hg",
+   "_hg"
+  ],
+  "icon": "mercurial"
+ },
+ {
+  "names": [
+   "meta",
+   "metadata",
+   ".meta",
+   "_meta",
+   "input",
+   ".inputs",
+   "form",
+   ".forms",
+   "_forms"
+  ],
+  "icon": "meta"
+ },
+ {
+  "names": [
+   ".meteor",
+   "meteor",
+   "_meteor"
+  ],
+  "icon": "meteor"
+ },
+ {
+  "names": [
+   "metro",
+   ".metro",
+   "_metro"
+  ],
+  "icon": "metro"
+ },
+ {
+  "names": [
+   "middleware",
+   "middlewares",
+   "thunk",
+   "thunks",
+   ".middlewares",
+   "_middlewares",
+   ".thunk",
+   "_thunks",
+   "proxy",
+   "proxies",
+   ".proxy",
+   "_proxy"
+  ],
+  "icon": "middleware"
+ },
+ {
+  "names": [
+   "mindsdb",
+   ".mindsdb",
+   "_mindsdb"
+  ],
+  "icon": "mindsdb"
+ },
+ {
+  "names": [
+   "mjml",
+   ".mjml",
+   "_mjml"
+  ],
+  "icon": "mjml"
+ },
+ {
+  "names": [
+   "mobile",
+   "mobiles",
+   ".mobile",
+   "_mobiles",
+   "portable",
+   "_portable",
+   "portables",
+   ".portables"
+  ],
+  "icon": "mobile"
+ },
+ {
+  "names": [
+   "mock",
+   "mocks",
+   "fake",
+   "fakes",
+   "stub",
+   "stubs",
+   ".mock",
+   "_mocks",
+   ".fakes",
+   "_fakes",
+   ".stub",
+   "_stubs",
+   "wireframe",
+   ".wireframe",
+   "wireframes",
+   "_wireframes",
+   "sketch",
+   ".sketch",
+   "sketches",
+   "_sketches"
+  ],
+  "icon": "mocks"
+ },
+ {
+  "names": [
+   "modal",
+   "modals",
+   "portal",
+   "portals",
+   "usecase",
+   "usecases",
+   ".modal",
+   ".modals",
+   "_portal",
+   ".portals",
+   "_usecase",
+   "_usecases",
+   "dialog",
+   ".dialog",
+   "dialogs",
+   "_dialogs",
+   "dialogbox",
+   ".dialogbox",
+   "dialogboxes",
+   "_dialogboxes",
+   "popup",
+   ".popup",
+   "popups",
+   "_popups"
+  ],
+  "icon": "modals"
+ },
+ {
+  "names": [
+   "model",
+   "models",
+   "struct",
+   "structs",
+   "class",
+   "classes",
+   ".models",
+   "_models",
+   "_struct",
+   ".struct",
+   ".class",
+   "_classes",
+   "entity",
+   ".entity",
+   "entities",
+   "_entities",
+   "dto",
+   ".dto",
+   "_dto",
+   "object",
+   "objects",
+   "_objects"
+  ],
+  "icon": "models"
+ },
+ {
+  "names": [
+   "molecule",
+   "molecules",
+   ".molecules",
+   "_molecules"
+  ],
+  "icon": "molecules"
+ },
+ {
+  "names": [
+   "mongo",
+   ".mongo",
+   "_mongo",
+   "mongodb",
+   ".mongodb",
+   "_mongodb"
+  ],
+  "icon": "mongo"
+ },
+ {
+  "names": [
+   "moon",
+   ".moon",
+   "_moon"
+  ],
+  "icon": "moon"
+ },
+ {
+  "names": [
+   "msw",
+   ".msw",
+   "_msw"
+  ],
+  "icon": "msw"
+ },
+ {
+  "names": [
+   "geo",
+   ".geo",
+   "_geo",
+   "nav",
+   ".nav",
+   "_nav",
+   "navigation",
+   "navigate",
+   ".navigations",
+   "_navigations",
+   ".navigate"
+  ],
+  "icon": "navigation"
+ },
+ {
+  "names": [
+   ".netlify",
+   "netlify",
+   "_netlify"
+  ],
+  "icon": "netlify"
+ },
+ {
+  "names": [
+   "next",
+   ".next",
+   "_next"
+  ],
+  "icon": "next"
+ },
+ {
+  "names": [
+   "node_modules",
+   ".node_modules",
+   "_node_modules",
+   ".node",
+   ".nodejs",
+   ".npm",
+   "_node",
+   "npm"
+  ],
+  "icon": "node"
+ },
+ {
+  "names": [
+   "notebook",
+   "notebooks",
+   ".notebooks",
+   "_notebooks",
+   "jupyter-notebook",
+   "jupyter-notebooks",
+   ".jupyter-notebook",
+   ".jupyter-notebooks",
+   "_jupyter-notebook",
+   "_jupyter-notebooks",
+   "jupyter",
+   ".jupyter",
+   "_jupyter",
+   "ipynb",
+   ".ipynb",
+   "_ipynb"
+  ],
+  "icon": "notebooks"
+ },
+ {
+  "names": [
+   "notif",
+   "notification",
+   "notifications",
+   "flash",
+   ".notif",
+   "_notifications",
+   ".flash",
+   "_flash"
+  ],
+  "icon": "notification"
+ },
+ {
+  "names": [
+   "nuget",
+   ".nuget",
+   "_nuget"
+  ],
+  "icon": "nuget"
+ },
+ {
+  "names": [
+   "nuxt",
+   ".nuxt",
+   "_nuxt"
+  ],
+  "icon": "nuxt"
+ },
+ {
+  "names": [
+   "nx",
+   ".nx",
+   "_nx"
+  ],
+  "icon": "nx"
+ },
+ {
+  "names": [
+   "obsidian",
+   ".obsidian",
+   "_obsidian"
+  ],
+  "icon": "obsidian"
+ },
+ {
+  "names": [
+   "openshift",
+   ".openshift",
+   "_openshift"
+  ],
+  "icon": "openshift"
+ },
+ {
+  "names": [
+   "order",
+   "orders",
+   ".order",
+   "_orders",
+   ".orders",
+   "list",
+   "lists",
+   ".list",
+   "_lists",
+   ".lists",
+   "listing",
+   "listings",
+   ".listing",
+   "_listings"
+  ],
+  "icon": "orders"
+ },
+ {
+  "names": [
+   "other",
+   "misc",
+   "extra",
+   "extras",
+   ".other",
+   "_other",
+   "_misc",
+   ".misc",
+   "_extra",
+   ".extras",
+   "etc",
+   ".etc",
+   "_etc"
+  ],
+  "icon": "other"
+ },
+ {
+  "names": [
+   "package",
+   "packages",
+   "bundle",
+   "bundles",
+   ".bundle",
+   ".paket",
+   "module",
+   "modules",
+   "_package",
+   ".packages",
+   "_bundles",
+   ".bundles",
+   "_paket",
+   "_modules",
+   ".module",
+   "pkg",
+   "pkgs",
+   "_pkgs",
+   "serverpackages",
+   ".devpackages"
+  ],
+  "icon": "packages"
+ },
+ {
+  "names": [
+   "parcel",
+   ".parcel",
+   "_parcel",
+   "parcel-cache",
+   ".parcel-cache",
+   "_parcel-cache"
+  ],
+  "icon": "parcel"
+ },
+ {
+  "names": [
+   "perl",
+   ".perl",
+   "_perl",
+   "pl",
+   ".pl",
+   "_pl"
+  ],
+  "icon": "perl"
+ },
+ {
+  "names": [
+   "pdf",
+   ".pdf",
+   "pdfs",
+   "_pdf",
+   ".pdfs",
+   "adobe",
+   ".adobe",
+   "_adobe"
+  ],
+  "icon": "pdf"
+ },
+ {
+  "names": [
+   ".pdm-build",
+   ".pdm-plugins"
+  ],
+  "icon": "pdm"
+ },
+ {
+  "names": [
+   "php",
+   "phtml",
+   "_php",
+   ".php",
+   ".phtml",
+   "phpmailer",
+   ".phpmailer",
+   ".phpcs",
+   "_phpcs"
+  ],
+  "icon": "php"
+ },
+ {
+  "names": [
+   "pinia",
+   ".pinia",
+   "_pinia"
+  ],
+  "icon": "pinia"
+ },
+ {
+  "names": [
+   "pipe",
+   "pipes",
+   "filter",
+   "filters",
+   ".pipes",
+   "_pipes",
+   "_filter",
+   ".filters",
+   "pipeline",
+   "pipelines",
+   ".pipeline",
+   "_pipeline"
+  ],
+  "icon": "pipe"
+ },
+ {
+  "names": [
+   ".pio",
+   ".pioenv",
+   ".pioenvs"
+  ],
+  "icon": "platformio"
+ },
+ {
+  "names": [
+   "playwright",
+   "pw",
+   ".pw",
+   "_playwright"
+  ],
+  "icon": "playwright"
+ },
+ {
+  "names": [
+   "plugin",
+   "plugins",
+   "mu-plugins",
+   "extension",
+   "extensions",
+   ".plugin",
+   ".plugins",
+   "_plugins",
+   ".extension",
+   ".extensions",
+   ".mod",
+   "_mods"
+  ],
+  "icon": "plugin"
+ },
+ {
+  "names": [
+   "pocketbase",
+   ".pocketbase",
+   "_pocketbase",
+   "pb",
+   "pb_data",
+   "pb_migrations",
+   "pb_public"
+  ],
+  "icon": "pocketbase"
+ },
+ {
+  "names": [
+   "policy",
+   "policies",
+   ".policy",
+   "_policy",
+   ".policies",
+   "_policies"
+  ],
+  "icon": "policies"
+ },
+ {
+  "names": [
+   "post",
+   "posts",
+   ".post",
+   "_post",
+   "_posts"
+  ],
+  "icon": "posts"
+ },
+ {
+  "names": [
+   "postman",
+   ".postman",
+   "_postman"
+  ],
+  "icon": "postman"
+ },
+ {
+  "names": [
+   "prompt",
+   "prompts",
+   ".prompt",
+   "_prompts"
+  ],
+  "icon": "prompts"
+ },
+ {
+  "names": [
+   "proto",
+   ".proto",
+   "_proto",
+   "protobuf",
+   ".protobuf",
+   "_protobuf",
+   "protobufs",
+   ".protobufs"
+  ],
+  "icon": "protobuf"
+ },
+ {
+  "names": [
+   ".prisma",
+   "prisma",
+   "_prisma"
+  ],
+  "icon": "prisma"
+ },
+ {
+  "names": [
+   "private",
+   ".private",
+   "_private"
+  ],
+  "icon": "private"
+ },
+ {
+  "names": [
+   "profile",
+   "profiles",
+   ".profile",
+   "_profiles",
+   ".profiles",
+   "persona",
+   "personas",
+   ".persona",
+   "_personas",
+   ".personas"
+  ],
+  "icon": "profiles"
+ },
+ {
+  "names": [
+   "proj",
+   ".proj",
+   "_proj",
+   ".project",
+   "project",
+   "_project",
+   "projects",
+   "_projects"
+  ],
+  "icon": "project"
+ },
+ {
+  "names": [
+   "provider",
+   "providers",
+   "_providers",
+   ".providers"
+  ],
+  "icon": "providers"
+ },
+ {
+  "names": [
+   "python",
+   "py",
+   ".py",
+   "_py",
+   "_python",
+   "__pycache__",
+   ".pytest_cache"
+  ],
+  "icon": "python"
+ },
+ {
+  "names": [
+   "quasar",
+   ".quasar",
+   "_quasar"
+  ],
+  "icon": "quasar"
+ },
+ {
+  "names": [
+   "quantum",
+   ".quantum",
+   "_quantum",
+   "qtn",
+   ".qtn",
+   "_qtn"
+  ],
+  "icon": "quantum"
+ },
+ {
+  "names": [
+   "query",
+   "queries",
+   ".query",
+   "_query",
+   "_queries"
+  ],
+  "icon": "queries"
+ },
+ {
+  "names": [
+   "queue",
+   ".queue",
+   "queues",
+   ".queues",
+   "_queues",
+   "bull",
+   ".bull",
+   "mq",
+   ".mq",
+   "_mq"
+  ],
+  "icon": "queue"
+ },
+ {
+  "names": [
+   "r",
+   "rdata",
+   ".r",
+   "_r",
+   ".rdata",
+   "_rdata"
+  ],
+  "icon": "r"
+ },
+ {
+  "names": [
+   "rabbitmq",
+   ".rabbitmq",
+   "_rabbitmq"
+  ],
+  "icon": "rabbitmq"
+ },
+ {
+  "names": [
+   "react",
+   "react_components",
+   "react-scripts",
+   "_react",
+   ".react",
+   "_react_components",
+   ".react-scripts",
+   "tsx",
+   "jsx",
+   ".jsx",
+   "_tsx"
+  ],
+  "icon": "react"
+ },
+ {
+  "names": [
+   "redhat",
+   ".redhat",
+   "_redhat",
+   "s2i",
+   "_s2i",
+   ".s2i"
+  ],
+  "icon": "redhat"
+ },
+ {
+  "names": [
+   "redis",
+   ".redis",
+   "_redis"
+  ],
+  "icon": "redis"
+ },
+ {
+  "names": [
+   "redwood",
+   ".redwood",
+   "_redwood"
+  ],
+  "icon": "redwood"
+ },
+ {
+  "names": [
+   "coil",
+   "recoil",
+   ".coil",
+   "_recoil"
+  ],
+  "icon": "recoil"
+ },
+ {
+  "names": [
+   "redux",
+   ".redux",
+   "_redux",
+   "organisms",
+   "_organisms",
+   "flux",
+   ".flux"
+  ],
+  "icon": "redux"
+ },
+ {
+  "names": [
+   "action",
+   "actions",
+   ".action",
+   "_actions"
+  ],
+  "icon": "redux-actions"
+ },
+ {
+  "names": [
+   "epic",
+   "epics",
+   ".epic",
+   "_epics"
+  ],
+  "icon": "redux-epics"
+ },
+ {
+  "names": [
+   "reducer",
+   "reducers",
+   ".reducer",
+   "_reducers"
+  ],
+  "icon": "redux-reducers"
+ },
+ {
+  "names": [
+   "saga",
+   "sagas",
+   ".saga",
+   "_sagas",
+   "effect",
+   "effects",
+   "_effects",
+   ".effects"
+  ],
+  "icon": "redux-sagas"
+ },
+ {
+  "names": [
+   "store",
+   "stores",
+   ".store",
+   "_stores",
+   "states",
+   "state",
+   ".states",
+   "_state"
+  ],
+  "icon": "redux-stores"
+ },
+ {
+  "names": [
+   "relay",
+   ".relay",
+   "_relay"
+  ],
+  "icon": "relay"
+ },
+ {
+  "names": [
+   "resolver",
+   "resolvers",
+   ".resolver",
+   "_resolvers",
+   "value",
+   ".value",
+   "_value",
+   "values",
+   ".values"
+  ],
+  "icon": "resolver"
+ },
+ {
+  "names": [
+   "res",
+   "resource",
+   "resources",
+   "asset",
+   "assets",
+   ".res",
+   "_res",
+   "_resources",
+   ".assets",
+   "_assets",
+   "report",
+   "reports",
+   ".reports",
+   "_report"
+  ],
+  "icon": "resource"
+ },
+ {
+  "names": [
+   "review",
+   "reviews",
+   ".review",
+   ".reviews",
+   "_reviews",
+   "reviewed",
+   ".reviewed",
+   "revision",
+   "revisions",
+   ".revisions",
+   "_revisions",
+   "pr",
+   ".pr",
+   "prs",
+   "_prs",
+   "preview",
+   "previews",
+   ".preview",
+   "_previews"
+  ],
+  "icon": "reviews"
+ },
+ {
+  "names": [
+   "root",
+   ".root",
+   "_root",
+   "roots",
+   ".roots",
+   "_roots"
+  ],
+  "icon": "root"
+ },
+ {
+  "names": [
+   "route",
+   ".route",
+   "_route",
+   "routes",
+   "router",
+   "routing",
+   "_routes",
+   ".router",
+   ".routing"
+  ],
+  "icon": "routes"
+ },
+ {
+  "names": [
+   "ruby",
+   "rubies",
+   "rb",
+   "gem",
+   "gems",
+   ".ruby",
+   "_ruby",
+   "_gems",
+   ".gems",
+   ".rb",
+   "_rb",
+   ".gem_rbs_collection",
+   "sig",
+   ".sig",
+   "_sig"
+  ],
+  "icon": "ruby"
+ },
+ {
+  "names": [
+   "validation",
+   "validations",
+   "validator",
+   "validators",
+   "rule",
+   "rules",
+   ".validation",
+   "_validations",
+   "_validators",
+   ".rules",
+   "_rules"
+  ],
+  "icon": "rules"
+ },
+ {
+  "names": [
+   "rust",
+   "_rust",
+   "cargo",
+   ".cargo",
+   "_cargo",
+   "rs",
+   ".rs",
+   "_rs"
+  ],
+  "icon": "rust"
+ },
+ {
+  "names": [
+   "saltstack",
+   "sls",
+   ".sls",
+   "_sls",
+   ".saltstack",
+   "_saltstack",
+   ".salt",
+   "salt"
+  ],
+  "icon": "salt"
+ },
+ {
+  "names": [
+   "sass",
+   "scss",
+   ".scss",
+   "_scss",
+   ".sass",
+   "_sass"
+  ],
+  "icon": "sass"
+ },
+ {
+  "names": [
+   "scala",
+   "_scala",
+   ".scala",
+   "sbt",
+   ".sbt",
+   "_sbt",
+   "sbt_modules",
+   ".sbt_modules"
+  ],
+  "icon": "scala"
+ },
+ {
+  "names": [
+   "scons",
+   ".scons",
+   "_scons",
+   "scons_temp",
+   ".scons_temp",
+   "_scons_temp"
+  ],
+  "icon": "scons"
+ },
+ {
+  "names": [
+   "screens",
+   "screen",
+   "screenshot",
+   "screenshots",
+   ".screens",
+   "_screens",
+   ".screenshots",
+   "_screenshot",
+   "screenvid",
+   ".screenvids",
+   "capture",
+   "captures",
+   ".captures",
+   "_captures"
+  ],
+  "icon": "screens"
+ },
+ {
+  "names": [
+   "script",
+   "scripts",
+   "selector",
+   "selectors",
+   ".script",
+   "_scripts",
+   "_selectors",
+   ".selectors",
+   "polyfill",
+   ".polyfills"
+  ],
+  "icon": "scripts"
+ },
+ {
+  "names": [
+   "scratch",
+   "scratches",
+   ".scratch",
+   ".scratches",
+   "todo",
+   ".todo",
+   "todos",
+   ".todos",
+   "_todos",
+   "note",
+   ".notes",
+   "_notes"
+  ],
+  "icon": "scratch"
+ },
+ {
+  "names": [
+   "secure",
+   "security",
+   ".secure",
+   "_security",
+   "_secure",
+   ".security"
+  ],
+  "icon": "security"
+ },
+ {
+  "names": [
+   "seed",
+   "seeds",
+   ".seed",
+   "_seeds",
+   ".seeds",
+   "seeders",
+   ".seeders",
+   "_seeders"
+  ],
+  "icon": "seed"
+ },
+ {
+  "names": [
+   "server",
+   "http",
+   "request",
+   "requests",
+   "staging",
+   "qa",
+   "backend",
+   "_server",
+   ".server",
+   ".http",
+   "_request",
+   ".requests",
+   "_staging",
+   "_qa",
+   ".backend",
+   "_backend"
+  ],
+  "icon": "server"
+ },
+ {
+  "names": [
+   ".serverless",
+   "serverless",
+   "_serverless",
+   ".infra",
+   "infrastructure",
+   "infra",
+   "_infrastructure",
+   ".structures",
+   "_structures"
+  ],
+  "icon": "serverless"
+ },
+ {
+  "names": [
+   "shader",
+   ".shader",
+   "shaders",
+   ".shaders",
+   "_shaders",
+   "glsl",
+   ".glsl",
+   ".hlsl",
+   "hlsl"
+  ],
+  "icon": "shader"
+ },
+ {
+  "names": [
+   "share",
+   ".share",
+   "_share",
+   "shared",
+   "common",
+   "_shared",
+   ".common",
+   "_common",
+   "shared_components",
+   ".shared_components"
+  ],
+  "icon": "shared"
+ },
+ {
+  "names": [
+   "skeletons",
+   ".skeletons",
+   "_skeletons",
+   "placeholders",
+   ".placeholders",
+   "_placeholders"
+  ],
+  "icon": "skeletons"
+ },
+ {
+  "names": [
+   "skill",
+   "skills",
+   ".skill",
+   "_skills",
+   "instructions",
+   "instruction",
+   ".instructions",
+   "_instructions"
+  ],
+  "icon": "skill"
+ },
+ {
+  "names": [
+   "src",
+   "source",
+   "sources",
+   "code",
+   "buildSrc",
+   ".src",
+   "_src",
+   "_source",
+   ".sources",
+   ".code",
+   "_code",
+   ".buildSrc",
+   "snippets",
+   ".snippets",
+   ".snippet"
+  ],
+  "icon": "src"
+ },
+ {
+  "names": [
+   "sql",
+   "mysql",
+   "pgsql",
+   "maria",
+   ".sql",
+   "_sql",
+   "_mysql",
+   ".pgsql",
+   ".maria",
+   "_mariadb"
+  ],
+  "icon": "sql"
+ },
+ {
+  "names": [
+   "sso.sso",
+   "_sso"
+  ],
+  "icon": "sso"
+ },
+ {
+  "names": [
+   "sst",
+   ".sst",
+   "_sst"
+  ],
+  "icon": "sst"
+ },
+ {
+  "names": [
+   "stack",
+   "stacks",
+   "structure",
+   "structures",
+   "_stack",
+   ".stacks",
+   ".structures",
+   "_structure"
+  ],
+  "icon": "stack"
+ },
+ {
+  "names": [
+   "stencil",
+   ".stencil",
+   "_stencil"
+  ],
+  "icon": "stencil"
+ },
+ {
+  "names": [
+   "storage",
+   "storages",
+   "_storage",
+   ".storage",
+   "packet",
+   "packets",
+   "_packets",
+   "bucket",
+   "buckets",
+   ".bucket"
+  ],
+  "icon": "storage"
+ },
+ {
+  "names": [
+   "stories",
+   "storybook",
+   "storybooks",
+   ".stories",
+   ".storybook",
+   "_storybook",
+   "__stories__"
+  ],
+  "icon": "storybook"
+ },
+ {
+  "names": [
+   "storyblok",
+   "storybloks",
+   ".storyblok",
+   "_storyblok"
+  ],
+  "icon": "storyblok"
+ },
+ {
+  "names": [
+   "strategy",
+   "strategies",
+   "_strategy",
+   ".strategies",
+   ".strategy"
+  ],
+  "icon": "strategy"
+ },
+ {
+  "names": [
+   "css",
+   "style",
+   "styles",
+   "stylesheet",
+   "stylesheets",
+   ".css",
+   "_styles",
+   ".styles",
+   ".stylesheets",
+   "_css"
+  ],
+  "icon": "styles"
+ },
+ {
+  "names": [
+   "styled",
+   ".styled",
+   "_styled",
+   ".styled-components",
+   "_styled-components"
+  ],
+  "icon": "styled"
+ },
+ {
+  "names": [
+   "styl",
+   "stylus",
+   ".styl",
+   "_styl",
+   "_stylus",
+   ".stylus"
+  ],
+  "icon": "stylus"
+ },
+ {
+  "names": [
+   "sublime",
+   ".sublime",
+   "_sublime"
+  ],
+  "icon": "sublime"
+ },
+ {
+  "names": [
+   ".supabase",
+   "supabase",
+   "_supabase"
+  ],
+  "icon": "supabase"
+ },
+ {
+  "names": [
+   "svelte",
+   ".svelte",
+   "_svelte",
+   "sapper",
+   ".sapper",
+   "_sapper",
+   "svelte-kit",
+   ".svelte-kit"
+  ],
+  "icon": "svelte"
+ },
+ {
+  "names": [
+   "svg",
+   "svgs",
+   "svgicon",
+   "svgicons",
+   "graphic",
+   "graphics",
+   ".svg",
+   "_svg",
+   "_svgicons",
+   ".graphics",
+   "_graphic",
+   "gfx",
+   ".gfx",
+   "_gfx",
+   "vectors",
+   ".vectors",
+   "_vectors",
+   "vector",
+   ".vector"
+  ],
+  "icon": "svg"
+ },
+ {
+  "names": [
+   ".svn"
+  ],
+  "icon": "svn"
+ },
+ {
+  "names": [
+   "swagger",
+   "openapi",
+   ".swagger",
+   "_swagger",
+   ".openapi",
+   "_openapi"
+  ],
+  "icon": "swagger"
+ },
+ {
+  "names": [
+   "sync",
+   "synced",
+   ".sync",
+   "_synced",
+   ".synced"
+  ],
+  "icon": "sync"
+ },
+ {
+  "names": [
+   "syntax",
+   "syntaxes",
+   "spellcheck",
+   ".syntax",
+   "_syntax",
+   "_syntaxes",
+   ".spellcheck",
+   "_spellcheck",
+   "grammar",
+   ".grammar",
+   "_grammars",
+   "dict",
+   ".dict",
+   "_dict",
+   "dictionary",
+   ".dictionary",
+   "_dictionary",
+   "dictionaries",
+   ".dictionaries"
+  ],
+  "icon": "syntax"
+ },
+ {
+  "names": [
+   "target",
+   ".target",
+   "_target",
+   "targets",
+   "_targets"
+  ],
+  "icon": "target"
+ },
+ {
+  "names": [
+   "cli",
+   "task",
+   "tasks",
+   "command",
+   "commands",
+   "cmd",
+   "console",
+   "consoles",
+   ".run",
+   ".cli",
+   ".tasks",
+   "_commands",
+   "_cli",
+   "_consoles",
+   ".command",
+   "workflows",
+   ".workflows",
+   "_workflow",
+   "ticket",
+   "tickets",
+   "_ticket",
+   ".tickets",
+   "shell",
+   ".shell",
+   "bash",
+   "_bash",
+   ".zsh",
+   "_zsh",
+   ".fish",
+   "_fish"
+  ],
+  "icon": "tasks"
+ },
+ {
+  "names": [
+   "taskfile",
+   "taskfiles",
+   ".taskfile",
+   "_taskfile",
+   "_taskfiles"
+  ],
+  "icon": "taskfile"
+ },
+ {
+  "names": [
+   "src-tauri",
+   "tauri",
+   ".tauri",
+   "_tauri",
+   ".src-tauri"
+  ],
+  "icon": "tauri"
+ },
+ {
+  "names": [
+   "tech",
+   ".tech",
+   "technology",
+   "_technology",
+   "technologies",
+   ".technologies"
+  ],
+  "icon": "tech"
+ },
+ {
+  "names": [
+   "tmp",
+   ".tmp",
+   "temp",
+   ".temp",
+   "cache",
+   ".cache",
+   "_tmp",
+   "_cache",
+   "_temp"
+  ],
+  "icon": "temp"
+ },
+ {
+  "names": [
+   "test",
+   "tests",
+   "spec",
+   "specs",
+   "unit",
+   "units",
+   "_tests",
+   "_specs",
+   ".unit",
+   ".units",
+   ".spec",
+   "__test__",
+   "__tests__"
+  ],
+  "icon": "tests"
+ },
+ {
+  "names": [
+   "terraform",
+   ".terraform",
+   "_terraform",
+   "terragrunt",
+   ".terragrunt",
+   "_terragrunt",
+   "tf",
+   ".tf",
+   "_tf",
+   "hcl",
+   ".hcl",
+   "tfstate",
+   ".tfstate",
+   "tfvars",
+   "_tfvars"
+  ],
+  "icon": "terraform"
+ },
+ {
+  "names": [
+   ".tmBundle"
+  ],
+  "icon": "textmate"
+ },
+ {
+  "names": [
+   "trait",
+   "traits",
+   ".trait",
+   "_trait",
+   ".traits",
+   "_traits"
+  ],
+  "icon": "trait"
+ },
+ {
+  "names": [
+   "trash",
+   "bin",
+   ".trash",
+   ".bin",
+   "_trash",
+   "_bin",
+   "archived",
+   "deprecated",
+   "scrap",
+   ".archived",
+   ".deprecated",
+   ".scrap",
+   "_archived",
+   "_deprecated",
+   "_scrap"
+  ],
+  "icon": "trash"
+ },
+ {
+  "names": [
+   "theme",
+   "themes",
+   "color",
+   "colors",
+   "scheme",
+   "schemes",
+   "skin",
+   "skins",
+   ".theme",
+   "_themes",
+   ".colors",
+   "_color",
+   ".schemes",
+   "_scheme",
+   "_skins",
+   ".skin",
+   "design",
+   "designs",
+   ".design",
+   "_designs"
+  ],
+  "icon": "themes"
+ },
+ {
+  "names": [
+   "trpc",
+   ".trpc",
+   "_trpc"
+  ],
+  "icon": "trpc"
+ },
+ {
+  "names": [
+   "protheus",
+   "totvs",
+   "advpl",
+   ".protheus",
+   "_protheus",
+   ".totvs",
+   "_totvs",
+   ".advpl",
+   "_advpl"
+  ],
+  "icon": "totvs"
+ },
+ {
+  "names": [
+   "turborepo",
+   ".turborepo",
+   "_turborepo",
+   "turbo",
+   ".turbo",
+   "_turbo"
+  ],
+  "icon": "turborepo"
+ },
+ {
+  "names": [
+   "types",
+   "type",
+   "typescript",
+   "typescripts",
+   "ts",
+   "interface",
+   "interfaces",
+   "typings",
+   ".interface",
+   "_interfaces",
+   ".types",
+   "_type",
+   ".typescript",
+   "_typescripts",
+   ".ts",
+   ".typing",
+   "_typings",
+   "@types"
+  ],
+  "icon": "ts"
+ },
+ {
+  "names": [
+   "ui",
+   "gui",
+   "ux",
+   ".ui",
+   "_ui",
+   ".gui",
+   "_gui",
+   ".ux",
+   "_ux",
+   "figma",
+   ".figma",
+   "_figma"
+  ],
+  "icon": "ui"
+ },
+ {
+  "names": [
+   "unity",
+   ".unity",
+   "_unity",
+   "unity3d",
+   ".unity3d",
+   "_unity3d"
+  ],
+  "icon": "unity"
+ },
+ {
+  "names": [
+   "upload",
+   "uploads",
+   ".uploads",
+   "_uploads",
+   "update",
+   "updates",
+   "_updates",
+   "updated",
+   ".updated",
+   "upgrade",
+   "upgrades",
+   ".upgrade",
+   "_upgrades"
+  ],
+  "icon": "upload"
+ },
+ {
+  "names": [
+   "user",
+   "users",
+   "member",
+   "members",
+   "friend",
+   "friends",
+   "partner",
+   "partners",
+   ".users",
+   ".roles",
+   "_partners",
+   "_members",
+   ".friend",
+   "_friends",
+   "contact",
+   "contacts",
+   ".contact",
+   "_contacts"
+  ],
+  "icon": "users"
+ },
+ {
+  "names": [
+   "util",
+   "utils",
+   "tool",
+   "tools",
+   ".util",
+   "_utils",
+   "_tools",
+   ".tools",
+   "utility",
+   ".utility",
+   "utilities",
+   "_utilities",
+   "toolkit",
+   "toolkits",
+   ".toolkit",
+   "_toolkits",
+   "toolbox",
+   "toolboxes",
+   ".toolbox",
+   "_toolboxes",
+   "tooling",
+   ".tooling",
+   "devtools",
+   ".devtools",
+   ".kit",
+   "_kits",
+   "kits"
+  ],
+  "icon": "tools"
+ },
+ {
+  "names": [
+   ".vagrant",
+   ".vagrant.d",
+   "_vagrant",
+   "vagrant.d",
+   "_vagrant.d"
+  ],
+  "icon": "vagrant"
+ },
+ {
+  "names": [
+   "vendor",
+   "vendors",
+   "lib",
+   "libs",
+   "library",
+   ".library",
+   "libraries",
+   ".libraries",
+   "Pod",
+   "Pods",
+   "stdlib",
+   ".vendor",
+   "_vendor",
+   ".vendors",
+   ".lib",
+   "_lib",
+   ".Pods",
+   "_Pod",
+   ".stdlib",
+   "_stdlib",
+   ".lib64",
+   "_lib64"
+  ],
+  "icon": "lib"
+ },
+ {
+  "names": [
+   "venv",
+   ".venv",
+   "virtualenv",
+   ".virtualenv",
+   "_virtualenv"
+  ],
+  "icon": "venv"
+ },
+ {
+  "names": [
+   "vercel",
+   ".vercel",
+   "_vercel",
+   "now",
+   ".now",
+   "_now"
+  ],
+  "icon": "vercel"
+ },
+ {
+  "names": [
+   "verdaccio",
+   ".verdaccio",
+   "_verdaccio"
+  ],
+  "icon": "verdaccio"
+ },
+ {
+  "names": [
+   "videos",
+   "video",
+   "movie",
+   "movies",
+   ".video",
+   "_videos",
+   "_movie",
+   ".movies",
+   "vids",
+   ".vids",
+   "_vid",
+   "mov",
+   ".movs",
+   "mp4",
+   ".mp4"
+  ],
+  "icon": "video"
+ },
+ {
+  "names": [
+   "view",
+   "views",
+   "template",
+   "templates",
+   "page",
+   "pages",
+   ".view",
+   "_views",
+   ".templates",
+   "_template",
+   "_page",
+   ".pages",
+   "html",
+   "_html",
+   ".html"
+  ],
+  "icon": "views"
+ },
+ {
+  "names": [
+   "viewmodel",
+   "viewModels",
+   "_viewModel",
+   ".viewmodels",
+   "crud",
+   ".crud",
+   "_crud"
+  ],
+  "icon": "viewmodel"
+ },
+ {
+  "names": [
+   "vim",
+   ".vim",
+   "_vim"
+  ],
+  "icon": "vim"
+ },
+ {
+  "names": [
+   "virtual",
+   "vm",
+   "vms",
+   "desktop",
+   ".virtual",
+   "_virtual",
+   ".vm",
+   "_vms",
+   ".desktop",
+   "_desktop"
+  ],
+  "icon": "vm"
+ },
+ {
+  "names": [
+   "vs",
+   ".vs",
+   "_vs"
+  ],
+  "icon": "vs"
+ },
+ {
+  "names": [
+   "vitepress",
+   ".vitepress",
+   "_vitepress",
+   "vitest",
+   ".vitest",
+   "_vitest"
+  ],
+  "icon": "vitepress"
+ },
+ {
+  "names": [
+   "vscode",
+   ".vscode",
+   "_vscode",
+   ".vscode-test",
+   "vscode-test"
+  ],
+  "icon": "vscode"
+ },
+ {
+  "names": [
+   "vue",
+   ".vue",
+   "_vue"
+  ],
+  "icon": "vue"
+ },
+ {
+  "names": [
+   "vuepress",
+   ".vuepress",
+   "_vuepress"
+  ],
+  "icon": "vuepress"
+ },
+ {
+  "names": [
+   "vuex",
+   ".vuex",
+   "_vuex"
+  ],
+  "icon": "vuex"
+ },
+ {
+  "names": [
+   "public",
+   "static",
+   "web",
+   "www",
+   "wwwroot",
+   "public_html",
+   ".public",
+   "_public_html",
+   ".static",
+   "_static",
+   ".web",
+   "_www",
+   ".www",
+   ".wwwroot",
+   "_wwwroot",
+   "site",
+   "sites",
+   ".sites",
+   "_site"
+  ],
+  "icon": "web"
+ },
+ {
+  "names": [
+   "webcomponents",
+   ".webcomponents",
+   "_webcomponents",
+   ".web-components",
+   "_web-components"
+  ],
+  "icon": "webcomponents"
+ },
+ {
+  "names": [
+   "webpack",
+   ".webpack",
+   "_webpack"
+  ],
+  "icon": "webpack"
+ },
+ {
+  "names": [
+   "windows",
+   ".windows",
+   "_windows",
+   ".win",
+   "_win",
+   "win",
+   "win32",
+   "win64"
+  ],
+  "icon": "windows"
+ },
+ {
+  "names": [
+   ".wine"
+  ],
+  "icon": "wine"
+ },
+ {
+  "names": [
+   "woocommerce",
+   ".woocommerce",
+   "_woocommerce"
+  ],
+  "icon": "woocommerce"
+ },
+ {
+  "names": [
+   "woodpecker",
+   ".woodpecker",
+   "_woodpecker"
+  ],
+  "icon": "woodpecker"
+ },
+ {
+  "names": [
+   "folder",
+   "folders",
+   ".folders",
+   "_folders",
+   "workspace",
+   "workspaces",
+   ".workspace",
+   "_workspaces"
+  ],
+  "icon": "projects"
+ },
+ {
+  "names": [
+   "wp-admin",
+   "wp-content",
+   "wp-includes",
+   ".wp-admin",
+   "_wp-content",
+   ".wp-includes"
+  ],
+  "icon": "wordpress"
+ },
+ {
+  "names": [
+   "xstate",
+   "_xstate",
+   "machine",
+   "_machine",
+   ".machines"
+  ],
+  "icon": "xstate"
+ },
+ {
+  "names": [
+   "yarn",
+   ".yarn",
+   "_yarn"
+  ],
+  "icon": "yarn"
+ }
+]

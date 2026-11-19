@@ -322,7 +322,7 @@ func (a *App) searchFileRow(c *ui.Context, index int) {
 		return
 	}
 	row.Children(func() {
-		ui.Icon(c, iconFile).FontSize(smallFontSize).TextColor(fileTint(name, colors))
+		a.fileIconView(c, result.path, smallFontSize)
 		ui.Text(c, name).FontSize(smallFontSize).FontWeight(600).MaxLines(1).Shrink(0)
 		if dir := path.Dir(result.path); dir != "." {
 			ui.Text(c, dir).FontSize(smallFontSize - 1).TextColor(colors.muted).MaxLines(1).Shrink(1)
