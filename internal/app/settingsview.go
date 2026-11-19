@@ -37,7 +37,6 @@ const (
 	settingsEditor
 	settingsReading
 	settingsLanguages
-	settingsAgents
 )
 
 // settingsNavItem is a page in the list beside the settings.
@@ -61,14 +60,12 @@ func settingsNavItems() []settingsNavItem {
 		{settingsEditor, iconCode, locales.SectionEditor()},
 		{settingsReading, iconBook, locales.SectionReading()},
 		{settingsLanguages, iconBraces, locales.SettingLanguageServers()},
-		{settingsAgents, iconAgent, locales.SectionAgents()},
 	}
 }
 
 // showSettings opens the settings over the window, on their first page.
 func (a *App) showSettings() {
 	a.languages = languagesPage{}
-	a.agents = agentsPage{}
 	a.settingsPage = settingsAppearance
 	a.settingsOpen = true
 }
@@ -76,11 +73,8 @@ func (a *App) showSettings() {
 // chooseSettingsPage shows a page, finding out what it lists the first time.
 func (a *App) chooseSettingsPage(page settingsPage) {
 	a.settingsPage = page
-	switch {
-	case page == settingsLanguages && !a.languages.open:
+	if page == settingsLanguages && !a.languages.open {
 		a.showLanguages()
-	case page == settingsAgents && !a.agents.open:
-		a.showAgents()
 	}
 }
 
@@ -206,8 +200,6 @@ func (a *App) settingsPageContent(c *ui.Context) {
 		)
 	case settingsLanguages:
 		a.languagesContent(c)
-	case settingsAgents:
-		a.agentsContent(c)
 	default:
 		a.themeGroup(c)
 		a.settingsGroup(c, "",

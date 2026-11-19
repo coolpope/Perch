@@ -63,8 +63,6 @@ type App struct {
 	definition    definitionState
 	// projectSymbols is the finder of symbols across the project.
 	projectSymbols projectSymbolsState
-	agentTour      agentTour
-	agents         agentsPage
 
 	settings     settings.Settings
 	settingsOpen bool
@@ -161,7 +159,6 @@ func (a *App) loadFolder(root string) error {
 	a.active = noDocument
 	a.notice = toast{}
 	a.brief = toast{}
-	a.agentTour = agentTour{}
 	a.restoreSession()
 	return nil
 }

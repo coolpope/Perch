@@ -280,7 +280,6 @@ func (a *App) panelContentView(c *ui.Context) {
 		return
 	}
 	a.pathBarView(c, d)
-	a.agentTourView(c, d)
 	a.conflictView(c, d)
 	a.documentView(c, d)
 	a.statusView(c, d)
