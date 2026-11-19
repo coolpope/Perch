@@ -66,6 +66,7 @@ type App struct {
 
 	settings     settings.Settings
 	settingsOpen bool
+	settingsPage settingsPage
 	languages    languagesPage
 	// languageFile is the person's configuration of language servers, empty
 	// when there is no place for one.
@@ -84,9 +85,9 @@ type App struct {
 	briefID      uint64
 	briefHovered bool
 
-	look      *look
-	lightLook *look
-	darkLook  *look
+	look *look
+	// looks are the looks that have shown, built once each.
+	looks map[lookKey]*look
 
 	closingDocument *document
 	askCloseTab     bool
@@ -111,6 +112,7 @@ func New() *App {
 		treeRow:      noRow,
 		sidebarWidth: initialSidebarWidth,
 		active:       noDocument,
+		looks:        map[lookKey]*look{},
 		settings:     settings.Default(),
 		trashItem:    mygo.Shell.TrashItem,
 	}

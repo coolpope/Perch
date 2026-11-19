@@ -17,9 +17,8 @@ import (
 )
 
 const (
-	languagesListHeight float32 = 372
-	languageRowHeight   float32 = 54
-	copiedExample       string  = "\x00example"
+	languageRowHeight float32 = 54
+	copiedExample     string  = "\x00example"
 )
 
 // languagesPage is the settings page of the language servers.
@@ -108,34 +107,23 @@ func writeLanguageTemplate(file string) error {
 }
 
 func (a *App) languagesContent(c *ui.Context) {
-	colors := a.look.palette
-	ui.Column(c).FillWidth().Padding(6, 20, 16, 20).Children(func() {
-		ui.Row(c).FillWidth().Height(48).Gap(6).AlignItems(ui.Center).Children(func() {
-			back := ui.Box(c).Size(24, 24).Center().Radius(radiusSmall).Label(locales.LanguagesBack())
-			if back.Hovered() {
-				back.Background(colors.hover)
-			}
-			if back.Clicked() {
-				a.languages = languagesPage{}
-			}
-			back.Children(func() { ui.Icon(c, iconBack).FontSize(15).TextColor(colors.muted) })
-			ui.Text(c, locales.LanguageServersTitle()).FontSize(16).FontWeight(600)
-		})
-		ui.Scroll(c).FillWidth().Height(languagesListHeight).Children(func() {
-			for _, language := range a.languages.languages {
-				c.Key(language.ID)
-				a.languageRowView(c, language, !slices.Contains(a.settings.DisabledLanguages, language.ID))
-			}
-		})
-		a.languagesFooterView(c)
+	a.settingsCard(c, func() {
+		for index, language := range a.languages.languages {
+			c.Key(language.ID)
+			a.languageRowView(c, language, !slices.Contains(a.settings.DisabledLanguages, language.ID), index > 0)
+		}
 	})
+	a.languagesFooterView(c)
 }
 
-func (a *App) languageRowView(c *ui.Context, language lsp.Language, enabled bool) {
+func (a *App) languageRowView(c *ui.Context, language lsp.Language, enabled bool, divided bool) {
 	colors := a.look.palette
-	ui.Row(c).FillWidth().Height(languageRowHeight).Gap(10).Padding(0, 10, 0, 0).AlignItems(ui.Center).
-		BorderWidth(0, 0, 1, 0).BorderColor(colors.border).Children(func() {
-		ui.Column(c).Grow(1).Shrink(1).Gap(3).Children(func() {
+	row := ui.Row(c).FillWidth().Height(languageRowHeight).Gap(10).Padding(0, 14).AlignItems(ui.Center)
+	if divided {
+		row.BorderWidth(1, 0, 0, 0).BorderColor(colors.border)
+	}
+	row.Children(func() {
+		ui.Column(c).Grow(1).Shrink(1).MinWidth(0).Gap(3).Children(func() {
 			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Text(c, language.Name).MaxLines(1)
 				if language.Custom {
@@ -182,7 +170,7 @@ func (a *App) languageInstallView(c *ui.Context, language lsp.Language) {
 }
 
 func (a *App) languagesFooterView(c *ui.Context) {
-	ui.Column(c).FillWidth().Gap(10).Padding(12, 0, 0, 0).Children(func() {
+	ui.Column(c).FillWidth().Gap(10).Children(func() {
 		ui.Text(c, locales.LanguageConfigHint()).FontSize(smallFontSize).TextColor(a.look.palette.muted)
 		ui.Row(c).FillWidth().Gap(8).Children(func() {
 			ui.Spacer(c)

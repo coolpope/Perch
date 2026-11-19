@@ -10,7 +10,7 @@ import (
 func TestSettingsSurviveARestart(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "nested", "settings.json")
 	want := Settings{
-		Appearance: AppearanceDark, FontSize: 16, TabSize: 2, WordWrap: true,
+		Appearance: AppearanceDark, Theme: ThemePaper, FontSize: 16, TabSize: 2, WordWrap: true,
 		MarkdownView: MarkdownSource, DiffLayout: DiffSplit,
 	}
 	if err := Save(file, want); err != nil {

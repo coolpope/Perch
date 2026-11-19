@@ -1922,16 +1922,6 @@ func (msgs Messages) TrashFailed(name string) string {
 	return Catalog.Format(msgs.locale, "trashFailed", map[string]any{"name": name})
 }
 
-// SectionNavigation says "Code Navigation"
-// in the language the app shows.
-func SectionNavigation() string { return In(i18n.Locale()).SectionNavigation() }
-
-// SectionNavigation says "Code Navigation"
-// in the language of msgs.
-func (msgs Messages) SectionNavigation() string {
-	return Catalog.Format(msgs.locale, "sectionNavigation", nil)
-}
-
 // SettingLanguageServers says "Language servers"
 // in the language the app shows.
 func SettingLanguageServers() string { return In(i18n.Locale()).SettingLanguageServers() }
@@ -1940,36 +1930,6 @@ func SettingLanguageServers() string { return In(i18n.Locale()).SettingLanguageS
 // in the language of msgs.
 func (msgs Messages) SettingLanguageServers() string {
 	return Catalog.Format(msgs.locale, "settingLanguageServers", nil)
-}
-
-// ManageLanguages says "Manage"
-// in the language the app shows.
-func ManageLanguages() string { return In(i18n.Locale()).ManageLanguages() }
-
-// ManageLanguages says "Manage"
-// in the language of msgs.
-func (msgs Messages) ManageLanguages() string {
-	return Catalog.Format(msgs.locale, "manageLanguages", nil)
-}
-
-// LanguageServersTitle says "Language Servers"
-// in the language the app shows.
-func LanguageServersTitle() string { return In(i18n.Locale()).LanguageServersTitle() }
-
-// LanguageServersTitle says "Language Servers"
-// in the language of msgs.
-func (msgs Messages) LanguageServersTitle() string {
-	return Catalog.Format(msgs.locale, "languageServersTitle", nil)
-}
-
-// LanguagesBack says "Back to Settings"
-// in the language the app shows.
-func LanguagesBack() string { return In(i18n.Locale()).LanguagesBack() }
-
-// LanguagesBack says "Back to Settings"
-// in the language of msgs.
-func (msgs Messages) LanguagesBack() string {
-	return Catalog.Format(msgs.locale, "languagesBack", nil)
 }
 
 // LanguageInstalled says "Installed"
@@ -2142,36 +2102,6 @@ func SectionAgents() string { return In(i18n.Locale()).SectionAgents() }
 // in the language of msgs.
 func (msgs Messages) SectionAgents() string {
 	return Catalog.Format(msgs.locale, "sectionAgents", nil)
-}
-
-// SettingCodingAgents says "Coding agents"
-// in the language the app shows.
-func SettingCodingAgents() string { return In(i18n.Locale()).SettingCodingAgents() }
-
-// SettingCodingAgents says "Coding agents"
-// in the language of msgs.
-func (msgs Messages) SettingCodingAgents() string {
-	return Catalog.Format(msgs.locale, "settingCodingAgents", nil)
-}
-
-// ManageAgents says "Manage"
-// in the language the app shows.
-func ManageAgents() string { return In(i18n.Locale()).ManageAgents() }
-
-// ManageAgents says "Manage"
-// in the language of msgs.
-func (msgs Messages) ManageAgents() string {
-	return Catalog.Format(msgs.locale, "manageAgents", nil)
-}
-
-// AgentsTitle says "Coding Agents"
-// in the language the app shows.
-func AgentsTitle() string { return In(i18n.Locale()).AgentsTitle() }
-
-// AgentsTitle says "Coding Agents"
-// in the language of msgs.
-func (msgs Messages) AgentsTitle() string {
-	return Catalog.Format(msgs.locale, "agentsTitle", nil)
 }
 
 // AgentNotFound says "Not found on this Mac"
@@ -2372,4 +2302,54 @@ func MenuPreviousStop() string { return In(i18n.Locale()).MenuPreviousStop() }
 // in the language of msgs.
 func (msgs Messages) MenuPreviousStop() string {
 	return Catalog.Format(msgs.locale, "menuPreviousStop", nil)
+}
+
+// SettingColorMode says "Light or dark"
+// in the language the app shows.
+func SettingColorMode() string { return In(i18n.Locale()).SettingColorMode() }
+
+// SettingColorMode says "Light or dark"
+// in the language of msgs.
+func (msgs Messages) SettingColorMode() string {
+	return Catalog.Format(msgs.locale, "settingColorMode", nil)
+}
+
+// ThemeGrokBotAbout says "Black and white with a blue accent"
+// in the language the app shows.
+func ThemeGrokBotAbout() string { return In(i18n.Locale()).ThemeGrokBotAbout() }
+
+// ThemeGrokBotAbout says "Black and white with a blue accent"
+// in the language of msgs.
+func (msgs Messages) ThemeGrokBotAbout() string {
+	return Catalog.Format(msgs.locale, "themeGrokBotAbout", nil)
+}
+
+// ThemePaperAbout says "Neutral sheet with a fine grain"
+// in the language the app shows.
+func ThemePaperAbout() string { return In(i18n.Locale()).ThemePaperAbout() }
+
+// ThemePaperAbout says "Neutral sheet with a fine grain"
+// in the language of msgs.
+func (msgs Messages) ThemePaperAbout() string {
+	return Catalog.Format(msgs.locale, "themePaperAbout", nil)
+}
+
+// ThemePerchAbout says "Warm paper and graphite"
+// in the language the app shows.
+func ThemePerchAbout() string { return In(i18n.Locale()).ThemePerchAbout() }
+
+// ThemePerchAbout says "Warm paper and graphite"
+// in the language of msgs.
+func (msgs Messages) ThemePerchAbout() string {
+	return Catalog.Format(msgs.locale, "themePerchAbout", nil)
+}
+
+// ClearSearch says "Clear Search"
+// in the language the app shows.
+func ClearSearch() string { return In(i18n.Locale()).ClearSearch() }
+
+// ClearSearch says "Clear Search"
+// in the language of msgs.
+func (msgs Messages) ClearSearch() string {
+	return Catalog.Format(msgs.locale, "clearSearch", nil)
 }

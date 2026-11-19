@@ -28,6 +28,16 @@ const (
 	AppearanceDark   Appearance = "dark"
 )
 
+// Theme is the color theme of the windows.
+type Theme string
+
+// The themes to choose from.
+const (
+	ThemeGrokBot Theme = "grokbot"
+	ThemePaper   Theme = "paper"
+	ThemePerch   Theme = "perch"
+)
+
 // MarkdownView is how Markdown files open.
 type MarkdownView string
 
@@ -52,6 +62,7 @@ var TabSizes = []int{0, 2, 4, 8}
 // Settings are the preferences of every window.
 type Settings struct {
 	Appearance   Appearance   `json:"appearance"`
+	Theme        Theme        `json:"theme"`
 	FontSize     int          `json:"fontSize"`
 	TabSize      int          `json:"tabSize"`
 	WordWrap     bool         `json:"wordWrap"`
@@ -65,6 +76,7 @@ type Settings struct {
 func Default() Settings {
 	return Settings{
 		Appearance:   AppearanceSystem,
+		Theme:        ThemeGrokBot,
 		FontSize:     DefaultFontSize,
 		MarkdownView: MarkdownPreview,
 		DiffLayout:   DiffUnified,
@@ -76,6 +88,9 @@ func valid(s Settings) Settings {
 	defaults := Default()
 	if !slices.Contains([]Appearance{AppearanceSystem, AppearanceLight, AppearanceDark}, s.Appearance) {
 		s.Appearance = defaults.Appearance
+	}
+	if !slices.Contains([]Theme{ThemeGrokBot, ThemePaper, ThemePerch}, s.Theme) {
+		s.Theme = defaults.Theme
 	}
 	if s.FontSize < MinFontSize || s.FontSize > MaxFontSize {
 		s.FontSize = defaults.FontSize

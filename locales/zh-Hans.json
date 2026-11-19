@@ -188,11 +188,7 @@
   "trashUnsaved": "有 {count} 个打开的标签页含有未保存的更改。",
   "trashAction": "移到废纸篓",
   "trashFailed": "无法将 {name} 移到废纸篓",
-  "sectionNavigation": "代码导航",
   "settingLanguageServers": "语言服务",
-  "manageLanguages": "管理",
-  "languageServersTitle": "语言服务",
-  "languagesBack": "返回设置",
   "languageInstalled": "已安装",
   "languageNotInstalled": "未安装",
   "languageChecking": "正在检查…",
@@ -210,9 +206,6 @@
   "menuPreviousTab": "上一个标签页",
   "readOnly": "只读",
   "sectionAgents": "Agent",
-  "settingCodingAgents": "编程 Agent",
-  "manageAgents": "管理",
-  "agentsTitle": "编程 Agent",
   "agentNotFound": "这台 Mac 上没有找到",
   "agentToolsName": "Perch 工具",
   "agentToolsDetail": "让 agent 在 Perch 里显示代码、读取你的选区",
@@ -232,5 +225,10 @@
   "tourDone": "完成",
   "tourStopFailed": "无法显示这一处",
   "menuNextStop": "下一处",
-  "menuPreviousStop": "上一处"
+  "menuPreviousStop": "上一处",
+  "settingColorMode": "深浅色",
+  "themeGrokBotAbout": "黑白为主，配一抹蓝",
+  "themePaperAbout": "中性灰白，带细腻纸纹",
+  "themePerchAbout": "暖色纸张与石墨",
+  "clearSearch": "清除搜索"
 }

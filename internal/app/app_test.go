@@ -25,6 +25,7 @@ import (
 	"perch/internal/session"
 	"perch/internal/settings"
 	"perch/internal/workspace"
+	"perch/locales"
 )
 
 const (
@@ -1213,11 +1214,15 @@ func TestSettingsChangeTheOpenWindow(t *testing.T) {
 
 	a.showSettings()
 	tester.Frame()
-	for _, want := range []string{"Settings", "Theme", "Font size", "Wrap long lines", "Open Markdown as"} {
+	for _, want := range []string{"Settings", "Theme", "Grok Bot", "Paper", "Light or dark"} {
 		if !tester.HasText(want) {
 			t.Fatalf("settings do not show %q; texts %q", want, tester.Texts())
 		}
 	}
+	if err := tester.Click("Reading"); err != nil {
+		t.Fatal(err)
+	}
+	tester.Frame()
 	if err := tester.Click("Source"); err != nil {
 		t.Fatal(err)
 	}
@@ -1714,13 +1719,34 @@ func TestLanguageSettingsListEveryServer(t *testing.T) {
 	a, tester, posted := openWithPosts(t, root)
 	a.showSettings()
 	tester.Frame()
-	if err := tester.Click("Manage"); err != nil {
+	if err := tester.Click(locales.SettingLanguageServers()); err != nil {
 		t.Fatalf("%v; texts %q", err, tester.Texts())
 	}
 	followPosts(t, posted, tester, func() bool { return a.languages.checked })
 	tester.Frame()
-	if !tester.HasText("Language Servers") || !tester.HasText("Zig") {
+	if !tester.HasText("Zig") {
 		t.Errorf("texts %q", tester.Texts())
+	}
+}
+
+func TestChoosingAThemeRecolorsTheWindow(t *testing.T) {
+	a, tester := openWorkspace(t, t.TempDir())
+	tester.Frame()
+	if a.settings.Theme != settings.ThemeGrokBot || a.look.palette.background != paletteFor(settings.ThemeGrokBot, false).background {
+		t.Fatalf("first launch shows %q", a.settings.Theme)
+	}
+	a.showSettings()
+	tester.Frame()
+	if err := tester.Click("Paper"); err != nil {
+		t.Fatalf("%v; texts %q", err, tester.Texts())
+	}
+	tester.Frame()
+	tester.Frame()
+	if a.settings.Theme != settings.ThemePaper {
+		t.Fatalf("the theme is %q", a.settings.Theme)
+	}
+	if a.look.palette.background != paletteFor(settings.ThemePaper, false).background || a.look.grain == nil {
+		t.Errorf("the window did not change: %+v", a.look.palette.background)
 	}
 }
 

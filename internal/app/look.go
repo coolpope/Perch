@@ -6,6 +6,8 @@ import (
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
+
+	"perch/internal/settings"
 )
 
 // The corner radii of the interface, from its smallest parts to its panels.
@@ -16,8 +18,7 @@ const (
 	radiusDialog  float32 = 18
 )
 
-// palette is the color scheme of one appearance: warm paper or graphite with
-// a single blue accent taken from the app icon.
+// palette is the color scheme of a theme in one appearance.
 type palette struct {
 	background ui.Color
 	sidebar    ui.Color
@@ -36,48 +37,27 @@ type palette struct {
 	number   ui.Color
 	comment  ui.Color
 	markup   ui.Color
+
+	// fill is the face of primary buttons and checked controls, the accent
+	// when a theme leaves it out, under fillText. fillHover and fillPressed
+	// are that face under the pointer and pressed.
+	fill, fillHover, fillPressed, fillText ui.Color
+	// code is the plain text of code, the text color when left out.
+	code ui.Color
+	// gutter and gutterNow are the line numbers, and that of the caret's line.
+	gutter, gutterNow ui.Color
+	selection         ui.Color
+	// added, changed and removed mark changed lines, the editor's own colors
+	// when left out.
+	added, changed, removed ui.Color
+	// grain is how strongly a fine paper grain marks the window, 0 for none.
+	grain float32
 }
 
-func lightPalette() palette {
-	return palette{
-		background: ui.Hex("#FBFAF7"),
-		sidebar:    ui.Hex("#F3F1EB"),
-		hover:      ui.Hex("#E9E6DE"),
-		border:     ui.Hex("#E5E1D8"),
-		text:       ui.Hex("#2B2925"),
-		muted:      ui.Hex("#7D776C"),
-		accent:     ui.Hex("#1464F0"),
-		warning:    ui.Hex("#9A6A10"),
-		danger:     ui.Hex("#B3382C"),
-		keyword:    ui.Hex("#A8461F"),
-		typeName:   ui.Hex("#1F7A6D"),
-		function:   ui.Hex("#2F5FA8"),
-		str:        ui.Hex("#55792A"),
-		number:     ui.Hex("#9A6A10"),
-		comment:    ui.Hex("#9A9487"),
-		markup:     ui.Hex("#7A4A9E"),
-	}
-}
-
-func darkPalette() palette {
-	return palette{
-		background: ui.Hex("#1C1B19"),
-		sidebar:    ui.Hex("#171614"),
-		hover:      ui.Hex("#2A2926"),
-		border:     ui.Hex("#2E2C29"),
-		text:       ui.Hex("#E7E2D9"),
-		muted:      ui.Hex("#928C80"),
-		accent:     ui.Hex("#4A9DFF"),
-		warning:    ui.Hex("#D9A441"),
-		danger:     ui.Hex("#E5705F"),
-		keyword:    ui.Hex("#E59068"),
-		typeName:   ui.Hex("#6CC4B4"),
-		function:   ui.Hex("#8DB4EA"),
-		str:        ui.Hex("#A9C77A"),
-		number:     ui.Hex("#DDB061"),
-		comment:    ui.Hex("#6F6A60"),
-		markup:     ui.Hex("#C3A0E0"),
-	}
+// lookKey names a look: a theme in one appearance.
+type lookKey struct {
+	theme settings.Theme
+	dark  bool
 }
 
 // look is everything the window draws with in one appearance.
@@ -91,10 +71,21 @@ type look struct {
 	// that the main panel stands on its own.
 	shell *ui.Theme
 	code  *editor.Theme
+	// grain is the tile of the theme's paper grain, nil for a smooth theme.
+	grain *ui.Bitmap
 }
 
 func newLook(base *ui.Theme, colors palette) *look {
-	theme := *base.WithAccent(colors.accent)
+	theme := *base.WithAccent(colors.fill)
+	if colors.fillHover.A != 0 {
+		theme.AccentHover, theme.AccentPressed = colors.fillHover, colors.fillPressed
+	}
+	if colors.fillText.A != 0 {
+		theme.AccentText = colors.fillText
+	}
+	theme.InactiveAccent = colors.fill
+	theme.Selection = colors.selection
+	theme.Focus = colors.accent.Alpha(0.6)
 	theme.Background = colors.background
 	theme.Surface = colors.sidebar
 	theme.SurfaceHover = colors.hover
@@ -114,21 +105,32 @@ func newLook(base *ui.Theme, colors palette) *look {
 	tree.InactiveAccent = colors.hover
 	shell := theme
 	shell.Border = colors.sidebar
-	return &look{palette: colors, theme: &theme, tree: &tree, shell: &shell, code: newCodeTheme(&theme, colors)}
+	made := &look{palette: colors, theme: &theme, tree: &tree, shell: &shell, code: newCodeTheme(&theme, colors)}
+	if colors.grain > 0 {
+		made.grain = ui.NewBitmap(grainImage(colors.grain, base.Dark))
+	}
+	return made
 }
 
 func newCodeTheme(theme *ui.Theme, colors palette) *editor.Theme {
 	code := editor.DefaultTheme(theme)
+	code.Text = colors.code
 	code.ActiveLine = colors.hover.Alpha(0.45)
-	code.LineNumber = colors.muted.Alpha(0.55)
-	code.ActiveLineNumber = colors.text
+	code.LineNumber = colors.gutter
+	code.ActiveLineNumber = colors.gutterNow
+	code.Selection = colors.selection
+	code.InactiveSelection = colors.selection.Alpha(0.6)
+	code.Cursor = colors.accent
+	if colors.added.A != 0 {
+		code.Added, code.Modified, code.Deleted = colors.added, colors.changed, colors.removed
+	}
 	code.IndentGuide = colors.border
 	styles := map[editor.TokenKind]ui.Color{
 		editor.TokenKeyword:  colors.keyword,
 		editor.TokenType:     colors.typeName,
 		editor.TokenFunction: colors.function,
-		editor.TokenProperty: colors.text,
-		editor.TokenVariable: colors.text,
+		editor.TokenProperty: colors.code,
+		editor.TokenVariable: colors.code,
 		editor.TokenConstant: colors.number,
 		editor.TokenNumber:   colors.number,
 		editor.TokenString:   colors.str,
@@ -148,18 +150,16 @@ func newCodeTheme(theme *ui.Theme, colors palette) *editor.Theme {
 	return code
 }
 
-// lookFor returns the look of the window's appearance, built once for each.
+// lookFor returns the look of the chosen theme in the window's appearance,
+// built the first time it shows.
 func (a *App) lookFor(base *ui.Theme) *look {
-	if base.Dark {
-		if a.darkLook == nil {
-			a.darkLook = newLook(base, darkPalette())
-		}
-		return a.darkLook
+	key := lookKey{theme: a.settings.Theme, dark: base.Dark}
+	made, built := a.looks[key]
+	if !built {
+		made = newLook(base, paletteFor(key.theme, key.dark))
+		a.looks[key] = made
 	}
-	if a.lightLook == nil {
-		a.lightLook = newLook(base, lightPalette())
-	}
-	return a.lightLook
+	return made
 }
 
 // fileTint colors a file's icon by the kind of file it is.
@@ -198,6 +198,10 @@ var (
 	iconCopy       = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2"/></svg>`))
 	iconLink       = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>`))
 	iconReveal     = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>`))
-	iconBack       = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="m15 18-6-6 6-6"/></svg>`))
+	iconPalette    = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/></svg>`))
+	iconCode       = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>`))
+	iconBook       = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>`))
+	iconBraces     = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>`))
+	iconAgent      = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>`))
 	iconPerch      = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M3 20h18"/><path d="M11 20v-3"/><path d="M5 12a7 7 0 0 1 12.5-4.3L21 7l-2.6 3.1A7 7 0 0 1 12 17H9a4 4 0 0 1-4-4Z"/><path d="M15 9h.01"/></svg>`))
 )

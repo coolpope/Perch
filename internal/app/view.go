@@ -41,6 +41,7 @@ func (a *App) view(c *ui.Context) {
 	a.look = a.lookFor(c.Theme())
 	c.SetTheme(a.look.theme)
 	c.SetMenuPresentation(ui.PopoverMenus)
+	defer a.grainView(c)
 	a.toastsView(c)
 	if a.root == "" {
 		a.welcomeView(c)

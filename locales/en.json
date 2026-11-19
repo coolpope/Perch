@@ -259,11 +259,7 @@
   },
   "trashAction": "Move to Trash",
   "trashFailed": "Could not move {name} to Trash",
-  "sectionNavigation": "Code Navigation",
   "settingLanguageServers": "Language servers",
-  "manageLanguages": "Manage",
-  "languageServersTitle": "Language Servers",
-  "languagesBack": "Back to Settings",
   "languageInstalled": "Installed",
   "languageNotInstalled": "Not installed",
   "languageChecking": "Checking…",
@@ -281,9 +277,6 @@
   "menuPreviousTab": "Previous Tab",
   "readOnly": "Read only",
   "sectionAgents": "Agents",
-  "settingCodingAgents": "Coding agents",
-  "manageAgents": "Manage",
-  "agentsTitle": "Coding Agents",
   "agentNotFound": "Not found on this Mac",
   "agentToolsName": "Perch tools",
   "agentToolsDetail": "Lets the agent show code here and read your selection",
@@ -303,5 +296,10 @@
   "tourDone": "Done",
   "tourStopFailed": "Could not show this stop",
   "menuNextStop": "Next Stop",
-  "menuPreviousStop": "Previous Stop"
+  "menuPreviousStop": "Previous Stop",
+  "settingColorMode": "Light or dark",
+  "themeGrokBotAbout": "Black and white with a blue accent",
+  "themePaperAbout": "Neutral sheet with a fine grain",
+  "themePerchAbout": "Warm paper and graphite",
+  "clearSearch": "Clear Search"
 }

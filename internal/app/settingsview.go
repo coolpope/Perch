@@ -12,19 +12,76 @@ import (
 )
 
 const (
-	settingsWidth    float32 = 520
-	settingsRowSpace float32 = 44
+	settingsMaxWidth   float32 = 800
+	settingsMaxHeight  float32 = 580
+	settingsWidthPart  float32 = 94
+	settingsHeightPart float32 = 92
+	settingsRailWidth  float32 = 180
+	settingsRowHeight  float32 = 52
+	settingsNavHeight  float32 = 32
+	settingsPagePad    float32 = 24
+	themeTileWidth     float32 = 150
+	themeTileHeight    float32 = 92
 
 	languageSystem  = ""
 	languageEnglish = "en"
 	languageChinese = "zh-Hans"
 )
 
-// showSettings opens the settings over the window.
+// settingsPage is a page of the settings.
+type settingsPage uint8
+
+// The pages of the settings, in the order of their list.
+const (
+	settingsAppearance settingsPage = iota
+	settingsEditor
+	settingsReading
+	settingsLanguages
+	settingsAgents
+)
+
+// settingsNavItem is a page in the list beside the settings.
+type settingsNavItem struct {
+	page  settingsPage
+	icon  *ui.SVG
+	label string
+}
+
+// settingLine is one row of a group of settings.
+type settingLine struct {
+	label  string
+	detail string
+	// control is the row's control, nil for a row that only says something.
+	control func()
+}
+
+func settingsNavItems() []settingsNavItem {
+	return []settingsNavItem{
+		{settingsAppearance, iconPalette, locales.SectionAppearance()},
+		{settingsEditor, iconCode, locales.SectionEditor()},
+		{settingsReading, iconBook, locales.SectionReading()},
+		{settingsLanguages, iconBraces, locales.SettingLanguageServers()},
+		{settingsAgents, iconAgent, locales.SectionAgents()},
+	}
+}
+
+// showSettings opens the settings over the window, on their first page.
 func (a *App) showSettings() {
 	a.languages = languagesPage{}
 	a.agents = agentsPage{}
+	a.settingsPage = settingsAppearance
 	a.settingsOpen = true
+}
+
+// chooseSettingsPage shows a page, finding out what it lists the first time.
+func (a *App) chooseSettingsPage(page settingsPage) {
+	a.settingsPage = page
+	switch {
+	case page == settingsLanguages && !a.languages.open:
+		a.showLanguages()
+	case page == settingsAgents && !a.agents.open:
+		a.showAgents()
+	}
 }
 
 // updateSettings applies new settings to every window.
@@ -64,28 +121,59 @@ func (a *App) settingsView(c *ui.Context) {
 	}
 	colors := a.look.palette
 	ui.DialogBase(c, &a.settingsOpen, func(backdrop ui.Element, panel ui.Element) {
-		backdrop.Background(ui.RGBA(0, 0, 0, 0.22))
-		panel.Width(settingsWidth).Background(colors.background).Radius(radiusDialog).Border(1, colors.border).
-			Shadow(0, 14, 40, 0, ui.RGBA(0, 0, 0, 0.25)).Label(locales.SettingsTitle())
-		a.settingsContent(c)
+		backdrop.Background(ui.RGBA(0, 0, 0, 0.28))
+		panel.WidthPercent(settingsWidthPart).MaxWidth(settingsMaxWidth).HeightPercent(settingsHeightPart).MaxHeight(settingsMaxHeight).
+			Background(colors.background).Radius(radiusDialog).Border(1, colors.border).Clip().
+			Shadow(0, 18, 48, 0, ui.RGBA(0, 0, 0, 0.28)).Label(locales.SettingsTitle())
+		ui.Row(c).Fill().Children(func() {
+			a.settingsRailView(c)
+			a.settingsPageView(c)
+		})
 	})
 }
 
-func (a *App) settingsContent(c *ui.Context) {
-	if a.languages.open {
-		a.languagesContent(c)
-		return
-	}
-	if a.agents.open {
-		a.agentsContent(c)
-		return
-	}
+// settingsRailView lists the pages of the settings.
+func (a *App) settingsRailView(c *ui.Context) {
 	colors := a.look.palette
-	ui.Column(c).FillWidth().Padding(6, 20, 16, 20).Children(func() {
-		ui.Row(c).FillWidth().Height(48).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, locales.SettingsTitle()).FontSize(16).FontWeight(600)
+	ui.Column(c).Width(settingsRailWidth).Shrink(0).FillHeight().Gap(2).Padding(14, 10).Background(colors.sidebar).
+		BorderWidth(0, 1, 0, 0).BorderColor(colors.border).Children(func() {
+		ui.Text(c, locales.SettingsTitle()).FontSize(15).FontWeight(600).Padding(4, 8, 12, 8)
+		for _, item := range settingsNavItems() {
+			c.Key(item.label)
+			a.settingsNavRow(c, item)
+		}
+	})
+}
+
+func (a *App) settingsNavRow(c *ui.Context, item settingsNavItem) {
+	colors := a.look.palette
+	chosen := a.settingsPage == item.page
+	row := ui.Row(c).FillWidth().Height(settingsNavHeight).Gap(9).Padding(0, 8).AlignItems(ui.Center).Radius(radiusControl).Label(item.label)
+	if chosen || row.Hovered() {
+		row.Background(colors.hover)
+	}
+	if row.Clicked() {
+		a.chooseSettingsPage(item.page)
+	}
+	row.Children(func() {
+		tint, weight := colors.muted, 400
+		if chosen {
+			tint, weight = colors.text, 600
+		}
+		ui.Icon(c, item.icon).FontSize(15).TextColor(tint).Shrink(0)
+		ui.Text(c, item.label).FontWeight(weight).TextColor(tint).MaxLines(1)
+	})
+}
+
+// settingsPageView shows the chosen page under its title.
+func (a *App) settingsPageView(c *ui.Context) {
+	colors := a.look.palette
+	title := settingsNavItems()[a.settingsPage].label
+	ui.Column(c).Grow(1).Shrink(1).Basis(0).MinWidth(0).FillHeight().Children(func() {
+		ui.Row(c).FillWidth().Height(56).Shrink(0).Padding(0, 14, 0, settingsPagePad).AlignItems(ui.Center).Children(func() {
+			ui.Text(c, title).FontSize(16).FontWeight(600)
 			ui.Spacer(c)
-			button := ui.Box(c).Size(24, 24).Center().Radius(radiusSmall).Label(locales.CloseSettings())
+			button := ui.Box(c).Size(26, 26).Center().Radius(radiusSmall).Label(locales.CloseSettings())
 			if button.Hovered() {
 				button.Background(colors.hover)
 			}
@@ -94,50 +182,132 @@ func (a *App) settingsContent(c *ui.Context) {
 			}
 			button.Children(func() { ui.Icon(c, iconClose).FontSize(14).TextColor(colors.muted) })
 		})
-		a.settingsSection(c, locales.SectionAppearance(), func() {
-			a.settingRow(c, locales.SettingLanguage(), func() { a.languageControl(c) })
-			a.settingRow(c, locales.SettingTheme(), func() { a.appearanceControl(c) })
-		})
-		a.settingsSection(c, locales.SectionEditor(), func() {
-			a.settingRow(c, locales.SettingFontSize(), func() { a.fontSizeControl(c) })
-			a.settingRow(c, locales.SettingTabSize(), func() { a.tabSizeControl(c) })
-			a.settingRow(c, locales.SettingWrap(), func() { a.wordWrapControl(c) })
-		})
-		a.settingsSection(c, locales.SectionReading(), func() {
-			a.settingRow(c, locales.SettingMarkdown(), func() { a.markdownViewControl(c) })
-			a.settingRow(c, locales.SettingDiff(), func() { a.diffLayoutControl(c) })
-		})
-		a.settingsSection(c, locales.SectionNavigation(), func() {
-			a.settingRow(c, locales.SettingLanguageServers(), func() {
-				if ui.Button(c, locales.ManageLanguages()).Clicked() {
-					a.showLanguages()
-				}
-			})
-		})
-		a.settingsSection(c, locales.SectionAgents(), func() {
-			a.settingRow(c, locales.SettingCodingAgents(), func() {
-				if ui.Button(c, locales.ManageAgents()).Clicked() {
-					a.showAgents()
-				}
+		c.Key(title)
+		ui.Scroll(c).FillWidth().Grow(1).Basis(0).MinHeight(0).Children(func() {
+			ui.Column(c).FillWidth().Gap(20).Padding(2, settingsPagePad, settingsPagePad, settingsPagePad).Children(func() {
+				a.settingsPageContent(c)
 			})
 		})
 	})
 }
 
-func (a *App) settingsSection(c *ui.Context, title string, rows func()) {
-	ui.Column(c).FillWidth().Padding(10, 0, 4, 0).Children(func() {
-		ui.Text(c, title).FontSize(smallFontSize).FontWeight(600).TextColor(a.look.palette.muted).Padding(0, 0, 2, 0)
-		rows()
+func (a *App) settingsPageContent(c *ui.Context) {
+	switch a.settingsPage {
+	case settingsEditor:
+		a.settingsGroup(c, "",
+			settingLine{label: locales.SettingFontSize(), control: func() { a.fontSizeControl(c) }},
+			settingLine{label: locales.SettingTabSize(), control: func() { a.tabSizeControl(c) }},
+			settingLine{label: locales.SettingWrap(), control: func() { a.wordWrapControl(c) }},
+		)
+	case settingsReading:
+		a.settingsGroup(c, "",
+			settingLine{label: locales.SettingMarkdown(), control: func() { a.markdownViewControl(c) }},
+			settingLine{label: locales.SettingDiff(), control: func() { a.diffLayoutControl(c) }},
+		)
+	case settingsLanguages:
+		a.languagesContent(c)
+	case settingsAgents:
+		a.agentsContent(c)
+	default:
+		a.themeGroup(c)
+		a.settingsGroup(c, "",
+			settingLine{label: locales.SettingColorMode(), control: func() { a.appearanceControl(c) }},
+			settingLine{label: locales.SettingLanguage(), control: func() { a.languageControl(c) }},
+		)
+	}
+}
+
+// settingsTitle names a group of settings.
+func (a *App) settingsTitle(c *ui.Context, title string) {
+	if title != "" {
+		ui.Text(c, title).FontSize(smallFontSize).FontWeight(600).TextColor(a.look.palette.muted)
+	}
+}
+
+// settingsGroup shows rows of settings on one card, under an optional title.
+func (a *App) settingsGroup(c *ui.Context, title string, lines ...settingLine) {
+	ui.Column(c).FillWidth().Gap(8).Children(func() {
+		a.settingsTitle(c, title)
+		a.settingsCard(c, func() {
+			for index, line := range lines {
+				c.Key(line.label)
+				a.settingLineView(c, line, index > 0)
+			}
+		})
 	})
 }
 
-func (a *App) settingRow(c *ui.Context, label string, control func()) {
-	c.Key(label)
-	ui.Row(c).FillWidth().Height(settingsRowSpace).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).
-		BorderColor(a.look.palette.border).Children(func() {
-		ui.Text(c, label)
-		ui.Spacer(c)
-		control()
+// settingsCard is the rounded surface that groups rows.
+func (a *App) settingsCard(c *ui.Context, rows func()) {
+	colors := a.look.palette
+	ui.Column(c).FillWidth().Radius(radiusCard).Border(1, colors.border).Background(colors.sidebar.Alpha(0.45)).Clip().Children(rows)
+}
+
+func (a *App) settingLineView(c *ui.Context, line settingLine, divided bool) {
+	colors := a.look.palette
+	row := ui.Row(c).FillWidth().MinHeight(settingsRowHeight).Gap(14).Padding(8, 14).AlignItems(ui.Center)
+	if divided {
+		row.BorderWidth(1, 0, 0, 0).BorderColor(colors.border)
+	}
+	row.Children(func() {
+		ui.Column(c).Grow(1).Shrink(1).MinWidth(0).Gap(2).Children(func() {
+			ui.Text(c, line.label).MaxLines(1)
+			if line.detail != "" {
+				ui.Text(c, line.detail).FontSize(smallFontSize - 1).TextColor(colors.muted)
+			}
+		})
+		if line.control != nil {
+			line.control()
+		}
+	})
+}
+
+// themeGroup chooses the theme from a small window of each. The arrow keys
+// move the choice while a window has the keyboard.
+func (a *App) themeGroup(c *ui.Context) {
+	choices := themeChoices()
+	chosen := max(slices.IndexFunc(choices, func(choice themeChoice) bool { return choice.id == a.settings.Theme }), 0)
+	selected := chosen
+	ui.Column(c).FillWidth().Gap(8).Children(func() {
+		a.settingsTitle(c, locales.SettingTheme())
+		tiles := ui.SegmentedBase(c.Key("themes"), &selected, len(choices))
+		tiles.Track.FillWidth().Wrap().Gap(14).AlignItems(ui.Start).Label(locales.SettingTheme()).Children(func() {
+			for index, choice := range choices {
+				a.themeTile(c, tiles.Segment(index), choice, index == selected)
+			}
+		})
+	})
+	if selected != chosen {
+		next := a.settings
+		next.Theme = choices[selected].id
+		a.updateSettings(next)
+	}
+}
+
+func (a *App) themeTile(c *ui.Context, tile ui.Element, choice themeChoice, chosen bool) {
+	colors := a.look.palette
+	preview := paletteFor(choice.id, c.Theme().Dark)
+	tile.Column().Width(themeTileWidth).Shrink(0).Padding(0).Gap(7).AlignItems(ui.Start).Background(ui.Transparent).
+		Label(choice.name()).Tooltip(choice.about())
+	hovered := tile.Hovered()
+	tile.Children(func() {
+		edge, width := colors.border, float32(1)
+		switch {
+		case chosen:
+			edge, width = colors.accent, 2
+		case hovered:
+			edge = colors.muted
+		}
+		ui.Box(c.Key("preview")).Width(themeTileWidth).Height(themeTileHeight).Shrink(0).Children(func() {
+			ui.Box(c.Key("window")).Fill().Radius(radiusControl).Clip().
+				Draw(func(p *ui.Painter, r ui.Rect) { themePreview(p, r, preview) })
+			// The edge lies over the drawing, which would otherwise cover it.
+			ui.Box(c.Key("edge")).Absolute().Left(0).Top(0).Right(0).Bottom(0).Radius(radiusControl).Border(width, edge).PassThrough()
+		})
+		ui.Column(c.Key("name")).FillWidth().Gap(1).Children(func() {
+			ui.Text(c, choice.name()).FontWeight(600).MaxLines(1)
+			ui.Text(c, choice.about()).FontSize(smallFontSize - 1).TextColor(colors.muted)
+		})
 	})
 }
 

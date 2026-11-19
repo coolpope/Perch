@@ -20,6 +20,9 @@ import (
 const (
 	searchDelay         time.Duration = 150 * time.Millisecond
 	searchFlushInterval time.Duration = 60 * time.Millisecond
+
+	searchFieldHeight float32 = 32
+	searchOptionSize  float32 = 22
 )
 
 // Indexes of the sidebar's switch.
@@ -209,31 +212,75 @@ func (a *App) openSearchRow(index int) {
 func (a *App) findInFilesView(c *ui.Context) {
 	colors := a.look.palette
 	ui.Column(c).Grow(1).FillWidth().Children(func() {
-		ui.Column(c).FillWidth().Shrink(0).Gap(7).Padding(4, 10, 8, 10).Children(func() {
-			field := ui.SearchField(c, &a.find.query).Bind(&a.find.input).FillWidth().
-				Placeholder(locales.SearchInFiles()).Label(locales.SearchInFiles()).
-				OnShortcut(0, ui.KeyDown, func() { a.moveSearchChoice(1) }).
-				OnShortcut(0, ui.KeyUp, func() { a.moveSearchChoice(-1) })
-			if field.Changed() {
-				a.startSearch()
+		ui.Column(c).FillWidth().Shrink(0).Gap(6).Padding(4, 10, 8, 10).Children(func() {
+			a.searchFieldView(c)
+			if status := searchStatus(&a.find); status != "" {
+				ui.Text(c, status).FontSize(smallFontSize-1).TextColor(colors.muted).MaxLines(1).Padding(0, 2)
 			}
-			if field.Submitted() {
-				a.openSearchRow(a.find.chosen)
-			}
-			ui.Row(c).FillWidth().Gap(4).AlignItems(ui.Center).Children(func() {
-				if ui.Toggle(c, &a.find.caseSensitive, "Aa").Label(locales.MatchCase()).Changed() {
-					a.startSearch()
-				}
-				if ui.Toggle(c, &a.find.regexp, ".*").Label(locales.RegularExpression()).Changed() {
-					a.startSearch()
-				}
-				ui.Spacer(c)
-				ui.Text(c, searchStatus(&a.find)).FontSize(smallFontSize - 1).TextColor(colors.muted).MaxLines(1)
-			})
 		})
 		ui.Box(c).FillWidth().Height(1).Shrink(0).Background(colors.border)
 		a.searchResultsView(c)
 	})
+}
+
+// searchFieldView is the search box, with its options inside at the end.
+func (a *App) searchFieldView(c *ui.Context) {
+	colors := a.look.palette
+	box := ui.Row(c).FillWidth().Height(searchFieldHeight).Shrink(0).Gap(6).PaddingStart(9).PaddingEnd(5).
+		AlignItems(ui.Center).Radius(radiusControl).Background(colors.sidebar)
+	edge := colors.border
+	if box.FocusWithin() {
+		edge = colors.accent
+	}
+	box.Border(1, edge).Children(func() {
+		ui.Icon(c, iconSearch).FontSize(iconFontSize).TextColor(colors.muted).Shrink(0)
+		field := ui.TextInputBase(c, &a.find.query).Bind(&a.find.input).Grow(1).Shrink(1).MinWidth(0).
+			Placeholder(locales.SearchInFiles()).Label(locales.SearchInFiles()).
+			OnShortcut(0, ui.KeyDown, func() { a.moveSearchChoice(1) }).
+			OnShortcut(0, ui.KeyUp, func() { a.moveSearchChoice(-1) })
+		if field.Changed() {
+			a.startSearch()
+		}
+		if field.Submitted() {
+			a.openSearchRow(a.find.chosen)
+		}
+		if a.find.query != "" {
+			a.searchClearButton(c)
+		}
+		a.searchOption(c, &a.find.caseSensitive, "Aa", locales.MatchCase())
+		a.searchOption(c, &a.find.regexp, ".*", locales.RegularExpression())
+	})
+}
+
+func (a *App) searchClearButton(c *ui.Context) {
+	colors := a.look.palette
+	button := ui.Box(c).Size(searchOptionSize, searchOptionSize).Center().Radius(radiusSmall).Shrink(0).Label(locales.ClearSearch())
+	if button.Hovered() {
+		button.Background(colors.hover)
+	}
+	if button.Clicked() {
+		a.find.query = ""
+		a.startSearch()
+	}
+	button.Children(func() { ui.Icon(c, iconClose).FontSize(12).TextColor(colors.muted) })
+}
+
+// searchOption is a small switch inside the search box.
+func (a *App) searchOption(c *ui.Context, on *bool, text string, label string) {
+	colors := a.look.palette
+	option := ui.ToggleBase(c, on).Size(searchOptionSize, searchOptionSize).Center().Radius(radiusSmall).Shrink(0).Label(label).Tooltip(label)
+	tint := colors.muted
+	switch {
+	case *on:
+		option.Background(colors.accent.Alpha(0.16))
+		tint = colors.accent
+	case option.Hovered():
+		option.Background(colors.hover)
+	}
+	if option.Changed() {
+		a.startSearch()
+	}
+	option.Children(func() { ui.Text(c, text).FontSize(smallFontSize - 1).FontWeight(600).TextColor(tint) })
 }
 
 // searchStatus says how the search stands.

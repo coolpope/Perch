@@ -91,55 +91,34 @@ func (a *App) installPendingAgentTargets() {
 }
 
 func (a *App) agentsContent(c *ui.Context) {
-	colors := a.look.palette
-	ui.Column(c).FillWidth().Padding(6, 20, 16, 20).Children(func() {
-		ui.Row(c).FillWidth().Height(48).Gap(6).AlignItems(ui.Center).Children(func() {
-			back := ui.Box(c).Size(24, 24).Center().Radius(radiusSmall).Label(locales.LanguagesBack())
-			if back.Hovered() {
-				back.Background(colors.hover)
-			}
-			if back.Clicked() {
-				a.agents = agentsPage{}
-			}
-			back.Children(func() { ui.Icon(c, iconBack).FontSize(15).TextColor(colors.muted) })
-			ui.Text(c, locales.AgentsTitle()).FontSize(16).FontWeight(600)
-		})
-		if !a.agents.checked {
-			ui.Text(c, locales.LanguageChecking()).TextColor(colors.muted).Padding(8, 0, 16, 0)
-			return
-		}
-		for _, agent := range a.agents.status.Agents {
-			c.Key(string(agent.ID))
-			a.agentSectionView(c, agent)
-		}
-		a.settingsSection(c, locales.SectionTerminal(), func() {
-			a.agentPartRow(c, locales.TerminalCommandName(), locales.TerminalCommandDetail(), agentsetup.Target{Component: agentsetup.ComponentCommand}, a.agents.status.Command)
-		})
-		a.agentsFooterView(c)
-	})
+	if !a.agents.checked {
+		ui.Text(c, locales.LanguageChecking()).TextColor(a.look.palette.muted)
+		return
+	}
+	for _, agent := range a.agents.status.Agents {
+		c.Key(string(agent.ID))
+		a.agentSectionView(c, agent)
+	}
+	command := agentsetup.Target{Component: agentsetup.ComponentCommand}
+	a.settingsGroup(c, locales.SectionTerminal(), a.agentPartLine(c, locales.TerminalCommandName(), locales.TerminalCommandDetail(), command, a.agents.status.Command))
+	a.agentsFooterView(c)
 }
 
 func (a *App) agentSectionView(c *ui.Context, agent agentsetup.AgentStatus) {
-	a.settingsSection(c, agent.Name, func() {
-		if !agent.Found {
-			ui.Text(c, locales.AgentNotFound()).TextColor(a.look.palette.muted).Padding(8, 0, 8, 0)
-			return
-		}
-		a.agentPartRow(c, locales.AgentToolsName(), locales.AgentToolsDetail(), agentsetup.Target{Agent: agent.ID, Component: agentsetup.ComponentTools}, agent.Tools)
-		a.agentPartRow(c, locales.AgentSkillName(), locales.AgentSkillDetail(), agentsetup.Target{Agent: agent.ID, Component: agentsetup.ComponentSkill}, agent.Skill)
-	})
+	if !agent.Found {
+		a.settingsGroup(c, agent.Name, settingLine{label: locales.AgentNotFound()})
+		return
+	}
+	tools := agentsetup.Target{Agent: agent.ID, Component: agentsetup.ComponentTools}
+	skill := agentsetup.Target{Agent: agent.ID, Component: agentsetup.ComponentSkill}
+	a.settingsGroup(c, agent.Name,
+		a.agentPartLine(c, locales.AgentToolsName(), locales.AgentToolsDetail(), tools, agent.Tools),
+		a.agentPartLine(c, locales.AgentSkillName(), locales.AgentSkillDetail(), skill, agent.Skill),
+	)
 }
 
-func (a *App) agentPartRow(c *ui.Context, name string, detail string, target agentsetup.Target, state agentsetup.State) {
-	colors := a.look.palette
-	c.Key(name)
-	ui.Row(c).FillWidth().Height(languageRowHeight).Gap(10).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(colors.border).Children(func() {
-		ui.Column(c).Grow(1).Shrink(1).Gap(3).Children(func() {
-			ui.Text(c, name).MaxLines(1)
-			ui.Text(c, detail).FontSize(smallFontSize - 1).TextColor(colors.muted).MaxLines(1)
-		})
-		a.agentPartControl(c, name, target, state)
-	})
+func (a *App) agentPartLine(c *ui.Context, name string, detail string, target agentsetup.Target, state agentsetup.State) settingLine {
+	return settingLine{label: name, detail: detail, control: func() { a.agentPartControl(c, name, target, state) }}
 }
 
 func (a *App) agentPartControl(c *ui.Context, name string, target agentsetup.Target, state agentsetup.State) {
@@ -164,7 +143,7 @@ func (a *App) agentPartControl(c *ui.Context, name string, target agentsetup.Tar
 }
 
 func (a *App) agentsFooterView(c *ui.Context) {
-	ui.Column(c).FillWidth().Gap(10).Padding(12, 0, 0, 0).Children(func() {
+	ui.Column(c).FillWidth().Gap(10).Children(func() {
 		ui.Text(c, locales.AgentsHint()).FontSize(smallFontSize).TextColor(a.look.palette.muted)
 		ui.Row(c).FillWidth().Gap(8).Children(func() {
 			ui.Spacer(c)
