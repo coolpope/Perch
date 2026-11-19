@@ -9,6 +9,9 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
+	"sync"
+	"sync/atomic"
 	"unicode/utf8"
 )
 
@@ -20,7 +23,25 @@ const (
 
 	previewBytes int = 200
 	previewLead  int = 48
+
+	// searchWorkers is how many files are scanned at once. Each holds a
+	// buffer as large as the largest file it read, up to MaxScannedFileBytes,
+	// so more workers would cost memory for little speed.
+	searchWorkers int = 4
+	// batchFiles is how many files the workers share between two reports,
+	// which keep the order of paths.
+	batchFiles int = 256
 )
+
+// Pattern is a compiled query.
+type Pattern struct {
+	expression *regexp.Regexp
+	// needle, when set, is text every match holds, compared ignoring ASCII
+	// case when fold is set: a file without it is skipped unread by the
+	// expression.
+	needle []byte
+	fold   bool
+}
 
 // Query is what to look for in the text of files.
 type Query struct {
@@ -31,7 +52,7 @@ type Query struct {
 
 // Compile returns the pattern of a query. It fails only for a Regexp query
 // that is not a valid regular expression.
-func (q Query) Compile() (*regexp.Regexp, error) {
+func (q Query) Compile() (*Pattern, error) {
 	expression := q.Text
 	if !q.Regexp {
 		expression = regexp.QuoteMeta(q.Text)
@@ -39,11 +60,131 @@ func (q Query) Compile() (*regexp.Regexp, error) {
 	if !q.CaseSensitive {
 		expression = "(?i)" + expression
 	}
-	pattern, err := regexp.Compile("(?m)" + expression)
+	compiled, err := regexp.Compile("(?m)" + expression)
 	if err != nil {
 		return nil, fmt.Errorf("compile search %q: %w", q.Text, err)
 	}
+	pattern := &Pattern{expression: compiled}
+	if !q.Regexp && q.Text != "" && (q.CaseSensitive || foldsOnlyInASCII(q.Text)) {
+		pattern.needle, pattern.fold = []byte(q.Text), !q.CaseSensitive
+	}
 	return pattern, nil
+}
+
+// foldsOnlyInASCII reports text whose letters match, ignoring case, only ASCII
+// letters: not k and s, which also match the Kelvin sign and the long s.
+func foldsOnlyInASCII(text string) bool {
+	for _, r := range text {
+		if r >= utf8.RuneSelf || r == 'k' || r == 'K' || r == 's' || r == 'S' {
+			return false
+		}
+	}
+	return true
+}
+
+// mayMatch reports whether data could hold a match, by its needle.
+func (p *Pattern) mayMatch(data []byte) bool {
+	switch {
+	case p.needle == nil:
+		return true
+	case !p.fold:
+		return bytes.Contains(data, p.needle)
+	default:
+		return containsFold(data, p.needle)
+	}
+}
+
+// commonLetters ranks letters from the most common in code and prose.
+const commonLetters = "etaoinsrhldcumfpgwybvkxjqz"
+
+// containsFold reports whether data holds needle, ignoring ASCII case. It looks
+// for the needle's rarest letter first, which few places of data hold.
+func containsFold(data []byte, needle []byte) bool {
+	anchor := rarestByte(needle)
+	// Past end, the needle would not fit around its anchor.
+	end := len(data) - len(needle) + anchor + 1
+	lower := byteCursor{target: asciiLower(needle[anchor]), at: -1}
+	upper := byteCursor{target: asciiUpper(needle[anchor]), at: -1}
+	for from := anchor; from < end; {
+		index := earliest(lower.next(data[:end], from), upper.next(data[:end], from))
+		if index < 0 {
+			return false
+		}
+		start := index - anchor
+		if bytes.EqualFold(data[start:start+len(needle)], needle) {
+			return true
+		}
+		from = index + 1
+	}
+	return false
+}
+
+// earliest returns the smaller of two indexes, -1 meaning none.
+func earliest(a int, b int) int {
+	switch {
+	case a < 0:
+		return b
+	case b < 0:
+		return a
+	default:
+		return min(a, b)
+	}
+}
+
+// byteCursor finds the occurrences of one byte in order, remembering the next
+// one, so that no part of data is searched twice for it.
+type byteCursor struct {
+	target byte
+	// at is the occurrence found last, -1 before the first search.
+	at   int
+	done bool
+}
+
+// next returns the first index of the target at or after from, or -1.
+func (c *byteCursor) next(data []byte, from int) int {
+	switch {
+	case c.done:
+		return -1
+	case c.at >= from:
+		return c.at
+	}
+	index := bytes.IndexByte(data[from:], c.target)
+	if index < 0 {
+		c.done = true
+		return -1
+	}
+	c.at = from + index
+	return c.at
+}
+
+// rarestByte returns the index of the byte of needle least likely in text: a
+// byte that is not a letter, or else the letter commonLetters ranks last.
+func rarestByte(needle []byte) int {
+	best, bestRank := 0, -1
+	for index, c := range needle {
+		rank := strings.IndexByte(commonLetters, asciiLower(c))
+		if rank < 0 {
+			rank = len(commonLetters)
+		}
+		if rank > bestRank {
+			best, bestRank = index, rank
+		}
+	}
+	return best
+}
+
+func asciiLower(c byte) byte {
+	if 'A' <= c && c <= 'Z' {
+		return c + 'a' - 'A'
+	}
+	return c
+}
+
+func asciiUpper(c byte) byte {
+	if 'a' <= c && c <= 'z' {
+		return c - ('a' - 'A')
+	}
+	return c
 }
 
 // Hit is a match in a line of a file.
@@ -76,35 +217,73 @@ type Summary struct {
 	Unreadable int
 }
 
-// Text scans paths in order and calls emit with the matches of each file that
-// has any. It returns ctx's error when ctx ends first. One buffer serves every
-// file, so memory follows the largest file rather than the size of the folder.
-func Text(ctx context.Context, root string, paths []string, pattern *regexp.Regexp, emit func(FileHits)) (Summary, error) {
+// scanned is what scanning one file found.
+type scanned struct {
+	hits       []Hit
+	more       bool
+	unreadable bool
+}
+
+// Text scans paths and calls emit, in the order of paths, with the matches of
+// each file that has any. It returns ctx's error when ctx ends first. Files
+// are scanned a batch at a time by a few workers, each with one buffer, so
+// memory follows the largest files rather than the size of the folder.
+func Text(ctx context.Context, root string, paths []string, pattern *Pattern, emit func(FileHits)) (Summary, error) {
 	var summary Summary
-	buffer := make([]byte, 0, 64<<10)
-	for _, path := range paths {
+	buffers := make([][]byte, searchWorkers)
+	for start := 0; start < len(paths); start += batchFiles {
 		if err := ctx.Err(); err != nil {
 			return summary, err
 		}
-		data, err := readScannable(filepath.Join(root, filepath.FromSlash(path)), buffer)
-		if err != nil {
-			summary.Unreadable++
-			continue
-		}
-		buffer = data[:0]
-		remaining := MaxHits - summary.Hits
-		hits, more := scan(data, pattern, remaining)
-		if len(hits) > 0 {
-			summary.Files++
-			summary.Hits += len(hits)
-			emit(FileHits{Path: path, Hits: hits})
-		}
-		if more {
-			summary.Truncated = true
-			return summary, nil
+		batch := paths[start:min(start+batchFiles, len(paths))]
+		results := scanBatch(ctx, root, batch, pattern, MaxHits-summary.Hits, buffers)
+		for index, result := range results {
+			if result.unreadable {
+				summary.Unreadable++
+				continue
+			}
+			hits := result.hits[:min(len(result.hits), MaxHits-summary.Hits)]
+			if len(hits) > 0 {
+				summary.Files++
+				summary.Hits += len(hits)
+				emit(FileHits{Path: batch[index], Hits: hits})
+			}
+			if result.more || len(hits) < len(result.hits) {
+				summary.Truncated = true
+				return summary, nil
+			}
 		}
 	}
-	return summary, nil
+	return summary, ctx.Err()
+}
+
+// scanBatch scans files with searchWorkers goroutines, which end before it
+// returns, each reusing one of buffers.
+func scanBatch(ctx context.Context, root string, batch []string, pattern *Pattern, limit int, buffers [][]byte) []scanned {
+	results := make([]scanned, len(batch))
+	var next atomic.Int64
+	var group sync.WaitGroup
+	for worker := range buffers {
+		group.Go(func() {
+			for {
+				index := int(next.Add(1) - 1)
+				if index >= len(batch) || ctx.Err() != nil {
+					return
+				}
+				data, err := readScannable(filepath.Join(root, filepath.FromSlash(batch[index])), buffers[worker])
+				if err != nil {
+					results[index].unreadable = true
+					continue
+				}
+				buffers[worker] = data[:0]
+				if pattern.mayMatch(data) {
+					results[index].hits, results[index].more = scan(data, pattern.expression, limit)
+				}
+			}
+		})
+	}
+	group.Wait()
+	return results
 }
 
 // readScannable returns the content of a text file, reusing buffer, and nothing

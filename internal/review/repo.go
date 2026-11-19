@@ -39,21 +39,27 @@ type Head struct {
 // ReadHead reads the branch of the work tree at root and how far it is from
 // its upstream.
 func ReadHead(ctx context.Context, root string) (Head, error) {
-	output, err := git(ctx, root, readOnlyEnv, "status", "--porcelain=v2", "--branch", "-z", "--no-renames", "--untracked-files=all", "--", ".")
+	output, err := git(ctx, root, readOnlyEnv, "status", "--porcelain=v2", "--branch", "-z", "--find-renames", "--untracked-files=all", "--", ".")
 	if err != nil {
 		return Head{}, fmt.Errorf("read the status of %q: %w", root, err)
 	}
 	return parseStatus(string(output)), nil
 }
 
-// parseStatus reads the output of git status --porcelain=v2 --branch -z.
+// parseStatus reads the output of git status --porcelain=v2 --branch -z, where
+// a rename's record is followed by its old path.
 func parseStatus(output string) Head {
 	var head Head
-	for record := range strings.SplitSeq(output, "\x00") {
+	records := strings.Split(output, "\x00")
+	for index := 0; index < len(records); index++ {
+		record := records[index]
 		header, isHeader := strings.CutPrefix(record, "# ")
 		if !isHeader {
 			if record != "" {
 				head.Uncommitted++
+			}
+			if strings.HasPrefix(record, "2 ") {
+				index++
 			}
 			continue
 		}
@@ -151,41 +157,105 @@ func emptyTree(ctx context.Context, root string) (string, error) {
 // compareWorkTree lists the files that differ between base and the work tree,
 // with the untracked ones.
 func compareWorkTree(ctx context.Context, root string, base string) (Comparison, error) {
-	named, err := git(ctx, root, readOnlyEnv, "diff", "-z", "--no-renames", "--relative", "--name-status", base, "--")
+	changes, err := renamedChanges(ctx, root, readOnlyEnv, "diff", base, "--")
 	if err != nil {
 		return Comparison{}, fmt.Errorf("compare the work tree with %s: %w", base, err)
-	}
-	counted, err := git(ctx, root, readOnlyEnv, "diff", "-z", "--no-renames", "--relative", "--numstat", base, "--")
-	if err != nil {
-		return Comparison{}, fmt.Errorf("count changes since %s: %w", base, err)
 	}
 	untracked, err := git(ctx, root, nil, "ls-files", "-z", "--others", "--exclude-standard")
 	if err != nil {
 		return Comparison{}, fmt.Errorf("list untracked files of %q: %w", root, err)
 	}
-	kinds, counts := parseKinds(named), parseCounts(counted)
 	for name := range strings.SplitSeq(string(untracked), "\x00") {
 		if name != "" && !workspace.IsIgnored(name) {
-			kinds[name] = Untracked
+			changes = append(changes, Change{Path: name, Kind: Untracked})
 		}
 	}
-	return Comparison{Base: base, Changes: changesOf(kinds, counts)}, nil
+	slices.SortFunc(changes, func(a Change, b Change) int { return strings.Compare(a.Path, b.Path) })
+	return Comparison{Base: base, Changes: changes}, nil
 }
 
-// changesOf joins what happened to each file with its size, in path order.
-func changesOf(kinds map[string]Kind, counts map[string]lineCount) []Change {
-	changes := make([]Change, 0, len(kinds))
-	for path, kind := range kinds {
-		count := counts[path]
-		changes = append(changes, Change{Path: path, Kind: kind, Added: count.added, Removed: count.removed, Binary: count.binary})
+// renamedChanges runs a Git comparison, given as its command and revisions,
+// and lists the files of the opened folder it finds changed, a renamed file
+// once, at its new path.
+func renamedChanges(ctx context.Context, root string, env []string, comparison ...string) ([]Change, error) {
+	options := []string{"-z", "--find-renames", "--relative"}
+	named, err := git(ctx, root, env, slices.Concat(comparison[:1], options, []string{"--name-status"}, comparison[1:])...)
+	if err != nil {
+		return nil, err
+	}
+	counted, err := git(ctx, root, env, slices.Concat(comparison[:1], options, []string{"--numstat"}, comparison[1:])...)
+	if err != nil {
+		return nil, err
+	}
+	counts := parseRenamedCounts(string(counted))
+	changes := parseRenamedKinds(string(named))
+	for index := range changes {
+		count := counts[changes[index].Path]
+		changes[index].Added, changes[index].Removed, changes[index].Binary = count.added, count.removed, count.binary
 	}
 	slices.SortFunc(changes, func(a Change, b Change) int { return strings.Compare(a.Path, b.Path) })
+	return changes, nil
+}
+
+// parseRenamedKinds reads the output of --name-status -z --find-renames, where
+// a rename is its status, its old path and its new one.
+func parseRenamedKinds(output string) []Change {
+	fields := strings.Split(strings.TrimSuffix(output, "\x00"), "\x00")
+	var changes []Change
+	for index := 0; index+1 < len(fields); {
+		status := fields[index]
+		if strings.HasPrefix(status, "R") && index+2 < len(fields) {
+			change := Change{Path: fields[index+2], OldPath: fields[index+1], Kind: Renamed}
+			index += 3
+			if !workspace.IsIgnored(change.Path) {
+				changes = append(changes, change)
+			}
+			continue
+		}
+		change := Change{Path: fields[index+1], Kind: kindOf(status)}
+		index += 2
+		if !workspace.IsIgnored(change.Path) {
+			changes = append(changes, change)
+		}
+	}
 	return changes
 }
 
+// parseRenamedCounts reads the output of --numstat -z --find-renames, where a
+// rename's counts have an empty path followed by its old and new paths.
+func parseRenamedCounts(output string) map[string]lineCount {
+	records := strings.Split(output, "\x00")
+	counts := map[string]lineCount{}
+	for index := 0; index < len(records); index++ {
+		fields := strings.SplitN(records[index], "\t", 3)
+		if len(fields) != 3 {
+			continue
+		}
+		path := fields[2]
+		if path == "" && index+2 < len(records) {
+			path = records[index+2]
+			index += 2
+		}
+		added, addedErr := strconv.Atoi(fields[0])
+		removed, removedErr := strconv.Atoi(fields[1])
+		counts[path] = lineCount{added: added, removed: removed, binary: addedErr != nil || removedErr != nil}
+	}
+	return counts
+}
+
+// oldPathOf is where a change's file was before it: its old path when it was
+// renamed.
+func oldPathOf(change Change) string {
+	if change.OldPath != "" {
+		return change.OldPath
+	}
+	return change.Path
+}
+
 // WorkTreeSides returns a file's text in base and on disk.
-func WorkTreeSides(ctx context.Context, root string, base string, path string) (Sides, error) {
-	old, oldReadable, err := readObject(ctx, root, base+":./"+path)
+func WorkTreeSides(ctx context.Context, root string, base string, change Change) (Sides, error) {
+	path := change.Path
+	old, oldReadable, err := readObject(ctx, root, base+":./"+oldPathOf(change))
 	if err != nil {
 		return Sides{}, err
 	}
@@ -320,17 +390,11 @@ func ReadCommit(ctx context.Context, root string, hash string) (CommitDetail, er
 	if err != nil {
 		return CommitDetail{}, err
 	}
-	kinds, err := treeKinds(ctx, root, parent, hash)
+	changes, err := renamedChanges(ctx, root, nil, "diff-tree", "-r", parent, hash)
 	if err != nil {
-		return CommitDetail{}, err
+		return CommitDetail{}, fmt.Errorf("compare commit %s with %s: %w", hash, parent, err)
 	}
-	counts, err := treeCounts(ctx, root, parent, hash)
-	if err != nil {
-		return CommitDetail{}, err
-	}
-	return CommitDetail{
-		Hash: hash, Parent: parent, Message: strings.TrimSpace(string(message)), Changes: changesOf(kinds, counts),
-	}, nil
+	return CommitDetail{Hash: hash, Parent: parent, Message: strings.TrimSpace(string(message)), Changes: changes}, nil
 }
 
 func firstParent(ctx context.Context, root string, hash string) (string, error) {
@@ -346,8 +410,8 @@ func firstParent(ctx context.Context, root string, hash string) (string, error) 
 }
 
 // CommitSides returns a file's text before and after a commit.
-func CommitSides(ctx context.Context, root string, detail CommitDetail, path string) (Sides, error) {
-	return objectSides(ctx, root, detail.Parent+":./"+path, detail.Hash+":./"+path)
+func CommitSides(ctx context.Context, root string, detail CommitDetail, change Change) (Sides, error) {
+	return objectSides(ctx, root, detail.Parent+":./"+oldPathOf(change), detail.Hash+":./"+change.Path)
 }
 
 // FileStatuses returns what happened to each file of the opened folder that
@@ -365,4 +429,14 @@ func FileStatuses(ctx context.Context, root string) (map[string]Kind, error) {
 		kinds[change.Path] = change.Kind
 	}
 	return kinds, nil
+}
+
+// GitDir returns the folder where Git keeps HEAD and the index of the work
+// tree at root, or ErrNotRepository outside Git.
+func GitDir(ctx context.Context, root string) (string, error) {
+	output, err := git(ctx, root, nil, "rev-parse", "--absolute-git-dir")
+	if err != nil {
+		return "", fmt.Errorf("find the Git folder of %q: %w: %w", root, ErrNotRepository, err)
+	}
+	return strings.TrimRight(string(output), "\n"), nil
 }

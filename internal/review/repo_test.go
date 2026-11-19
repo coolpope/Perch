@@ -32,7 +32,7 @@ func TestReadingTheRepository(t *testing.T) {
 	if got := summary(uncommitted.Changes); !slices.Equal(got, []string{"b.go M +1-0", "new.go U +0-0"}) {
 		t.Errorf("uncommitted changes are %v", got)
 	}
-	sides, err := WorkTreeSides(ctx, root, uncommitted.Base, "b.go")
+	sides, err := WorkTreeSides(ctx, root, uncommitted.Base, Change{Path: "b.go", Kind: Modified})
 	if err != nil || sides.Old != "bee\n" || sides.New != "bee\nmore\n" {
 		t.Errorf("sides of b.go are %+v, %v", sides, err)
 	}
@@ -69,7 +69,7 @@ func TestReadingTheRepository(t *testing.T) {
 	if detail.Message != "change a\n\nWhy it changed." || !slices.Equal(summary(detail.Changes), []string{"a.go M +1-1"}) {
 		t.Errorf("commit is %+v", detail)
 	}
-	sides, err = CommitSides(ctx, root, detail, "a.go")
+	sides, err = CommitSides(ctx, root, detail, detail.Changes[0])
 	if err != nil || sides.Old != "one\ntwo\n" || sides.New != "one\n2\n" {
 		t.Errorf("sides of the commit are %+v, %v", sides, err)
 	}
@@ -110,8 +110,44 @@ func TestFileHistoryAndBlame(t *testing.T) {
 	}
 }
 
+func TestRenamesShowOnce(t *testing.T) {
+	ctx := context.Background()
+	root := newRepository(t)
+	run(t, root, "mv", "a.go", "moved.go")
+	write(t, root, "moved.go", "one\ntwo\nthree\n")
+
+	uncommitted, err := CompareWithHead(ctx, root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := summary(uncommitted.Changes); !slices.Equal(got, []string{"moved.go R +1-0"}) || uncommitted.Changes[0].OldPath != "a.go" {
+		t.Fatalf("uncommitted changes are %v, %+v", got, uncommitted.Changes)
+	}
+	if head, err := ReadHead(ctx, root); err != nil || head.Uncommitted != 1 {
+		t.Errorf("head is %+v, %v", head, err)
+	}
+	sides, err := WorkTreeSides(ctx, root, uncommitted.Base, uncommitted.Changes[0])
+	if err != nil || sides.Old != "one\ntwo\n" || sides.New != "one\ntwo\nthree\n" {
+		t.Errorf("sides of the rename are %+v, %v", sides, err)
+	}
+
+	run(t, root, "commit", "--quiet", "-am", "move a")
+	commits, err := Log(ctx, root, 0, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	detail, err := ReadCommit(ctx, root, commits[0].Hash)
+	if err != nil || !slices.Equal(summary(detail.Changes), []string{"moved.go R +1-0"}) {
+		t.Fatalf("the commit is %+v, %v", detail, err)
+	}
+	sides, err = CommitSides(ctx, root, detail, detail.Changes[0])
+	if err != nil || sides.Old != "one\ntwo\n" {
+		t.Errorf("sides of the committed rename are %+v, %v", sides, err)
+	}
+}
+
 func summary(changes []Change) []string {
-	letters := map[Kind]string{Modified: "M", Added: "A", Deleted: "D", Untracked: "U"}
+	letters := map[Kind]string{Modified: "M", Added: "A", Deleted: "D", Untracked: "U", Renamed: "R"}
 	lines := make([]string, 0, len(changes))
 	for _, change := range changes {
 		lines = append(lines, fmt.Sprintf("%s %s +%d-%d", change.Path, letters[change.Kind], change.Added, change.Removed))

@@ -341,5 +341,6 @@
   "viewCommit": "View Commit",
   "notCommittedYet": "Not committed yet",
   "blameFailed": "Could not read who changed these lines",
-  "noFileHistory": "No commit has changed this file yet."
+  "noFileHistory": "No commit has changed this file yet.",
+  "kindRenamed": "Renamed from {path}"
 }

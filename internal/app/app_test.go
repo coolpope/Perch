@@ -1196,12 +1196,18 @@ func TestGitPageComparesAndShowsHistory(t *testing.T) {
 	if kind, found := a.status.kinds["new.go"]; !found || kind != review.Untracked || len(a.status.kinds) != 1 {
 		t.Errorf("the tree colors %v", a.status.kinds)
 	}
+	a.after = func(_ time.Duration, action func()) { go a.post(action) }
+	gitIn(t, root, "add", "new.go")
+	gitIn(t, root, "commit", "--quiet", "-m", "commit from a terminal")
+	followPosts(t, posted, tester, func() bool { return len(a.status.kinds) == 0 && !a.status.running })
+	a.after = func(time.Duration, func()) {}
+	settleChanges(t, a, tester, posted)
 
 	if err := tester.Click("Uncommitted"); err != nil {
 		t.Fatal(err)
 	}
 	settleChanges(t, a, tester, posted)
-	if got := changePaths(a.review.listing.Changes); !slices.Equal(got, []string{"new.go"}) || tester.HasText("Mark All Reviewed") {
+	if got := changePaths(a.review.listing.Changes); len(got) != 0 || !tester.HasText("Everything is committed.") {
 		t.Fatalf("uncommitted %v; texts %q", got, tester.Texts())
 	}
 

@@ -242,5 +242,6 @@
   "viewCommit": "查看提交",
   "notCommittedYet": "尚未提交",
   "blameFailed": "无法读取逐行追溯",
-  "noFileHistory": "还没有提交改动过这个文件。"
+  "noFileHistory": "还没有提交改动过这个文件。",
+  "kindRenamed": "由 {path} 改名"
 }

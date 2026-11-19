@@ -31,6 +31,9 @@ const (
 
 	refKeyBytes = 12
 
+	// gitlinkMode is the mode of a submodule in the index.
+	gitlinkMode = "160000"
+
 	// gitCheckIgnoreNoMatch is the exit code of git check-ignore for a path
 	// that no rule ignores.
 	gitCheckIgnoreNoMatch = 1
@@ -49,6 +52,8 @@ const (
 	Deleted
 	// Untracked is a new file Git does not follow yet.
 	Untracked
+	// Renamed is a file moved from OldPath, and perhaps changed too.
+	Renamed
 )
 
 // Change is a file that differs from the last finished review.
@@ -56,6 +61,8 @@ type Change struct {
 	// Path is relative to the opened folder and separated by slashes.
 	Path string
 	Kind Kind
+	// OldPath is where a Renamed file was.
+	OldPath string
 	// Added and Removed count the lines left to read, or those of the
 	// whole change once the file is reviewed.
 	Added   int
@@ -347,31 +354,40 @@ func (s *Store) indexEnv() []string {
 }
 
 // snapshot writes the work tree's files to a tree, leaving out what Git ignores
-// and files above MaxSnapshotFileBytes.
+// and new files above MaxSnapshotFileBytes. Files Git already follows go in
+// without a look at each, which keeps a refresh of a large tree cheap.
 func (s *Store) snapshot(ctx context.Context) (string, error) {
 	top, err := s.topLevel(ctx)
 	if err != nil {
 		return "", err
 	}
 	if _, err := os.Stat(s.index); errors.Is(err, fs.ErrNotExist) {
-		if _, err := gitInput(ctx, top, s.indexEnv(), nil, "read-tree", "HEAD"); err != nil {
-			if _, err := gitInput(ctx, top, s.indexEnv(), nil, "read-tree", "--empty"); err != nil {
-				return "", fmt.Errorf("prepare snapshot of %q: %w", s.root, err)
-			}
+		if err := s.seedIndex(ctx, top); err != nil {
+			return "", err
 		}
 	}
-	listed, err := git(ctx, top, s.indexEnv(), "ls-files", "-z", "--cached", "--others", "--exclude-standard")
+	tracked, err := git(ctx, top, s.indexEnv(), "ls-files", "-z", "--cached", "--stage")
 	if err != nil {
 		return "", fmt.Errorf("list files of %q: %w", s.root, err)
 	}
-	var input bytes.Buffer
-	for name := range strings.SplitSeq(string(listed), "\x00") {
-		if name != "" && belongsInSnapshot(top, name) {
-			input.WriteString(name)
-			input.WriteByte(0)
+	untracked, err := git(ctx, top, s.indexEnv(), "ls-files", "-z", "--others", "--exclude-standard")
+	if err != nil {
+		return "", fmt.Errorf("list new files of %q: %w", s.root, err)
+	}
+	input := make([]byte, 0, len(tracked)/2+len(untracked))
+	for entry := range bytes.SplitSeq(tracked, []byte{0}) {
+		meta, name, found := bytes.Cut(entry, []byte{'\t'})
+		// A submodule is recorded by its commit, which update-index leaves.
+		if found && !bytes.HasPrefix(meta, []byte(gitlinkMode)) && !workspace.IsIgnored(string(name)) {
+			input = append(append(input, name...), 0)
 		}
 	}
-	if _, err := gitInput(ctx, top, s.indexEnv(), input.Bytes(), "update-index", "--add", "--remove", "-z", "--stdin"); err != nil {
+	for name := range strings.SplitSeq(string(untracked), "\x00") {
+		if name != "" && belongsInSnapshot(top, name) {
+			input = append(append(input, name...), 0)
+		}
+	}
+	if _, err := gitInput(ctx, top, s.indexEnv(), input, "update-index", "--add", "--remove", "-z", "--stdin"); err != nil {
 		return "", fmt.Errorf("record files of %q: %w", s.root, err)
 	}
 	tree, err := git(ctx, top, s.indexEnv(), "write-tree")
@@ -379,6 +395,33 @@ func (s *Store) snapshot(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("write snapshot of %q: %w", s.root, err)
 	}
 	return strings.TrimSpace(string(tree)), nil
+}
+
+// seedIndex starts the store's index as a copy of the work tree's own, whose
+// record of each file's state spares Git reading every file again, or from
+// HEAD when the work tree has no index yet.
+func (s *Store) seedIndex(ctx context.Context, top string) error {
+	output, err := git(ctx, top, nil, "rev-parse", "--path-format=absolute", "--git-path", "index")
+	if err != nil {
+		return fmt.Errorf("find the index of %q: %w", s.root, err)
+	}
+	data, err := os.ReadFile(strings.TrimRight(string(output), "\n"))
+	switch {
+	case err == nil:
+		if err := os.WriteFile(s.index, data, 0o600); err != nil {
+			return fmt.Errorf("prepare snapshot of %q: %w", s.root, err)
+		}
+		return nil
+	case !errors.Is(err, fs.ErrNotExist):
+		return fmt.Errorf("read the index of %q: %w", s.root, err)
+	}
+	if _, err := gitInput(ctx, top, s.indexEnv(), nil, "read-tree", "HEAD"); err == nil {
+		return nil
+	}
+	if _, err := gitInput(ctx, top, s.indexEnv(), nil, "read-tree", "--empty"); err != nil {
+		return fmt.Errorf("prepare snapshot of %q: %w", s.root, err)
+	}
+	return nil
 }
 
 func (s *Store) topLevel(ctx context.Context) (string, error) {

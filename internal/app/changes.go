@@ -370,7 +370,7 @@ func readSides(ctx context.Context, store *review.Store, root string, request co
 	if request.compare == compareReview {
 		return store.Sides(ctx, version, change)
 	}
-	return review.WorkTreeSides(ctx, root, version, change.Path)
+	return review.WorkTreeSides(ctx, root, version, change)
 }
 
 func (a *App) sidesLoaded(change review.Change, version string, sides review.Sides, err error) {
@@ -774,11 +774,15 @@ func (a *App) fileChangeRowView(c *ui.Context, change review.Change, selected bo
 		}
 		letter, color := kindLetter(change.Kind, colors)
 		ui.Text(c, letter).Font("monospace").FontSize(smallFontSize - 1).FontWeight(600).TextColor(color).Width(kindLetterWidth).Shrink(0)
-		text := ui.Text(c, name).MaxLines(1).Shrink(0)
+		// The name gives way last: its folder is cut first, as it shrinks
+		// from no width of its own.
+		text := ui.Text(c, name).MaxLines(1).Shrink(1)
 		if marked && change.Reviewed {
 			text.TextColor(colors.muted)
 		}
-		if dir := path.Dir(change.Path); dir != "." {
+		if change.Kind == review.Renamed {
+			ui.Text(c, "← "+change.OldPath).FontSize(smallFontSize - 1).TextColor(colors.muted).MaxLines(1).Shrink(1).MinWidth(0)
+		} else if dir := path.Dir(change.Path); dir != "." {
 			ui.Text(c, dir).FontSize(smallFontSize - 1).TextColor(colors.muted).MaxLines(1).Shrink(1).MinWidth(0)
 		}
 		ui.Spacer(c)
@@ -796,6 +800,8 @@ func kindLetter(kind review.Kind, colors palette) (string, ui.Color) {
 		return "D", colors.danger
 	case review.Untracked:
 		return "U", colors.str
+	case review.Renamed:
+		return "R", colors.accent
 	default:
 		return "M", colors.warning
 	}
@@ -878,7 +884,7 @@ func (a *App) changeBarView(c *ui.Context, change review.Change) {
 	ui.Row(c).FillWidth().Height(pathBarHeight+8).Shrink(0).Gap(5).Padding(0, 8, 0, 14).AlignItems(ui.Center).
 		BorderWidth(0, 0, 1, 0).BorderColor(colors.border).Children(func() {
 		a.pathCrumbsView(c, change.Path)
-		ui.Text(c, changeKindLabel(change.Kind)).FontSize(smallFontSize-1).TextColor(colors.muted).Padding(0, 0, 0, 6)
+		ui.Text(c, changeKindLabel(change)).FontSize(smallFontSize-1).TextColor(colors.muted).Padding(0, 0, 0, 6)
 		ui.Spacer(c)
 		if r.preview != nil {
 			ui.Segmented(c, &r.view, locales.ChangeRendered(), locales.ChangeDiff())
@@ -901,14 +907,16 @@ func (a *App) changeBarView(c *ui.Context, change review.Change) {
 	})
 }
 
-func changeKindLabel(kind review.Kind) string {
-	switch kind {
+func changeKindLabel(change review.Change) string {
+	switch change.Kind {
 	case review.Added:
 		return locales.KindAdded()
 	case review.Deleted:
 		return locales.KindDeleted()
 	case review.Untracked:
 		return locales.KindUntracked()
+	case review.Renamed:
+		return locales.KindRenamed(change.OldPath)
 	default:
 		return locales.KindModified()
 	}

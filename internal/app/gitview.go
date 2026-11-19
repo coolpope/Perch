@@ -330,10 +330,14 @@ func (a *App) selectCommitFile(relPath string) {
 	if h.detail == nil {
 		return
 	}
+	index := slices.IndexFunc(h.detail.Changes, func(change review.Change) bool { return change.Path == relPath })
+	if index < 0 {
+		return
+	}
 	h.file, h.diff, h.unreadable, h.landing = relPath, nil, false, landNowhere
-	ctx, root, detail := a.review.ctx, a.root, *h.detail
+	ctx, root, detail, change := a.review.ctx, a.root, *h.detail, h.detail.Changes[index]
 	go func() {
-		sides, err := review.CommitSides(ctx, root, detail, relPath)
+		sides, err := review.CommitSides(ctx, root, detail, change)
 		a.post(func() {
 			if ctx.Err() == nil && a.history.selected == detail.Hash && a.history.file == relPath {
 				a.commitSidesLoaded(relPath, sides, err)

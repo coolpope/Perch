@@ -76,7 +76,12 @@ func DigestOf(data []byte) Digest {
 // IsIgnored reports whether a slash-separated workspace path is hidden from
 // the file tree and the file watcher.
 func IsIgnored(relPath string) bool {
-	return slices.ContainsFunc(strings.Split(relPath, "/"), isIgnoredName)
+	for name := range strings.SplitSeq(relPath, "/") {
+		if isIgnoredName(name) {
+			return true
+		}
+	}
+	return false
 }
 
 func isIgnoredName(name string) bool {

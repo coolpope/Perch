@@ -160,3 +160,24 @@ func TestTextHonorsOptionsAndTheLimit(t *testing.T) {
 		t.Errorf("summary %+v at the limit", summary)
 	}
 }
+
+func TestContainsFold(t *testing.T) {
+	cases := []struct {
+		data   string
+		needle string
+		want   bool
+	}{
+		{"var containerGCPolicy = 1", "ContainerGCPolicy", true},
+		{"CONTAINERGCPOLICY", "containergcpolicy", true},
+		{"containerGCPolic", "ContainerGCPolicy", false},
+		{"xyz", "z", true},
+		{"zz-top", "Z-T", true},
+		{"", "a", false},
+		{"ab", "abc", false},
+	}
+	for _, test := range cases {
+		if got := containsFold([]byte(test.data), []byte(test.needle)); got != test.want {
+			t.Errorf("containsFold(%q, %q) = %v", test.data, test.needle, got)
+		}
+	}
+}

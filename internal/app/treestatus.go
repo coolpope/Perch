@@ -6,8 +6,10 @@ import (
 	"log/slog"
 	"os/exec"
 	"path"
+	"slices"
 	"time"
 
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
 	"perch/internal/review"
@@ -31,11 +33,57 @@ type treeStatus struct {
 	queued  bool
 }
 
-// startTreeStatus begins coloring the rows of the open folder.
+// gitStateFiles are the files of the Git folder that change when a commit,
+// a checkout, a merge, a pull or staging moves what the tree is compared with.
+var gitStateFiles = []string{"HEAD", "index", "ORIG_HEAD", "FETCH_HEAD", "packed-refs"}
+
+// startTreeStatus begins coloring the rows of the open folder, and following
+// the Git folder, which the folder's own watch leaves out.
 func (a *App) startTreeStatus() {
 	a.stopTreeStatus()
 	a.status.ctx, a.status.cancel = context.WithCancel(context.Background())
 	a.refreshTreeStatus()
+	a.watchGitDir(a.status.ctx, a.root)
+}
+
+// watchGitDir reads the status and the Git page again when Git's own state
+// changes, as after a commit made in a terminal. The goroutine is owned by
+// the open folder: stopTreeStatus cancels its context.
+func (a *App) watchGitDir(ctx context.Context, root string) {
+	go func() {
+		dir, err := review.GitDir(ctx, root)
+		if err != nil {
+			return // Not in Git, or the folder closed.
+		}
+		watcher, err := mygo.WatchFiles(ctx, dir, mygo.FileWatchOptions{
+			Ignore: func(_ string, isDir bool) bool { return isDir },
+		})
+		if err != nil {
+			slog.Warn("watch the Git folder", "dir", dir, "error", err)
+			return
+		}
+		for {
+			events, err := watcher.Next(ctx)
+			if err != nil {
+				if ctx.Err() == nil {
+					slog.Warn("follow the Git folder", "dir", dir, "error", err)
+				}
+				return
+			}
+			if slices.ContainsFunc(events, movesGitState) {
+				a.post(func() {
+					if ctx.Err() == nil {
+						a.scheduleTreeStatus()
+						a.scheduleChangesRefresh()
+					}
+				})
+			}
+		}
+	}()
+}
+
+func movesGitState(event mygo.FileEvent) bool {
+	return slices.Contains(gitStateFiles, event.Path)
 }
 
 // stopTreeStatus forgets the colors and ends the reading under way.

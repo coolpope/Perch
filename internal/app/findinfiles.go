@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"path"
-	"regexp"
 	"strings"
 	"time"
 
@@ -110,7 +109,7 @@ func (a *App) startSearch() {
 // runSearch waits for typing to pause and streams the results to the window.
 // The goroutine belongs to ctx: the next search and opening another folder
 // cancel it.
-func (a *App) runSearch(ctx context.Context, root string, pattern *regexp.Regexp) {
+func (a *App) runSearch(ctx context.Context, root string, pattern *search.Pattern) {
 	select {
 	case <-time.After(searchDelay):
 	case <-ctx.Done():

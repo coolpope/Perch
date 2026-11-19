@@ -2475,3 +2475,13 @@ func NoFileHistory() string { return In(i18n.Locale()).NoFileHistory() }
 func (msgs Messages) NoFileHistory() string {
 	return Catalog.Format(msgs.locale, "noFileHistory", nil)
 }
+
+// KindRenamed says "Renamed from {path}"
+// in the language the app shows.
+func KindRenamed(path string) string { return In(i18n.Locale()).KindRenamed(path) }
+
+// KindRenamed says "Renamed from {path}"
+// in the language of msgs.
+func (msgs Messages) KindRenamed(path string) string {
+	return Catalog.Format(msgs.locale, "kindRenamed", map[string]any{"path": path})
+}
