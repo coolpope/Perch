@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE'
+      - '.github/screenshots/**'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE'
+      - '.github/screenshots/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  checks:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      # setup-go adds GOPATH/bin to PATH for the real-server tests.
+      - name: Install gopls
+        run: go install golang.org/x/tools/gopls@v0.23.0
+
+      - name: Require both real-server tests to pass
+        run: |
+          go test ./internal/lsp -run 'RealServer$' -count=1 -v | tee "$RUNNER_TEMP/real-server-tests.log"
+          for name in TestDefinitionThroughARealServer TestHoverAndReferencesThroughARealServer; do
+            if ! grep -q "^--- PASS: $name " "$RUNNER_TEMP/real-server-tests.log"; then
+              echo "::error::$name skipped or missing"
+              exit 1
+            fi
+          done
+
+      - run: go vet ./...
+      - run: go test ./...
+
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.15.0
+
+      # Windows checkout can change line endings.
+      - name: Check formatting and generated files
+        if: runner.os == 'Linux'
+        run: |
+          unformatted=$(gofmt -l internal locales main.go)
+          if [[ -n "$unformatted" ]]; then
+            printf 'Unformatted Go files:\n%s\n' "$unformatted"
+            exit 1
+          fi
+
+          go tool mygo generate
+          changes=$(git status --porcelain)
+          if [[ -n "$changes" ]]; then
+            printf 'Generated files are out of date:\n%s\n' "$changes"
+            exit 1
+          fi
