@@ -516,6 +516,29 @@ func TestNewFolderUsesTheClickedFolder(t *testing.T) {
 	}
 }
 
+func TestCollapseAllKeepsVisibleSelection(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "docs/nested/child.txt", "child\n")
+	writeFile(t, root, "root.txt", "root\n")
+	a, tester := openWorkspace(t, root)
+	tester.Frame()
+
+	clickFile(t, tester, "docs")
+	clickFile(t, tester, "nested")
+	clickFile(t, tester, "child.txt")
+	clickFile(t, tester, locales.CollapseAll())
+	if _, visible := tester.AccessByRole(ui.RoleTreeItem, "nested"); visible || a.selectedTreePath() != "" {
+		t.Fatalf("nested rows or selection survived collapse: %q, %q", tester.Texts(), a.selectedTreePath())
+	}
+
+	clickFile(t, tester, "docs")
+	clickFile(t, tester, "root.txt")
+	clickFile(t, tester, locales.CollapseAll())
+	if got := a.selectedTreePath(); got != "root.txt" {
+		t.Errorf("selected %q after collapse, want root.txt", got)
+	}
+}
+
 func TestNewFileOpensAndAnExistingNameIsRefused(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, root, "notes.txt", "keep\n")
@@ -978,6 +1001,52 @@ func TestANewSearchReplacesTheLastOne(t *testing.T) {
 	}
 	if a.find.failure == "" {
 		t.Error("an invalid regular expression reported nothing")
+	}
+}
+
+func TestRecentSearchesSurviveProjectSession(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, root, "words.txt", "Foo\nfoo\n")
+	sessions := t.TempDir()
+	a, tester, posted := openSessionProject(t, root, sessions)
+	a.showFindInFiles()
+	tester.Frame()
+	if !tester.HasText(locales.SearchEmptyHint()) || tester.HasText(locales.RecentSearches()) {
+		t.Fatalf("empty search: %q", tester.Texts())
+	}
+
+	// A query counts once a result of it is opened, not while it is typed.
+	run := func(query string) {
+		a.find.query = query
+		a.startSearch()
+		followPosts(t, posted, tester, func() bool { return a.find.finished })
+		a.openSearchRow(1)
+	}
+	const expression = "F[o]+"
+	a.find.query = "F[o"
+	a.startSearch()
+	run(expression)
+	run("foo")
+	a.find.caseSensitive, a.find.regexp = true, true
+	run(expression)
+	a.release()
+
+	saved, err := session.Load(session.Path(sessions, root))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []session.RecentSearch{{Query: expression, CaseSensitive: true, Regexp: true}, {Query: "foo"}}
+	if !slices.Equal(saved.RecentSearches, want) {
+		t.Fatalf("saved searches: %+v, want %+v", saved.RecentSearches, want)
+	}
+
+	reopened, view, posts := openSessionProject(t, root, sessions)
+	t.Cleanup(reopened.release)
+	view.Frame()
+	clickFile(t, view, expression)
+	followPosts(t, posts, view, func() bool { return reopened.find.finished })
+	if reopened.find.summary.Hits != 1 || view.HasText(locales.RecentSearches()) {
+		t.Errorf("repeated search: %+v; texts %q", reopened.find.summary, view.Texts())
 	}
 }
 
@@ -1676,7 +1745,7 @@ func TestWelcomeShowsOnlyExistingRecentProjects(t *testing.T) {
 	a.post = func(action func()) { posted <- action }
 	tester := ui.NewTester(a.view, testWidth, testHeight)
 	tester.Frame()
-	followPosts(t, posted, tester, func() bool { return len(a.recentRoots) > 0 })
+	followPosts(t, posted, tester, func() bool { return len(a.recentProjects) > 0 })
 	tester.Frame()
 
 	if !tester.HasText("Recent Projects") || !tester.HasText(filepath.Base(root)) {

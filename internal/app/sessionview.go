@@ -173,6 +173,7 @@ func (a *App) restoreSessionLayout(s session.Session) {
 		a.sidebarWidth = min(s.SidebarWidth, maxWidth)
 	}
 	a.sidebarTab = sessionSidebarTab(s.SidebarTab)
+	a.find.recent = s.RecentSearches[:min(len(s.RecentSearches), maxRecentSearches)]
 	a.tree.Open.Clear()
 	for _, dir := range s.OpenFolders {
 		if dir != "." && validSessionPath(dir) {
@@ -402,6 +403,9 @@ func (a *App) sessionFingerprint() uint64 {
 		folders ^= maphash.String(sessionHashSeed, dir)
 	}
 	mix(folders)
+	for _, recent := range a.find.recent {
+		mix(maphash.Comparable(sessionHashSeed, recent))
+	}
 	for _, d := range a.documents {
 		if d.external {
 			continue
@@ -421,11 +425,12 @@ func (a *App) sessionFingerprint() uint64 {
 // sessionSnapshot builds the session of the window as it is now.
 func (a *App) sessionSnapshot() session.Session {
 	s := session.Session{
-		Version:      session.Version,
-		Active:       noDocument,
-		SidebarWidth: a.sidebarWidth,
-		SidebarTab:   sessionSidebarName(a.sidebarTab),
-		OpenFolders:  a.openTreePaths(),
+		Version:        session.Version,
+		Active:         noDocument,
+		SidebarWidth:   a.sidebarWidth,
+		SidebarTab:     sessionSidebarName(a.sidebarTab),
+		OpenFolders:    a.openTreePaths(),
+		RecentSearches: slices.Clone(a.find.recent),
 	}
 	slices.Sort(s.OpenFolders)
 	for i, d := range a.documents {

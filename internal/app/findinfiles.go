@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 
 	"perch/internal/search"
+	"perch/internal/session"
 	"perch/locales"
 )
 
@@ -22,6 +24,7 @@ const (
 
 	searchFieldHeight float32 = 32
 	searchOptionSize  float32 = 22
+	maxRecentSearches int     = 8
 )
 
 // Indexes of the sidebar's switch.
@@ -44,6 +47,7 @@ type findInFiles struct {
 	query         string
 	caseSensitive bool
 	regexp        bool
+	recent        []session.RecentSearch
 	rows          []resultRow
 	summary       search.Summary
 	running       bool
@@ -134,6 +138,20 @@ func (a *App) runSearch(ctx context.Context, root string, pattern *search.Patter
 	a.finishSearch(ctx, summary, err)
 }
 
+// rememberSearch puts the query whose result was opened first among the
+// recent searches, with its options, keeping one of each query. Opening a
+// result is what tells a finished query from one typed on the way to it.
+func (a *App) rememberSearch(query search.Query) {
+	recent := a.find.recent
+	if i := slices.IndexFunc(recent, func(previous session.RecentSearch) bool { return previous.Query == query.Text }); i >= 0 {
+		recent = slices.Delete(recent, i, i+1)
+	}
+	recent = recent[:min(len(recent), maxRecentSearches-1)]
+	a.find.recent = slices.Insert(recent, 0, session.RecentSearch{
+		Query: query.Text, CaseSensitive: query.CaseSensitive, Regexp: query.Regexp,
+	})
+}
+
 func rowsOf(hits search.FileHits) []resultRow {
 	rows := make([]resultRow, 0, len(hits.Hits)+1)
 	rows = append(rows, resultRow{path: hits.Path, isFile: true, count: len(hits.Hits)})
@@ -197,6 +215,7 @@ func (a *App) openSearchRow(index int) {
 		return
 	}
 	row := a.find.rows[index]
+	a.rememberSearch(search.Query{Text: a.find.query, CaseSensitive: a.find.caseSensitive, Regexp: a.find.regexp})
 	if row.isFile {
 		a.openFile(row.path)
 		a.chooseTab(a.active)
@@ -217,9 +236,55 @@ func (a *App) findInFilesView(c *ui.Context) {
 				ui.Text(c, status).FontSize(smallFontSize-1).TextColor(colors.muted).MaxLines(1).Padding(0, 2)
 			}
 		})
+		if strings.TrimSpace(a.find.query) == "" {
+			a.searchEmptyView(c)
+			return
+		}
 		ui.Box(c).FillWidth().Height(1).Shrink(0).Background(colors.border)
 		a.searchResultsView(c)
 	})
+}
+
+// searchEmptyView gives the search scope and a way to repeat a past query.
+func (a *App) searchEmptyView(c *ui.Context) {
+	colors := a.look.palette
+	ui.Column(c).FillWidth().Gap(12).Padding(6, 12, 8, 12).Children(func() {
+		ui.Text(c, locales.SearchEmptyHint()).FontSize(smallFontSize).TextColor(colors.muted)
+		if len(a.find.recent) == 0 {
+			return
+		}
+		ui.Column(c).FillWidth().Gap(4).Children(func() {
+			ui.Text(c, locales.RecentSearches()).FontSize(smallFontSize).TextColor(colors.muted)
+			ui.Row(c).FillWidth().Wrap().Gap(4).AlignItems(ui.Start).Children(func() {
+				for i, recent := range a.find.recent {
+					if a.recentSearchChip(c.Key(i), recent.Query) {
+						a.find.query = recent.Query
+						a.find.caseSensitive = recent.CaseSensitive
+						a.find.regexp = recent.Regexp
+						a.find.input.Focus()
+						a.startSearch()
+					}
+				}
+			})
+		})
+	})
+}
+
+// recentSearchChip builds one recent query and reports a click on it.
+func (a *App) recentSearchChip(c *ui.Context, query string) bool {
+	colors := a.look.palette
+	chip := ui.ButtonBase(c).Role(ui.RoleButton).Label(query).Tooltip(query).
+		MinWidth(0).Shrink(1).Padding(4, 8).Radius(radiusSmall).Background(colors.sidebar)
+	if chip.Hovered() {
+		chip.Background(colors.hover)
+	}
+	if chip.FocusVisible() {
+		chip.Border(1, colors.accent)
+	}
+	chip.Children(func() {
+		ui.Text(c, query).FontSize(smallFontSize).MaxLines(1).MinWidth(0)
+	})
+	return chip.Clicked()
 }
 
 // searchFieldView is the search box, with its options inside at the end.

@@ -2,7 +2,6 @@ package app
 
 import (
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/egoist/mygo/ui"
@@ -78,33 +77,6 @@ func (a *App) view(c *ui.Context) {
 	a.trackSession()
 }
 
-func (a *App) welcomeView(c *ui.Context) {
-	colors := a.look.palette
-	ui.Column(c).Fill().Children(func() {
-		ui.Box(c).FillWidth().Height(headerHeight).Shrink(0).DragWindow()
-		ui.Column(c).Grow(1).FillWidth().Center().Gap(10).Padding(0, 0, headerHeight, 0).Children(func() {
-			ui.Icon(c, iconPerch).FontSize(44).TextColor(colors.accent)
-			ui.Text(c, "Perch").FontSize(26).FontWeight(600).LetterSpacing(-0.3)
-			ui.Text(c, locales.AppTagline()).TextColor(colors.muted)
-			ui.Box(c).Height(8)
-			if ui.PrimaryButton(c, locales.OpenFolder()).Clicked() {
-				a.chooseFolder()
-			}
-			ui.Text(c, shortcutHint(runtime.GOOS, "O")).FontSize(smallFontSize).TextColor(colors.muted)
-			a.recentProjectsView(c)
-		})
-	})
-}
-
-// shortcutHint writes the shortcut of Command or Control with a key as the
-// platform shows it.
-func shortcutHint(goos string, key string) string {
-	if goos == "darwin" {
-		return "⌘" + key
-	}
-	return "Ctrl+" + key
-}
-
 func (a *App) sidebarView(c *ui.Context) {
 	colors := a.look.palette
 	ui.Column(c).Fill().Background(colors.sidebar).Children(func() {
@@ -161,9 +133,19 @@ func (a *App) sidebarHeaderView(c *ui.Context) {
 // name, and shows where it is when the pointer rests on it.
 func (a *App) projectNameView(c *ui.Context) {
 	colors := a.look.palette
-	ui.Row(c).FillWidth().Height(projectNameHeight).Shrink(0).Padding(0, 14).AlignItems(ui.Center).Children(func() {
-		name := ui.Text(c, filepath.Base(a.root)).FontWeight(600).MaxLines(1).Shrink(1)
+	row := ui.Row(c).FillWidth().Height(projectNameHeight).Shrink(0).Padding(0, 14).Gap(4).
+		AlignItems(ui.Center).Justify(ui.SpaceBetween)
+	row.Children(func() {
+		name := ui.Text(c, filepath.Base(a.root)).FontWeight(600).MaxLines(1).Shrink(1).MinWidth(0)
 		sidebarTooltip(c, name, a.root, colors)
+		if a.sidebarTab == sidebarFiles {
+			toolbar := ui.Row(c).AlignItems(ui.Center).Gap(2).Shrink(0)
+			// Keep the buttons in the tab order and accessibility tree while hidden.
+			if !row.Hovered() && !row.FocusWithin() {
+				toolbar.Opacity(0)
+			}
+			toolbar.Children(func() { a.fileTreeToolbarView(c) })
+		}
 	})
 }
 
@@ -200,16 +182,58 @@ func sidebarTooltip(c *ui.Context, button ui.Element, label string, colors palet
 
 func (a *App) fileTreeView(c *ui.Context) {
 	ui.Themed(c, a.look.tree).Grow(1).FillWidth().Children(func() {
+		selected := a.selectedTreePath()
+		_, listed := a.children["."]
+		roots := a.childPaths(".")
+		if len(roots) == 0 {
+			a.treeRow = noRow
+		}
 		a.tree.List.Selected = &a.treeRow
-		tree := ui.Outline(c, &a.tree, a.childPaths("."), a.childPaths, func(item string) {
+		tree := ui.Outline(c, &a.tree, roots, a.treeChildPaths, func(item string) {
 			a.treeRowView(c, item)
 		}).Grow(1).FillWidth().Padding(0, treeRowInset).Label(locales.TabFiles()).ContextMenu(func(m *ui.Menu) {
 			a.fileMenu(m, ".")
 		})
+		if !listed {
+			a.pruneOpenTreePaths()
+		}
 		if tree.Changed() {
 			a.chooseTreeRow()
+		} else if selected != "" && a.treeRow == noRow {
+			// The list follows its chosen row by key only so far; after a large
+			// collapse the row may have moved farther, so it is found again.
+			if row := a.treeRowFor(selected); row != noRow {
+				a.tree.List.Choose(row)
+				c.After(0)
+			}
 		}
 	})
+}
+
+// treeChildPaths gives the tree a folder's children, and nothing for a file.
+func (a *App) treeChildPaths(item string) []string {
+	if !a.entries[item].IsDir {
+		return nil
+	}
+	return a.childPaths(item)
+}
+
+// selectedTreePath returns the chosen row's path, empty when none is chosen.
+func (a *App) selectedTreePath() string {
+	if a.treeRow < 0 || a.treeRow >= a.tree.Rows() {
+		return ""
+	}
+	return a.tree.Item(a.treeRow)
+}
+
+// treeRowFor returns the row that shows a path, noRow when it is hidden.
+func (a *App) treeRowFor(item string) int {
+	for row := range a.tree.Rows() {
+		if a.tree.Item(row) == item {
+			return row
+		}
+	}
+	return noRow
 }
 
 func (a *App) treeRowView(c *ui.Context, item string) {
@@ -234,10 +258,10 @@ func (a *App) treeRowView(c *ui.Context, item string) {
 // chooseTreeRow opens the file of the chosen row, or opens or closes the
 // directory.
 func (a *App) chooseTreeRow() {
-	if a.treeRow < 0 || a.treeRow >= a.tree.Rows() {
+	item := a.selectedTreePath()
+	if item == "" {
 		return
 	}
-	item := a.tree.Item(a.treeRow)
 	if a.entries[item].IsDir {
 		toggleOpen(&a.tree.Open, item)
 		return
@@ -258,13 +282,7 @@ func (a *App) chooseTab(index int) {
 	a.closeOutline()
 	a.leaveGitView()
 	a.active = index
-	a.treeRow = noRow
-	for row := range a.tree.Rows() {
-		if a.tree.Item(row) == a.documents[index].path {
-			a.treeRow = row
-			return
-		}
-	}
+	a.treeRow = a.treeRowFor(a.documents[index].path)
 }
 
 // mainView floats the open file on a rounded panel below its tabs.
@@ -292,10 +310,7 @@ func (a *App) panelContentView(c *ui.Context) {
 		return
 	}
 	if d == nil {
-		ui.Column(c).Grow(1).FillWidth().Center().Gap(8).Children(func() {
-			ui.Icon(c, iconPerch).FontSize(32).TextColor(a.look.palette.border)
-			ui.Text(c, locales.ChooseFileToRead()).TextColor(a.look.palette.muted)
-		})
+		a.noFileView(c)
 		return
 	}
 	a.pathBarView(c, d)
@@ -373,6 +388,15 @@ func (a *App) tabCloseView(c *ui.Context, d *document, showClose bool) bool {
 		}
 	})
 	return clicked
+}
+
+// fitsInView reports whether every line of an editor shows at once, as
+// laid out in the last frame. Such a text then cannot scroll past its end,
+// so that it has nothing to scroll and shows no scroll bar; a longer one
+// still scrolls its last line up to the top.
+func fitsInView(state *editor.State) bool {
+	viewport := state.ViewportHeight()
+	return viewport > 0 && state.LineTop(state.Buffer.LineCount()) <= viewport
 }
 
 // pathCrumbsView shows a file's path, its folders quieter than its name.
@@ -474,6 +498,7 @@ func (a *App) documentView(c *ui.Context, d *document) {
 	}
 	d.editor.Theme = a.look.code
 	a.applyEditorSettings(d.editor)
+	d.editor.NoScrollPastEnd = fitsInView(d.editor)
 	if d.scrollPending && d.editor.ViewportHeight() > 0 {
 		d.editor.SetScrollY(d.restoredScroll)
 		d.scrollPending = false

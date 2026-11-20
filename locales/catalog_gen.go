@@ -2619,3 +2619,113 @@ func EmptyFolder() string { return In(i18n.Locale()).EmptyFolder() }
 func (msgs Messages) EmptyFolder() string {
 	return Catalog.Format(msgs.locale, "emptyFolder", nil)
 }
+
+// DropFolderHint says "You can also drop a folder here"
+// in the language the app shows.
+func DropFolderHint() string { return In(i18n.Locale()).DropFolderHint() }
+
+// DropFolderHint says "You can also drop a folder here"
+// in the language of msgs.
+func (msgs Messages) DropFolderHint() string {
+	return Catalog.Format(msgs.locale, "dropFolderHint", nil)
+}
+
+// DropFolderNotFile says "Drop a folder to open it as a project"
+// in the language the app shows.
+func DropFolderNotFile() string { return In(i18n.Locale()).DropFolderNotFile() }
+
+// DropFolderNotFile says "Drop a folder to open it as a project"
+// in the language of msgs.
+func (msgs Messages) DropFolderNotFile() string {
+	return Catalog.Format(msgs.locale, "dropFolderNotFile", nil)
+}
+
+// HintOpenFile says "Open a file"
+// in the language the app shows.
+func HintOpenFile() string { return In(i18n.Locale()).HintOpenFile() }
+
+// HintOpenFile says "Open a file"
+// in the language of msgs.
+func (msgs Messages) HintOpenFile() string {
+	return Catalog.Format(msgs.locale, "hintOpenFile", nil)
+}
+
+// HintSearchProject says "Search the project"
+// in the language the app shows.
+func HintSearchProject() string { return In(i18n.Locale()).HintSearchProject() }
+
+// HintSearchProject says "Search the project"
+// in the language of msgs.
+func (msgs Messages) HintSearchProject() string {
+	return Catalog.Format(msgs.locale, "hintSearchProject", nil)
+}
+
+// HintProjectSymbols says "Find a symbol"
+// in the language the app shows.
+func HintProjectSymbols() string { return In(i18n.Locale()).HintProjectSymbols() }
+
+// HintProjectSymbols says "Find a symbol"
+// in the language of msgs.
+func (msgs Messages) HintProjectSymbols() string {
+	return Catalog.Format(msgs.locale, "hintProjectSymbols", nil)
+}
+
+// HintShowChanges says "See the changes"
+// in the language the app shows.
+func HintShowChanges() string { return In(i18n.Locale()).HintShowChanges() }
+
+// HintShowChanges says "See the changes"
+// in the language of msgs.
+func (msgs Messages) HintShowChanges() string {
+	return Catalog.Format(msgs.locale, "hintShowChanges", nil)
+}
+
+// HintFindReferences says "Find where a name is used"
+// in the language the app shows.
+func HintFindReferences() string { return In(i18n.Locale()).HintFindReferences() }
+
+// HintFindReferences says "Find where a name is used"
+// in the language of msgs.
+func (msgs Messages) HintFindReferences() string {
+	return Catalog.Format(msgs.locale, "hintFindReferences", nil)
+}
+
+// SearchEmptyHint says "Search the project’s text files, skipping files Git ignores; Aa matches case and .* uses regular expressions."
+// in the language the app shows.
+func SearchEmptyHint() string { return In(i18n.Locale()).SearchEmptyHint() }
+
+// SearchEmptyHint says "Search the project’s text files, skipping files Git ignores; Aa matches case and .* uses regular expressions."
+// in the language of msgs.
+func (msgs Messages) SearchEmptyHint() string {
+	return Catalog.Format(msgs.locale, "searchEmptyHint", nil)
+}
+
+// RecentSearches says "Recent searches"
+// in the language the app shows.
+func RecentSearches() string { return In(i18n.Locale()).RecentSearches() }
+
+// RecentSearches says "Recent searches"
+// in the language of msgs.
+func (msgs Messages) RecentSearches() string {
+	return Catalog.Format(msgs.locale, "recentSearches", nil)
+}
+
+// RefreshFileTree says "Refresh"
+// in the language the app shows.
+func RefreshFileTree() string { return In(i18n.Locale()).RefreshFileTree() }
+
+// RefreshFileTree says "Refresh"
+// in the language of msgs.
+func (msgs Messages) RefreshFileTree() string {
+	return Catalog.Format(msgs.locale, "refreshFileTree", nil)
+}
+
+// CollapseAll says "Collapse All"
+// in the language the app shows.
+func CollapseAll() string { return In(i18n.Locale()).CollapseAll() }
+
+// CollapseAll says "Collapse All"
+// in the language of msgs.
+func (msgs Messages) CollapseAll() string {
+	return Catalog.Format(msgs.locale, "collapseAll", nil)
+}

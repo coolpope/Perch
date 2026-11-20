@@ -57,18 +57,18 @@ type App struct {
 	find           findInFiles
 	files          fileTreeState
 	session        sessionState
-	// recentRoots are the recent projects the welcome screen lists, known once
-	// recentChecked has been answered.
-	recentRoots   []string
-	recentChecked bool
-	review        changesPanel
-	history       historyPanel
-	status        treeStatus
-	fileHistory   fileHistory
-	fileIcons     fileIconCache
-	definition    definitionState
-	hover         hoverState
-	references    referencesState
+	// recentProjects are the recent projects the welcome screen lists, known
+	// once recentChecked has been answered.
+	recentProjects []recentProject
+	recentChecked  bool
+	review         changesPanel
+	history        historyPanel
+	status         treeStatus
+	fileHistory    fileHistory
+	fileIcons      fileIconCache
+	definition     definitionState
+	hover          hoverState
+	references     referencesState
 	// projectSymbols is the finder of symbols across the project.
 	projectSymbols projectSymbolsState
 
@@ -176,12 +176,8 @@ func (a *App) loadFolder(root string) error {
 	return nil
 }
 
-// childPaths returns the paths inside a directory of the tree, listing it
-// the first time it is asked for. It returns nil for a file.
+// childPaths lists a directory the first time it is asked for.
 func (a *App) childPaths(dir string) []string {
-	if dir != "." && !a.entries[dir].IsDir {
-		return nil
-	}
 	if paths, listed := a.children[dir]; listed {
 		return paths
 	}
@@ -387,7 +383,7 @@ func (a *App) useDisk(d *document) {
 // changes on disk.
 func (a *App) applyFileEvents(events []mygo.FileEvent) {
 	if slices.ContainsFunc(events, changesTree) {
-		a.children = map[string][]string{}
+		a.invalidateFileTree()
 	}
 	for _, d := range a.documents {
 		a.reconcile(d)

@@ -33,14 +33,22 @@ type Tab struct {
 	Source bool `json:"source,omitempty"`
 }
 
+// RecentSearch is an executed project search and the options it used.
+type RecentSearch struct {
+	Query         string `json:"query"`
+	CaseSensitive bool   `json:"caseSensitive"`
+	Regexp        bool   `json:"regexp"`
+}
+
 // Session is the state of one project.
 type Session struct {
-	Version      int      `json:"version"`
-	Tabs         []Tab    `json:"tabs"`
-	Active       int      `json:"active"`
-	SidebarWidth float32  `json:"sidebarWidth"`
-	SidebarTab   string   `json:"sidebarTab"`
-	OpenFolders  []string `json:"openFolders,omitempty"`
+	Version        int            `json:"version"`
+	Tabs           []Tab          `json:"tabs"`
+	Active         int            `json:"active"`
+	SidebarWidth   float32        `json:"sidebarWidth"`
+	SidebarTab     string         `json:"sidebarTab"`
+	OpenFolders    []string       `json:"openFolders,omitempty"`
+	RecentSearches []RecentSearch `json:"recentSearches,omitempty"`
 }
 
 // Key names a project's session without its path in the file name.

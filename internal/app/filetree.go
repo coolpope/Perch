@@ -1,6 +1,7 @@
 package app
 
 import (
+	"cmp"
 	"errors"
 	"io/fs"
 	"path"
@@ -188,6 +189,23 @@ func (a *App) startCreate(action fileAction, target string) {
 		return
 	}
 	a.openNameDialog(action, target, entry.IsDir, "")
+}
+
+// fileTreeToolbarView builds the buttons over the file tree: new items go in
+// the chosen folder, or beside the chosen file, or at the top.
+func (a *App) fileTreeToolbarView(c *ui.Context) {
+	if a.pathBarButton(c, iconFilePlus, locales.FileMenuNewFile(), false).Clicked() {
+		a.startCreate(fileActionNewFile, cmp.Or(a.selectedTreePath(), "."))
+	}
+	if a.pathBarButton(c, iconFolderPlus, locales.FileMenuNewFolder(), false).Clicked() {
+		a.startCreate(fileActionNewFolder, cmp.Or(a.selectedTreePath(), "."))
+	}
+	if a.pathBarButton(c, iconRefresh, locales.RefreshFileTree(), false).Clicked() {
+		a.refreshFileTree()
+	}
+	if a.pathBarButton(c, iconCollapse, locales.CollapseAll(), false).Clicked() {
+		a.collapseFileTree()
+	}
 }
 
 // startRename opens the name dialog with the current name, selected.
@@ -481,7 +499,6 @@ func (a *App) renameTarget(name string) {
 	}
 	a.renameDocuments(oldPath, newPath)
 	a.renameTreePaths(oldPath, newPath)
-	a.forgetEntries(oldPath)
 	a.finishFileChange(path.Dir(newPath))
 	a.files.open = false
 }
@@ -556,8 +573,42 @@ func (a *App) renameTreePaths(oldPath string, newPath string) {
 // watcher, and shows dir's new children.
 func (a *App) finishFileChange(dir string) {
 	a.expandTreeTo(dir)
-	a.children = map[string][]string{}
+	a.invalidateFileTree()
 	a.treeRow = noRow
+}
+
+// refreshFileTree reads the tree again from disk, with its Git colors, for a
+// change the watcher missed.
+func (a *App) refreshFileTree() {
+	a.invalidateFileTree()
+	a.scheduleTreeStatus()
+}
+
+// invalidateFileTree leaves relisting and its ignore checks to the next read.
+func (a *App) invalidateFileTree() {
+	clear(a.children)
+	clear(a.entries)
+}
+
+// collapseFileTree closes every folder, and lets go of a chosen row that the
+// folders it was in now hide.
+func (a *App) collapseFileTree() {
+	a.tree.Open.Clear()
+	if path.Dir(a.selectedTreePath()) != "." {
+		a.treeRow = noRow
+	}
+}
+
+// pruneOpenTreePaths forgets missing folders without reading closed branches.
+func (a *App) pruneOpenTreePaths() {
+	for dir := range a.tree.Open.All() {
+		for item := dir; item != "."; item = path.Dir(item) {
+			if a.children[path.Dir(item)] != nil && !a.entries[item].IsDir {
+				a.tree.Open.Remove(dir)
+				break
+			}
+		}
+	}
 }
 
 // expandTreeTo opens dir and its parent folders, so that a new item shows.
@@ -565,15 +616,6 @@ func (a *App) expandTreeTo(dir string) {
 	for dir != "." && dir != "/" {
 		a.tree.Open.Add(dir)
 		dir = path.Dir(dir)
-	}
-}
-
-// forgetEntries drops listed entries of a path and its children.
-func (a *App) forgetEntries(relPath string) {
-	for entryPath := range a.entries {
-		if removesDocument(relPath, entryPath) {
-			delete(a.entries, entryPath)
-		}
 	}
 }
 
@@ -615,8 +657,7 @@ func (a *App) trashTarget() {
 	}
 	a.closeTrashedDocuments(target)
 	a.removeTreePaths(target)
-	a.forgetEntries(target)
-	a.children = map[string][]string{}
+	a.invalidateFileTree()
 	a.treeRow = noRow
 }
 

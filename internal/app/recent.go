@@ -8,12 +8,16 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
+	"perch/internal/session"
 	"perch/locales"
 )
 
@@ -22,7 +26,12 @@ const (
 	recentVersion     int = 1
 	recentFileName        = "recent-projects.json"
 
-	recentRowWidth      float32 = 360
+	// recentNumbered is how many recent projects Command and a number open.
+	recentNumbered int = 3
+	// shortCommitLength is how much of a detached HEAD's commit shows.
+	shortCommitLength int = 7
+
+	recentRowWidth      float32 = 400
 	recentRowHeight     float32 = 42
 	recentListGap       float32 = 2
 	recentListMaxHeight float32 = 320
@@ -127,6 +136,14 @@ func existingFolders(paths []string) []string {
 	return existing
 }
 
+// recentProject is a recent project as the welcome screen describes it: its
+// branch, empty outside Git, and when it was last open, zero when unknown.
+type recentProject struct {
+	root   string
+	branch string
+	opened time.Time
+}
+
 // checkRecentRoots finds which recent projects the welcome screen can list,
 // once for each version of the list, since a folder on a slow disk must not
 // hold up a frame. The goroutine ends with that search.
@@ -136,10 +153,55 @@ func (a *App) checkRecentRoots() {
 	}
 	a.recentChecked = true
 	paths := slices.Clone(a.desktop.recent)
+	sessionDir := a.desktop.sessionDir
 	go func() {
-		existing := existingFolders(paths)
-		a.post(func() { a.recentRoots = existing })
+		projects := describeRecent(existingFolders(paths), sessionDir)
+		a.post(func() { a.recentProjects = projects })
 	}()
+}
+
+// describeRecent reads the branch of each project and when it was last open,
+// which its saved session's time tells.
+func describeRecent(roots []string, sessionDir string) []recentProject {
+	projects := make([]recentProject, 0, len(roots))
+	for _, root := range roots {
+		project := recentProject{root: root, branch: gitBranch(root)}
+		if sessionDir != "" {
+			if info, err := os.Stat(session.Path(sessionDir, root)); err == nil {
+				project.opened = info.ModTime()
+			}
+		}
+		projects = append(projects, project)
+	}
+	return projects
+}
+
+// gitBranch returns the branch checked out in a project, the short commit of
+// a detached HEAD, or nothing outside Git. It reads HEAD rather than running
+// Git, as the welcome screen lists several projects at once.
+func gitBranch(root string) string {
+	gitPath := filepath.Join(root, ".git")
+	head, err := os.ReadFile(filepath.Join(gitPath, "HEAD"))
+	if err != nil {
+		// A worktree's .git is a file naming its Git directory.
+		link, linkErr := os.ReadFile(gitPath)
+		dir, linked := strings.CutPrefix(strings.TrimSpace(string(link)), "gitdir: ")
+		if linkErr != nil || !linked {
+			return ""
+		}
+		if !filepath.IsAbs(dir) {
+			dir = filepath.Join(root, dir)
+		}
+		if head, err = os.ReadFile(filepath.Join(dir, "HEAD")); err != nil {
+			slog.Warn("read a recent project's branch", "root", root, "error", err)
+			return ""
+		}
+	}
+	text := strings.TrimSpace(string(head))
+	if ref, named := strings.CutPrefix(text, "ref: "); named {
+		return strings.TrimPrefix(ref, "refs/heads/")
+	}
+	return text[:min(len(text), shortCommitLength)]
 }
 
 // recordRecent puts a folder at the top of the recent projects.
@@ -237,24 +299,30 @@ func shortenProjectPath(full string) string {
 }
 
 // recentProjectsView lists the recent projects under the welcome screen's
-// Open Folder button.
+// Open Folder button. Command and the number of one of the first few opens it.
 func (a *App) recentProjectsView(c *ui.Context) {
 	if a.desktop == nil {
 		return
 	}
 	a.checkRecentRoots()
-	roots := a.recentRoots
-	if len(roots) == 0 {
+	projects := a.recentProjects
+	if len(projects) == 0 {
 		return
+	}
+	for place, project := range projects[:min(len(projects), recentNumbered)] {
+		if c.Shortcut(ui.Cmd, tabNumberKeys[place]) {
+			a.openRecentProject(project.root)
+		}
 	}
 	colors := a.look.palette
 	_, height := c.Size()
 	ui.Box(c).Height(8)
-	ui.Text(c, locales.RecentProjects()).FontSize(smallFontSize).TextColor(colors.muted)
-	ui.Scroll(c).Width(recentRowWidth).Height(recentListHeight(len(roots), height)).Label(locales.RecentProjects()).Children(func() {
+	ui.Text(c, locales.RecentProjects()).FontSize(smallFontSize).TextColor(colors.muted).Width(recentRowWidth).Padding(0, 8)
+	ui.Scroll(c).Width(recentRowWidth).Height(recentListHeight(len(projects), height)).Label(locales.RecentProjects()).Children(func() {
 		ui.Column(c).FillWidth().Gap(recentListGap).Children(func() {
-			for _, root := range roots {
-				a.recentProjectRow(c, root)
+			now := time.Now()
+			for place, project := range projects {
+				a.recentProjectRow(c, project, place, now)
 			}
 		})
 	})
@@ -266,25 +334,44 @@ func recentListHeight(count int, windowHeight float32) float32 {
 	return min(float32(count)*(recentRowHeight+recentListGap), room)
 }
 
-// recentProjectRow shows one recent project and opens it on a click.
-func (a *App) recentProjectRow(c *ui.Context, root string) {
+// recentProjectRow shows one recent project, its branch and when it was open,
+// and opens it on a click.
+func (a *App) recentProjectRow(c *ui.Context, project recentProject, place int, now time.Time) {
 	colors := a.look.palette
-	name := filepath.Base(root)
-	row := ui.ButtonBase(c).Width(recentRowWidth).Height(recentRowHeight).Gap(9).Padding(6, 8).Radius(radiusControl).Label(name)
+	name := filepath.Base(project.root)
+	row := ui.ButtonBase(c.Key(project.root)).Width(recentRowWidth).Height(recentRowHeight).Gap(9).Padding(6, 8).Radius(radiusControl).Label(name)
 	if row.Hovered() {
 		row.Background(colors.hover)
 	}
 	clicked := row.Clicked()
 	row.Children(func() {
-		ui.Icon(c, iconFolder).FontSize(iconFontSize).TextColor(colors.muted)
-		ui.Column(c).Grow(1).Shrink(1).Gap(1).Children(func() {
-			ui.Text(c, name).MaxLines(1)
-			ui.Text(c, shortenProjectPath(root)).FontSize(smallFontSize - 1).TextColor(colors.muted).MaxLines(1)
+		ui.Icon(c, iconFolder).FontSize(iconFontSize).TextColor(colors.accent)
+		ui.Column(c).Grow(1).Shrink(1).MinWidth(0).Gap(1).Children(func() {
+			ui.Text(c, name).FontWeight(500).MaxLines(1)
+			ui.Text(c, shortenProjectPath(project.root)).FontSize(smallFontSize - 1).TextColor(colors.muted).MaxLines(1)
 		})
+		if about := recentAbout(project, now); about != "" {
+			ui.Text(c, about).FontSize(smallFontSize - 1).TextColor(colors.muted).MaxLines(1).Shrink(0)
+		}
+		if place < recentNumbered {
+			a.keycapView(c, shortcutLabel(runtime.GOOS, shortcut{command: true, key: strconv.Itoa(place + 1)}))
+		}
 	})
 	if clicked {
-		a.openRecentProject(root)
+		a.openRecentProject(project.root)
 	}
+}
+
+// recentAbout joins a recent project's branch and when it was last open.
+func recentAbout(project recentProject, now time.Time) string {
+	parts := make([]string, 0, 2)
+	if project.branch != "" {
+		parts = append(parts, project.branch)
+	}
+	if !project.opened.IsZero() {
+		parts = append(parts, relativeTime(project.opened, now))
+	}
+	return strings.Join(parts, " · ")
 }
 
 // openRecentProject opens a recent project in this window.

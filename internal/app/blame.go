@@ -212,10 +212,11 @@ func (a *App) gitButtonsView(c *ui.Context, d *document) {
 	})
 }
 
-// pathBarButton builds a button of the path bar that shows an icon.
+// pathBarButton builds a compact icon button shared by the path bar and file tree.
 func (a *App) pathBarButton(c *ui.Context, icon *ui.SVG, label string, active bool) ui.Element {
 	colors := a.look.palette
-	button := ui.Box(c).Size(pathBarButtonSize, pathBarButtonSize).Center().Radius(radiusSmall).Label(label).Tooltip(label)
+	button := ui.ButtonBase(c).Size(pathBarButtonSize, pathBarButtonSize).Radius(radiusSmall).
+		Role(ui.RoleButton).Label(label).Tooltip(label)
 	color := colors.muted
 	switch {
 	case active:
@@ -224,6 +225,9 @@ func (a *App) pathBarButton(c *ui.Context, icon *ui.SVG, label string, active bo
 	case button.Hovered():
 		button.Background(colors.hover)
 		color = colors.text
+	}
+	if button.FocusVisible() {
+		button.Border(1, colors.accent)
 	}
 	button.Children(func() {
 		ui.Icon(c, icon).FontSize(pathBarIconFontSize).TextColor(color)

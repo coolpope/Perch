@@ -317,6 +317,7 @@ func (d *Desktop) menu() *mygo.Menu {
 		}},
 		{Label: locales.MenuView(), Submenu: []*mygo.MenuItem{
 			d.menuItem(locales.MenuToggleMarkdown(), "CmdOrCtrl+Shift+V", (*App).toggleMarkdownView),
+			d.menuItem(locales.CollapseAll(), "", (*App).collapseFileTree),
 			mygo.Separator(),
 			d.menuItem(locales.MenuShowChanges(), "CmdOrCtrl+Shift+R", (*App).showChanges),
 			d.menuItem(locales.MenuMarkReviewed(), "CmdOrCtrl+Enter", (*App).markSelectedReviewed),

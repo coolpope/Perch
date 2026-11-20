@@ -375,5 +375,16 @@
     }
   },
   "parentFolder": "Parent Folder",
-  "emptyFolder": "This folder is empty"
+  "emptyFolder": "This folder is empty",
+  "dropFolderHint": "You can also drop a folder here",
+  "dropFolderNotFile": "Drop a folder to open it as a project",
+  "hintOpenFile": "Open a file",
+  "hintSearchProject": "Search the project",
+  "hintProjectSymbols": "Find a symbol",
+  "hintShowChanges": "See the changes",
+  "hintFindReferences": "Find where a name is used",
+  "searchEmptyHint": "Search the project’s text files, skipping files Git ignores; Aa matches case and .* uses regular expressions.",
+  "recentSearches": "Recent searches",
+  "refreshFileTree": "Refresh",
+  "collapseAll": "Collapse All"
 }
