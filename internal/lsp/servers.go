@@ -9,13 +9,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/marukolibro/Perch/internal/proc"
 )
 
 const shellPathTimeout = 3 * time.Second
@@ -94,7 +95,7 @@ func loginShellPath() string {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), shellPathTimeout)
 	defer cancel()
-	output, err := exec.CommandContext(ctx, shell, "-lc", `printf %s "$PATH"`).Output()
+	output, err := proc.CommandContext(ctx, shell, "-lc", `printf %s "$PATH"`).Output()
 	if err != nil {
 		return ""
 	}

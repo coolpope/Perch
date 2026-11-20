@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/marukolibro/Perch/internal/proc"
 	"github.com/marukolibro/Perch/internal/workspace"
 )
 
@@ -49,7 +50,7 @@ func isGitWorkTree(ctx context.Context, root string) (bool, error) {
 	if _, err := exec.LookPath("git"); err != nil {
 		return false, nil
 	}
-	output, err := exec.CommandContext(ctx, "git", "-C", root, "rev-parse", "--is-inside-work-tree").Output()
+	output, err := proc.CommandContext(ctx, "git", "-C", root, "rev-parse", "--is-inside-work-tree").Output()
 	var exit *exec.ExitError
 	if errors.As(err, &exit) {
 		return false, nil
@@ -61,7 +62,7 @@ func isGitWorkTree(ctx context.Context, root string) (bool, error) {
 }
 
 func listGitFiles(ctx context.Context, root string) (Listing, error) {
-	command := exec.CommandContext(ctx, "git", "-C", root, "ls-files", "--cached", "--others", "--exclude-standard", "-z")
+	command := proc.CommandContext(ctx, "git", "-C", root, "ls-files", "--cached", "--others", "--exclude-standard", "-z")
 	var stderr bytes.Buffer
 	command.Stderr = &stderr
 	output, err := command.Output()

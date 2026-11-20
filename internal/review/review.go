@@ -21,6 +21,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/marukolibro/Perch/internal/proc"
 	"github.com/marukolibro/Perch/internal/workspace"
 )
 
@@ -648,7 +649,7 @@ func git(ctx context.Context, dir string, env []string, args ...string) ([]byte,
 
 // gitInput runs Git in dir and returns what it prints.
 func gitInput(ctx context.Context, dir string, env []string, input []byte, args ...string) ([]byte, error) {
-	command := exec.CommandContext(ctx, "git", append([]string{"-C", dir}, args...)...)
+	command := proc.CommandContext(ctx, "git", append([]string{"-C", dir}, args...)...)
 	command.Env = append(os.Environ(), env...)
 	command.Stdin = bytes.NewReader(input)
 	var stderr bytes.Buffer

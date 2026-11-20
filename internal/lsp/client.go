@@ -16,6 +16,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/marukolibro/Perch/internal/proc"
 )
 
 const (
@@ -157,7 +159,7 @@ func Start(ctx context.Context, server Server, root string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	command := exec.Command(program, server.Args...)
+	command := proc.Command(program, server.Args...)
 	command.Dir = root
 	command.Env = append(os.Environ(), "PATH="+toolPath())
 	stdin, err := command.StdinPipe()
