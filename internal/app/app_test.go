@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -1063,13 +1064,16 @@ func TestFindBarOpensOverMarkdownSource(t *testing.T) {
 }
 
 func TestLaterLaunchesNameFoldersFromTheirOwnDirectory(t *testing.T) {
-	if got := folderArgument([]string{"beta"}, "/work"); got != "/work/beta" {
+	root := t.TempDir()
+	work := filepath.Join(root, "work")
+	other := filepath.Join(root, "other", "beta")
+	if got := folderArgument([]string{"beta"}, work); got != filepath.Join(work, "beta") {
 		t.Errorf("relative folder became %q", got)
 	}
-	if got := folderArgument([]string{"/other/beta"}, "/work"); got != "/other/beta" {
+	if got := folderArgument([]string{other}, work); got != other {
 		t.Errorf("absolute folder became %q", got)
 	}
-	if got := folderArgument(nil, "/work"); got != "" {
+	if got := folderArgument(nil, work); got != "" {
 		t.Errorf("no argument became %q", got)
 	}
 }
@@ -1692,23 +1696,25 @@ func TestSessionSavesAfterChangesSettle(t *testing.T) {
 }
 
 func TestRecentProjectsKeepOrderAndLimit(t *testing.T) {
+	root := t.TempDir()
 	var list []string
 	for i := range 12 {
-		list = addRecent(list, filepath.Join("/projects", fmt.Sprintf("p%02d", i)))
+		list = addRecent(list, filepath.Join(root, fmt.Sprintf("p%02d", i)))
 	}
 	if len(list) != maxRecentProjects {
 		t.Fatalf("recent list has %d entries", len(list))
 	}
-	if list[0] != "/projects/p11" || list[len(list)-1] != "/projects/p02" {
+	if list[0] != filepath.Join(root, "p11") || list[len(list)-1] != filepath.Join(root, "p02") {
 		t.Errorf("recent list %q", list)
 	}
-	list = addRecent(list, "/projects/p05")
-	if len(list) != maxRecentProjects || list[0] != "/projects/p05" {
+	reopened := filepath.Join(root, "p05")
+	list = addRecent(list, reopened)
+	if len(list) != maxRecentProjects || list[0] != reopened {
 		t.Fatalf("after reopening p05: %q", list)
 	}
 	count := 0
 	for _, path := range list {
-		if path == "/projects/p05" {
+		if path == reopened {
 			count++
 		}
 	}
@@ -1716,11 +1722,11 @@ func TestRecentProjectsKeepOrderAndLimit(t *testing.T) {
 		t.Errorf("p05 appears %d times", count)
 	}
 
-	if got, want := cleanRecent([]string{"/b", "/a", "/b", "relative"}), []string{"/b", "/a"}; !slices.Equal(got, want) {
+	dirA, dirB := t.TempDir(), t.TempDir()
+	if got, want := cleanRecent([]string{dirB, dirA, dirB, "relative"}), []string{dirB, dirA}; !slices.Equal(got, want) {
 		t.Errorf("cleanRecent %q, want %q", got, want)
 	}
 
-	dirA, dirB := t.TempDir(), t.TempDir()
 	missing := filepath.Join(dirA, "missing")
 	d := &Desktop{recent: []string{dirA, missing, dirB}}
 	if got, want := d.recentExisting(), []string{dirA, dirB}; !slices.Equal(got, want) {
@@ -2016,9 +2022,18 @@ func TestTreeMarksWhatGitIgnores(t *testing.T) {
 	writeFile(t, root, "main.go", "package main\n")
 	writeFile(t, root, "kept.log", "tracked\n")
 	writeFile(t, root, "debug.log", "noise\n")
-	writeFile(t, root, ":odd", "noise\n")
 	writeFile(t, root, "build/out/app.o", "binary\n")
 	gitIn(t, root, "add", "-f", "kept.log")
+
+	ignored := map[string]bool{
+		"main.go": false, "kept.log": false, ".gitignore": false,
+		"debug.log": true, "build": true, "build/out/app.o": true,
+	}
+	if runtime.GOOS != "windows" {
+		// Windows forbids colons in file names.
+		writeFile(t, root, ":odd", "noise\n")
+		ignored[":odd"] = true
+	}
 
 	a := New()
 	posted := make(chan func(), 16)
@@ -2042,10 +2057,7 @@ func TestTreeMarksWhatGitIgnores(t *testing.T) {
 	}
 	settle()
 
-	for item, want := range map[string]bool{
-		"main.go": false, "kept.log": false, ".gitignore": false,
-		"debug.log": true, ":odd": true, "build": true, "build/out/app.o": true,
-	} {
+	for item, want := range ignored {
 		if got := a.treeRowIgnored(item); got != want {
 			t.Errorf("%s ignored = %v, want %v", item, got, want)
 		}

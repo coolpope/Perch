@@ -137,7 +137,7 @@ func customProgram(command string) (string, error) {
 	if command == "" {
 		return "", errors.New(`"command" is empty`)
 	}
-	if !filepath.IsAbs(command) && strings.ContainsRune(command, filepath.Separator) {
+	if !filepath.IsAbs(command) && strings.ContainsAny(command, "/"+string(filepath.Separator)) {
 		return "", fmt.Errorf("command %q must be a program name or an absolute path", command)
 	}
 	return command, nil

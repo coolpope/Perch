@@ -40,7 +40,7 @@ func TestLocationsOfEveryShape(t *testing.T) {
 		}
 	}
 	spaced, err := parseLocations(json.RawMessage(`{"uri":"file:///a%20b.go"}`))
-	if err != nil || spaced[0].Path != "/a b.go" {
+	if err != nil || spaced[0].Path != filepath.FromSlash("/a b.go") {
 		t.Errorf("escaped path gave %+v, %v", spaced, err)
 	}
 }

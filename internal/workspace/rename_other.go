@@ -1,4 +1,4 @@
-//go:build !darwin
+//go:build !darwin && !windows
 
 package workspace
 
@@ -9,7 +9,7 @@ import (
 )
 
 // renameNoReplace checks the destination before renaming it. This is not
-// atomic, and only Perch's macOS window gets the exclusive rename.
+// atomic; macOS and Windows have an exclusive rename of their own.
 func renameNoReplace(oldPath string, newPath string) error {
 	_, err := os.Lstat(newPath)
 	switch {
