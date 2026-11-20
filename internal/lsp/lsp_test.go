@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -208,6 +209,23 @@ func TestDefinitionThroughARealServer(t *testing.T) {
 	pool.CloseIdle(0)
 	if pool.Running() != 0 {
 		t.Error("an idle server stayed")
+	}
+}
+
+func TestDefinitionWithWorkspacePathAliasThroughARealServer(t *testing.T) {
+	root, document, position := goProject(t)
+	if runtime.GOOS == "windows" {
+		document.Path = filepath.Join(root, "MAIN.go")
+		root = strings.ToUpper(root)
+	}
+	pool := NewPool(root)
+	defer pool.Close()
+	ctx, cancel := context.WithTimeout(t.Context(), time.Minute)
+	defer cancel()
+
+	found, err := pool.Definition(ctx, goServer, document, position)
+	if err != nil || len(found) != 1 || filepath.Base(found[0].Path) != "util.go" || found[0].Range.Start.Line != 3 {
+		t.Fatalf("definition through %q from %q: %+v, %v", root, document.Path, found, err)
 	}
 }
 

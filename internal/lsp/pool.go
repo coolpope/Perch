@@ -2,6 +2,9 @@ package lsp
 
 import (
 	"context"
+	"fmt"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -32,23 +35,25 @@ func NewPool(root string) *Pool {
 // Definition asks the file's server where a symbol is defined, starting the
 // server when it is not running.
 func (p *Pool) Definition(ctx context.Context, server Server, document Document, position Position) ([]Location, error) {
-	client, err := p.client(ctx, server, serverRoot(p.root, document.Path, server.RootMarkers))
+	client, file, err := p.client(ctx, server, document.Path)
 	if err != nil {
 		return nil, err
 	}
+	document.Path = file
 	return client.Definition(ctx, document, position)
 }
 
 // DocumentSymbols asks the file's server for its symbols, starting the server
 // when it is not running.
 func (p *Pool) DocumentSymbols(ctx context.Context, server Server, document Document) ([]Symbol, error) {
-	client, err := p.client(ctx, server, serverRoot(p.root, document.Path, server.RootMarkers))
+	client, file, err := p.client(ctx, server, document.Path)
 	if err != nil {
 		return nil, err
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	document.Path = file
 	return client.DocumentSymbols(ctx, document)
 }
 
@@ -58,13 +63,18 @@ func (p *Pool) DocumentSymbolsIfRunning(ctx context.Context, server Server, docu
 	if err := ctx.Err(); err != nil {
 		return nil, false, err
 	}
-	client, running := p.runningClient(server, serverRoot(p.root, document.Path, server.RootMarkers))
+	root, file, err := p.serverPaths(document.Path, server.RootMarkers)
+	if err != nil {
+		return nil, false, err
+	}
+	client, running := p.runningClient(server, root)
 	if err := ctx.Err(); err != nil {
 		return nil, running, err
 	}
 	if !running {
 		return nil, false, nil
 	}
+	document.Path = file
 	symbols, err := client.DocumentSymbols(ctx, document)
 	return symbols, true, err
 }
@@ -72,7 +82,7 @@ func (p *Pool) DocumentSymbolsIfRunning(ctx context.Context, server Server, docu
 // WorkspaceSymbols asks the server of file for the project's symbols that
 // match query, starting the server when it is not running.
 func (p *Pool) WorkspaceSymbols(ctx context.Context, server Server, file string, query string) ([]ProjectSymbol, error) {
-	client, err := p.client(ctx, server, serverRoot(p.root, file, server.RootMarkers))
+	client, _, err := p.client(ctx, server, file)
 	if err != nil {
 		return nil, err
 	}
@@ -82,10 +92,11 @@ func (p *Pool) WorkspaceSymbols(ctx context.Context, server Server, file string,
 // References asks the file's server where the symbol at a position is used,
 // starting the server when it is not running.
 func (p *Pool) References(ctx context.Context, server Server, document Document, position Position) ([]Location, error) {
-	client, err := p.client(ctx, server, serverRoot(p.root, document.Path, server.RootMarkers))
+	client, file, err := p.client(ctx, server, document.Path)
 	if err != nil {
 		return nil, err
 	}
+	document.Path = file
 	return client.References(ctx, document, position)
 }
 
@@ -93,12 +104,37 @@ func (p *Pool) References(ctx context.Context, server Server, document Document,
 // when the server already runs, as resting the pointer is no reason to start
 // one, and reports whether it asked.
 func (p *Pool) HoverIfRunning(ctx context.Context, server Server, document Document, position Position) (Hover, bool, error) {
-	client, running := p.runningClient(server, serverRoot(p.root, document.Path, server.RootMarkers))
+	root, file, err := p.serverPaths(document.Path, server.RootMarkers)
+	if err != nil {
+		return Hover{}, false, err
+	}
+	client, running := p.runningClient(server, root)
 	if !running {
 		return Hover{}, false, nil
 	}
+	document.Path = file
 	hover, err := client.Hover(ctx, document, position)
 	return hover, true, err
+}
+
+// serverPaths returns the folder a file's server works from and the path the
+// server knows the file by. On Windows both are final paths, in the case the
+// disk lists them and without 8.3 short names: gopls refuses a folder spelled
+// any other way, makes no workspace of it, and answers every request with
+// "no views".
+func (p *Pool) serverPaths(file string, markers []string) (string, string, error) {
+	if runtime.GOOS != "windows" {
+		return serverRoot(p.root, file, markers), file, nil
+	}
+	project, err := filepath.EvalSymlinks(p.root)
+	if err != nil {
+		return "", "", fmt.Errorf("resolve language server workspace %q: %w", p.root, err)
+	}
+	path, err := filepath.EvalSymlinks(file)
+	if err != nil {
+		return "", "", fmt.Errorf("resolve language server file %q: %w", file, err)
+	}
+	return serverRoot(project, path, markers), path, nil
 }
 
 // clientKey tells apart servers by what runs and where it works from.
@@ -106,28 +142,34 @@ func clientKey(server Server, root string) string {
 	return strings.Join(append([]string{root, server.Program}, server.Args...), "\x00")
 }
 
-// client returns a running server. Asking for one that is starting waits for it.
-func (p *Pool) client(ctx context.Context, server Server, root string) (*Client, error) {
+// client returns a file's running server, starting it when needed, and the
+// path the server knows the file by. Asking for one that is starting waits for
+// it.
+func (p *Pool) client(ctx context.Context, server Server, file string) (*Client, string, error) {
+	root, path, err := p.serverPaths(file, server.RootMarkers)
+	if err != nil {
+		return nil, "", err
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if err := ctx.Err(); err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	if p.closed {
-		return nil, ErrServerStopped
+		return nil, "", ErrServerStopped
 	}
 	key := clientKey(server, root)
 	if entry := p.clients[key]; entry != nil && entry.client.Alive() {
 		entry.lastUsed = time.Now()
-		return entry.client, nil
+		return entry.client, path, nil
 	}
 	client, err := Start(ctx, server, root)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	p.clients[key] = &poolEntry{client: client, lastUsed: time.Now()}
 	p.starts.Add(1)
-	return client, nil
+	return client, path, nil
 }
 
 // runningClient returns a server that already runs, marking it used.
