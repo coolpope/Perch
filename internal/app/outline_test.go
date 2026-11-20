@@ -33,7 +33,7 @@ func outlineGoProject(t *testing.T) (*App, *ui.Tester, <-chan func()) {
 	a.openFile("store.go")
 	tester.Frame()
 	t.Cleanup(a.closeOutline)
-	t.Cleanup(a.stopDefinitions)
+	cleanupLanguageServers(t, a)
 	return a, tester, posted
 }
 

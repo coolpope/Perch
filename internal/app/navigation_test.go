@@ -112,7 +112,7 @@ func TestProjectSymbolsFindAFunctionInAnotherFile(t *testing.T) {
 	writeFile(t, root, "other.go", "package main\n\n// helperInOther is found from main.go.\nfunc helperInOther() {}\n")
 	a, tester, posted := openWithPosts(t, root)
 	a.after = func(_ time.Duration, action func()) { action() }
-	t.Cleanup(a.stopDefinitions)
+	cleanupLanguageServers(t, a)
 	a.openFile("main.go")
 	tester.Frame()
 

@@ -1791,6 +1791,18 @@ func TestEveryMessageIsTranslated(t *testing.T) {
 	}
 }
 
+// cleanupLanguageServers waits for servers before earlier cleanups remove the project.
+func cleanupLanguageServers(t *testing.T, a *App) {
+	t.Helper()
+	t.Cleanup(func() {
+		if pool := a.definition.pool; pool != nil {
+			pool.Close()
+			a.definition.pool = nil
+		}
+		a.stopDefinitions()
+	})
+}
+
 // definitionProject writes a Go module and opens its main file.
 func definitionProject(t *testing.T) (*App, *ui.Tester, <-chan func()) {
 	t.Helper()
@@ -1802,7 +1814,7 @@ func definitionProject(t *testing.T) (*App, *ui.Tester, <-chan func()) {
 	writeFile(t, root, "util.go", "package main\n\n// Helper is here.\nfunc Helper() int { return 1 }\n")
 	writeFile(t, root, "main.go", "package main\n\nimport \"fmt\"\n\nfunc main() {\n\tfmt.Println(Helper())\n}\n")
 	a, tester, posted := openWithPosts(t, root)
-	t.Cleanup(a.stopDefinitions)
+	cleanupLanguageServers(t, a)
 	tester.Frame()
 	a.openFile("main.go")
 	tester.Frame()
@@ -1889,7 +1901,7 @@ func TestCustomLanguageNamesItsInstallCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 	a, tester, posted := openWithPosts(t, root)
-	t.Cleanup(a.stopDefinitions)
+	cleanupLanguageServers(t, a)
 	a.languageFile = config
 	clickFile(t, tester, "main.perchlang")
 	a.goToDefinition(a.activeDocument(), 1)

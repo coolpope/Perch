@@ -24,6 +24,7 @@ func TestBreadcrumbGoFollowsRanges(t *testing.T) {
 	writeFile(t, root, "other.go", "package example\n\nfunc Other() {}\n")
 	a, tester, posted := openWithPosts(t, root)
 	t.Cleanup(a.release)
+	cleanupLanguageServers(t, a)
 
 	a.openFile("store.go")
 	d := a.activeDocument()
