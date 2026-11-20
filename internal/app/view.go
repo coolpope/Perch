@@ -189,17 +189,23 @@ func (a *App) fileTreeView(c *ui.Context) {
 			a.treeRow = noRow
 		}
 		a.tree.List.Selected = &a.treeRow
+		clicked := ""
 		tree := ui.Outline(c, &a.tree, roots, a.treeChildPaths, func(item string) {
-			a.treeRowView(c, item)
+			if a.treeRowView(c, item) {
+				clicked = item
+			}
 		}).Grow(1).FillWidth().Padding(0, treeRowInset).Label(locales.TabFiles()).ContextMenu(func(m *ui.Menu) {
 			a.fileMenu(m, ".")
 		})
 		if !listed {
 			a.pruneOpenTreePaths()
 		}
-		if tree.Changed() {
-			a.chooseTreeRow()
-		} else if selected != "" && a.treeRow == noRow {
+		switch {
+		case clicked != "":
+			a.clickTreeItem(clicked)
+		case tree.Changed():
+			a.followTreeChoice()
+		case selected != "" && a.treeRow == noRow:
 			// The list follows its chosen row by key only so far; after a large
 			// collapse the row may have moved farther, so it is found again.
 			if row := a.treeRowFor(selected); row != noRow {
@@ -236,12 +242,15 @@ func (a *App) treeRowFor(item string) int {
 	return noRow
 }
 
-func (a *App) treeRowView(c *ui.Context, item string) {
+// treeRowView builds one row of the tree and reports a click on it, which
+// the arrow's own clicks are not.
+func (a *App) treeRowView(c *ui.Context, item string) bool {
 	entry := a.entries[item]
 	colors := a.look.palette
 	ignored := a.treeRowIgnored(item)
 	quiet := colors.muted.Alpha(ignoredRowAlpha)
-	ui.Row(c).Grow(1).FillWidth().Gap(7).AlignItems(ui.Center).Children(func() {
+	row := ui.Row(c).Grow(1).FillWidth().Gap(7).AlignItems(ui.Center)
+	row.Children(func() {
 		a.treeIconView(c, item, entry.IsDir, ignored)
 		name := ui.Text(c, entry.Name).MaxLines(1).Shrink(1)
 		if color, changed := a.treeNameColor(item); changed {
@@ -253,17 +262,24 @@ func (a *App) treeRowView(c *ui.Context, item string) {
 	}).ContextMenu(func(m *ui.Menu) {
 		a.fileMenu(m, item)
 	})
+	return row.RowClicked()
 }
 
-// chooseTreeRow opens the file of the chosen row, or opens or closes the
-// directory.
-func (a *App) chooseTreeRow() {
-	item := a.selectedTreePath()
-	if item == "" {
-		return
-	}
+// clickTreeItem opens or closes a clicked folder, on every click of its row
+// and not only the one that chooses it, and opens a clicked file.
+func (a *App) clickTreeItem(item string) {
 	if a.entries[item].IsDir {
 		toggleOpen(&a.tree.Open, item)
+		return
+	}
+	a.openFile(item)
+}
+
+// followTreeChoice opens the file the keys chose. A folder they choose stays
+// as it is: Right and Left open and close it.
+func (a *App) followTreeChoice() {
+	item := a.selectedTreePath()
+	if item == "" || a.entries[item].IsDir {
 		return
 	}
 	a.openFile(item)
