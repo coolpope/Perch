@@ -15,7 +15,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -109,6 +108,9 @@ type Store struct {
 	index   string
 	refBase string
 	refSeen string
+	// unreadFrom maps an unread renamed file to its path in the seen tree,
+	// as the last listing found it.
+	unreadFrom map[string]string
 }
 
 // Open prepares the review of the work tree at root.
@@ -189,11 +191,19 @@ func (s *Store) Sides(ctx context.Context, version string, change Change) (Sides
 	if err != nil {
 		return Sides{}, err
 	}
-	from := seen
 	if change.Reviewed {
-		from = base
+		return s.readSides(ctx, base, version, oldPathOf(change), change.Path)
 	}
-	return s.readSides(ctx, from, version, change.Path)
+	return s.readSides(ctx, seen, version, s.seenPath(change.Path), change.Path)
+}
+
+// seenPath is where a file was in the seen tree: its old path when it was
+// renamed since it was last read.
+func (s *Store) seenPath(path string) string {
+	if old, renamed := s.unreadFrom[path]; renamed {
+		return old
+	}
+	return path
 }
 
 // Baseline returns a file's text as far as it has been read. A file the review
@@ -212,7 +222,7 @@ func (s *Store) Baseline(ctx context.Context, path string) (Baseline, error) {
 	if err != nil {
 		return Baseline{}, err
 	}
-	text, readable, err := s.readBlob(ctx, seen, path)
+	text, readable, err := s.readBlob(ctx, seen, s.seenPath(path))
 	if err != nil {
 		return Baseline{}, err
 	}
@@ -232,27 +242,43 @@ func (s *Store) ignoredByGit(ctx context.Context, path string) (bool, error) {
 	return true, nil
 }
 
-// MarkReviewed records the given files as read in a version, so that an edit
-// arriving later still counts as unread.
-func (s *Store) MarkReviewed(ctx context.Context, version string, paths []string) error {
+// MarkReviewed records the given changes as read in a version, so that an
+// edit arriving later still counts as unread.
+func (s *Store) MarkReviewed(ctx context.Context, version string, changes []Change) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	_, seen, err := s.marks(ctx)
 	if err != nil {
 		return err
 	}
-	return s.copyEntries(ctx, version, seen, paths)
+	return s.copyEntries(ctx, version, seen, s.markedPaths(changes))
 }
 
-// MarkUnreviewed returns the given files to unread.
-func (s *Store) MarkUnreviewed(ctx context.Context, paths []string) error {
+// MarkUnreviewed returns the given changes to unread.
+func (s *Store) MarkUnreviewed(ctx context.Context, changes []Change) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	base, seen, err := s.marks(ctx)
 	if err != nil {
 		return err
 	}
-	return s.copyEntries(ctx, base, seen, paths)
+	return s.copyEntries(ctx, base, seen, s.markedPaths(changes))
+}
+
+// markedPaths are the paths a mark copies: each file's path, with the paths a
+// renamed file had, so that the seen tree does not keep it twice.
+func (s *Store) markedPaths(changes []Change) []string {
+	paths := make([]string, 0, len(changes))
+	for _, change := range changes {
+		paths = append(paths, change.Path)
+		if change.OldPath != "" {
+			paths = append(paths, change.OldPath)
+		}
+		if seen := s.seenPath(change.Path); seen != change.Path && seen != change.OldPath {
+			paths = append(paths, seen)
+		}
+	}
+	return paths
 }
 
 // Finish starts a new review from a version, and returns the checkpoint that
@@ -445,59 +471,35 @@ func belongsInSnapshot(top string, name string) bool {
 	return err == nil && !info.IsDir() && info.Size() <= MaxSnapshotFileBytes
 }
 
-// listChanges compares the trees. A file differing from seen is unread.
+// listChanges compares the trees. A file differing from seen is unread. A
+// file moved since it was last read is remembered with the path it was read
+// at, where its unread diff starts.
 func (s *Store) listChanges(ctx context.Context, base string, seen string, current string) ([]Change, error) {
-	whole, err := treeKinds(ctx, s.root, base, current)
+	whole, err := renamedChanges(ctx, s.root, nil, "diff-tree", "-r", base, current)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("compare %s with %s: %w", base, current, err)
 	}
-	unread, err := treeKinds(ctx, s.root, seen, current)
+	unread, err := renamedChanges(ctx, s.root, nil, "diff-tree", "-r", seen, current)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("compare %s with %s: %w", seen, current, err)
 	}
-	wholeCounts, err := treeCounts(ctx, s.root, base, current)
-	if err != nil {
-		return nil, err
-	}
-	unreadCounts, err := treeCounts(ctx, s.root, seen, current)
-	if err != nil {
-		return nil, err
-	}
-	changes := make([]Change, 0, len(whole))
-	for path, kind := range whole {
-		_, pending := unread[path]
-		count := wholeCounts[path]
-		if pending {
-			count = unreadCounts[path]
-		}
-		changes = append(changes, Change{
-			Path: path, Kind: kind, Added: count.added, Removed: count.removed, Binary: count.binary, Reviewed: !pending,
-		})
-	}
-	slices.SortFunc(changes, func(a Change, b Change) int { return strings.Compare(a.Path, b.Path) })
-	return changes, nil
-}
-
-// treeKinds returns the files of the opened folder that differ between two
-// trees or commits.
-func treeKinds(ctx context.Context, root string, from string, to string) (map[string]Kind, error) {
-	output, err := git(ctx, root, nil, "diff-tree", "-r", "-z", "--no-renames", "--relative", "--name-status", from, to)
-	if err != nil {
-		return nil, fmt.Errorf("compare %s with %s: %w", from, to, err)
-	}
-	return parseKinds(output), nil
-}
-
-// parseKinds reads the output of --name-status -z.
-func parseKinds(output []byte) map[string]Kind {
-	fields := strings.Split(strings.TrimSuffix(string(output), "\x00"), "\x00")
-	kinds := make(map[string]Kind, len(fields)/2)
-	for index := 0; index+1 < len(fields); index += 2 {
-		if !workspace.IsIgnored(fields[index+1]) {
-			kinds[fields[index+1]] = kindOf(fields[index])
+	pending := make(map[string]Change, len(unread))
+	s.unreadFrom = map[string]string{}
+	for _, change := range unread {
+		pending[change.Path] = change
+		if change.OldPath != "" {
+			s.unreadFrom[change.Path] = change.OldPath
 		}
 	}
-	return kinds
+	for index, change := range whole {
+		left, found := pending[change.Path]
+		if !found {
+			whole[index].Reviewed = true
+			continue
+		}
+		whole[index].Added, whole[index].Removed, whole[index].Binary = left.Added, left.Removed, left.Binary
+	}
+	return whole, nil
 }
 
 func kindOf(status string) Kind {
@@ -518,31 +520,9 @@ type lineCount struct {
 	binary  bool
 }
 
-func treeCounts(ctx context.Context, root string, from string, to string) (map[string]lineCount, error) {
-	output, err := git(ctx, root, nil, "diff-tree", "-r", "-z", "--no-renames", "--relative", "--numstat", from, to)
-	if err != nil {
-		return nil, fmt.Errorf("count changes between %s and %s: %w", from, to, err)
-	}
-	return parseCounts(output), nil
-}
-
-// parseCounts reads the output of --numstat -z.
-func parseCounts(output []byte) map[string]lineCount {
-	counts := map[string]lineCount{}
-	for record := range strings.SplitSeq(string(output), "\x00") {
-		fields := strings.SplitN(record, "\t", 3)
-		if len(fields) != 3 {
-			continue
-		}
-		added, addedErr := strconv.Atoi(fields[0])
-		removed, removedErr := strconv.Atoi(fields[1])
-		counts[fields[2]] = lineCount{added: added, removed: removed, binary: addedErr != nil || removedErr != nil}
-	}
-	return counts
-}
-
-func (s *Store) readSides(ctx context.Context, from string, to string, path string) (Sides, error) {
-	return objectSides(ctx, s.root, from+":"+s.prefix+path, to+":"+s.prefix+path)
+// readSides reads a file at oldPath in one tree and at path in another.
+func (s *Store) readSides(ctx context.Context, from string, to string, oldPath string, path string) (Sides, error) {
+	return objectSides(ctx, s.root, from+":"+s.prefix+oldPath, to+":"+s.prefix+path)
 }
 
 // objectSides reads the texts of two objects, as "rev:path", to compare.

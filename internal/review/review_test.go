@@ -109,7 +109,7 @@ func TestReviewedFileReturnsOnlyWithNewEdits(t *testing.T) {
 	store := openStore(t, root)
 	ctx := context.Background()
 	write(t, root, "a.go", "one\ntwo\nthree\n")
-	if err := store.MarkReviewed(ctx, listing(t, store).Version, []string{"a.go"}); err != nil {
+	if err := store.MarkReviewed(ctx, listing(t, store).Version, []Change{{Path: "a.go"}}); err != nil {
 		t.Fatal(err)
 	}
 	if got := list(t, store)["a.go"]; !got.Reviewed {
@@ -130,7 +130,7 @@ func TestReviewedFileReturnsOnlyWithNewEdits(t *testing.T) {
 		t.Errorf("unread sides %+v", sides)
 	}
 
-	if err := store.MarkUnreviewed(ctx, []string{"a.go"}); err != nil {
+	if err := store.MarkUnreviewed(ctx, []Change{{Path: "a.go"}}); err != nil {
 		t.Fatal(err)
 	}
 	if got := list(t, store)["a.go"]; got.Reviewed || got.Added != 2 {
@@ -146,7 +146,7 @@ func TestAnEditAfterListingStaysUnread(t *testing.T) {
 	version := listing(t, store).Version
 	write(t, root, "a.go", "not seen\n")
 	listing(t, store)
-	if err := store.MarkReviewed(ctx, version, []string{"a.go"}); err != nil {
+	if err := store.MarkReviewed(ctx, version, []Change{{Path: "a.go"}}); err != nil {
 		t.Fatal(err)
 	}
 	if got := list(t, store)["a.go"]; got.Reviewed {
@@ -205,7 +205,7 @@ func TestSubfolderListsOnlyItsOwnFiles(t *testing.T) {
 	if sides.Old != "x\n" || sides.New != "y\n" {
 		t.Errorf("sides %+v", sides)
 	}
-	if err := store.MarkReviewed(context.Background(), listed.Version, []string{"x.go"}); err != nil {
+	if err := store.MarkReviewed(context.Background(), listed.Version, []Change{{Path: "x.go"}}); err != nil {
 		t.Fatal(err)
 	}
 	if got := list(t, store)["x.go"]; !got.Reviewed {
@@ -216,5 +216,44 @@ func TestSubfolderListsOnlyItsOwnFiles(t *testing.T) {
 func TestFolderOutsideGitIsRefused(t *testing.T) {
 	if _, err := Open(context.Background(), t.TempDir()); !errors.Is(err, ErrNotRepository) {
 		t.Errorf("opened with %v", err)
+	}
+}
+
+func TestRenameIsReviewedAsOneFile(t *testing.T) {
+	root := newRepository(t)
+	store := openStore(t, root)
+	ctx := context.Background()
+	if err := os.Rename(filepath.Join(root, "a.go"), filepath.Join(root, "moved.go")); err != nil {
+		t.Fatal(err)
+	}
+	listed := listing(t, store)
+	if len(listed.Changes) != 1 {
+		t.Fatalf("listed %+v", listed.Changes)
+	}
+	moved := listed.Changes[0]
+	if moved.Path != "moved.go" || moved.Kind != Renamed || moved.OldPath != "a.go" || moved.Added+moved.Removed != 0 {
+		t.Fatalf("the rename is %+v", moved)
+	}
+	sides, err := store.Sides(ctx, listed.Version, moved)
+	if err != nil || sides.Old != "one\ntwo\n" || sides.New != "one\ntwo\n" {
+		t.Fatalf("unread sides %+v, %v", sides, err)
+	}
+	if baseline, err := store.Baseline(ctx, "moved.go"); err != nil || baseline.Text != "one\ntwo\n" {
+		t.Fatalf("baseline %+v, %v", baseline, err)
+	}
+
+	if err := store.MarkReviewed(ctx, listed.Version, []Change{moved}); err != nil {
+		t.Fatal(err)
+	}
+	write(t, root, "moved.go", "one\ntwo\nthree\n")
+	got := list(t, store)
+	if len(got) != 1 || got["moved.go"].Reviewed || got["moved.go"].Added != 1 || got["moved.go"].Kind != Renamed {
+		t.Fatalf("after an edit to the read rename, listed %+v", got)
+	}
+	if err := store.MarkUnreviewed(ctx, []Change{got["moved.go"]}); err != nil {
+		t.Fatal(err)
+	}
+	if got := list(t, store)["moved.go"]; got.Reviewed || got.OldPath != "a.go" || got.Added != 1 {
+		t.Errorf("after unmarking, the rename is %+v", got)
 	}
 }

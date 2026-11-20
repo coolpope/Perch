@@ -539,14 +539,14 @@ func (a *App) setReviewed(relPath string, reviewed bool) {
 		return
 	}
 	changes := slices.Clone(r.listing.Changes)
+	marked := []review.Change{changes[index]}
 	changes[index].Reviewed = reviewed
 	r.listing.Changes = changes
-	paths := []string{relPath}
 	a.runReviewAction(func(ctx context.Context, store *review.Store) error {
 		if reviewed {
-			return store.MarkReviewed(ctx, version, paths)
+			return store.MarkReviewed(ctx, version, marked)
 		}
-		return store.MarkUnreviewed(ctx, paths)
+		return store.MarkUnreviewed(ctx, marked)
 	})
 }
 
@@ -581,16 +581,16 @@ func (a *App) markAllReviewed() {
 	r := &a.review
 	version := r.listing.Version
 	changes := slices.Clone(r.listing.Changes)
-	paths := make([]string, 0, len(changes))
+	marked := make([]review.Change, 0, len(changes))
 	for index := range changes {
 		if !changes[index].Reviewed {
-			paths = append(paths, changes[index].Path)
+			marked = append(marked, changes[index])
 			changes[index].Reviewed = true
 		}
 	}
 	r.listing.Changes = changes
 	a.runReviewAction(func(ctx context.Context, store *review.Store) error {
-		return store.MarkReviewed(ctx, version, paths)
+		return store.MarkReviewed(ctx, version, marked)
 	})
 }
 
