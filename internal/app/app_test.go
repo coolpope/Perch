@@ -193,6 +193,23 @@ Body text
 	if d := a.activeDocument(); d == nil || d.path != "docs/guide.md" {
 		t.Errorf("relative link opened %+v", d)
 	}
+	guide := a.activeDocument()
+	a.openFile("README.md")
+	a.openLink(a.activeDocument(), filepath.Join("docs", "guide.md"))
+	if d := a.activeDocument(); d != guide {
+		t.Errorf("link with native separators opened %+v rather than reusing the guide", d)
+	}
+}
+
+func TestHTMLImagePathUsesNativeSeparators(t *testing.T) {
+	address := filepath.Join("assets", "icons") + "/../../cover.png"
+	if !isWorkspaceImage("README.md", address) {
+		t.Errorf("rejected workspace image %q", address)
+	}
+	rooted := string(filepath.Separator) + "cover.png"
+	if isWorkspaceImage("docs/README.md", rooted) {
+		t.Errorf("accepted rooted image %q", rooted)
+	}
 }
 
 func TestCleanDocumentFollowsTheDisk(t *testing.T) {
@@ -787,6 +804,13 @@ func TestRenameRefusesANameOutsideTheWorkspace(t *testing.T) {
 	}
 	if got := a.activeDocument(); got == nil || got.path != "main.go" {
 		t.Errorf("document moved to %+v", got)
+	}
+}
+
+func TestFileNameRejectsNativeSeparator(t *testing.T) {
+	name := filepath.Join("nested", "file.go")
+	if err := validFileName(name); !errors.Is(err, errNameInvalid) {
+		t.Errorf("validating path %q as a name: got %v, want %v", name, err, errNameInvalid)
 	}
 }
 

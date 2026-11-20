@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"path"
+	"path/filepath"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -60,8 +60,8 @@ func (a *App) endBrief(id uint64) {
 }
 
 // openFailure says in plain words why a file did not open.
-func openFailure(relPath string, err error) toast {
-	name := path.Base(relPath)
+func openFailure(file string, err error) toast {
+	name := filepath.Base(file)
 	var tooLarge *workspace.FileTooLargeError
 	switch {
 	case errors.As(err, &tooLarge):

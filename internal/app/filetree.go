@@ -63,7 +63,8 @@ func validFileName(name string) error {
 	switch {
 	case strings.TrimSpace(name) == "":
 		return errNameEmpty
-	case strings.ContainsRune(name, '/'), strings.ContainsRune(name, 0):
+	case strings.ContainsRune(name, '/'), strings.ContainsRune(name, 0),
+		filepath.Separator != '/' && strings.ContainsRune(name, filepath.Separator):
 		return errNameInvalid
 	case name == ".", name == "..":
 		return errNameDot

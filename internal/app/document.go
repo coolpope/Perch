@@ -127,7 +127,7 @@ func (d *document) displayPath() string {
 }
 
 func (d *document) name() string {
-	return path.Base(d.path)
+	return filepath.Base(d.path)
 }
 
 func (d *document) modified() bool {

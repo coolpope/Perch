@@ -2,6 +2,7 @@ package fileicons
 
 import (
 	"encoding/json"
+	"path/filepath"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
@@ -78,6 +79,7 @@ func TestCommonFilesHaveTheirIcons(t *testing.T) {
 		"Dockerfile":               "docker",
 		".gitignore":               "gitignore",
 	}
+	cases[filepath.Join(t.TempDir(), "Dockerfile")] = "docker"
 	for relPath, want := range cases {
 		icon, found, err := For(relPath)
 		if err != nil || !found || icon.Name != want {

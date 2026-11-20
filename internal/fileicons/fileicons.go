@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -110,24 +111,24 @@ var loadRules = sync.OnceValues(func() (*ruleSet, error) {
 // matching serializes For, which compiles patterns as they are first needed.
 var matching sync.Mutex
 
-// For returns the icon of a file, given its path relative to the project and
-// separated by slashes, and false when no rule names one. A rule matches the
-// file's name, or its path for rules about folders.
-func For(relPath string) (Icon, bool, error) {
+// For returns the icon of a file by its path, and false when no rule names one.
+// Rules match the file's name or its slash-separated path.
+func For(file string) (Icon, bool, error) {
 	set, err := loadRules()
 	if err != nil {
 		return Icon{}, false, err
 	}
+	slashed := filepath.ToSlash(file)
 	matching.Lock()
 	defer matching.Unlock()
-	name := path.Base(relPath)
+	name := path.Base(slashed)
 	order, found := set.lookup(name)
 	for index := range set.patterns {
 		p := &set.patterns[index]
 		if found && p.order >= order {
 			break
 		}
-		matched, err := p.matches(name, relPath)
+		matched, err := p.matches(name, slashed)
 		if err != nil {
 			return Icon{}, false, err
 		}

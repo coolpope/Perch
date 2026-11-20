@@ -57,6 +57,7 @@ func (a *App) openRelativeLink(d *document, target string) {
 	if target == "" {
 		return
 	}
+	target = filepath.ToSlash(target)
 	relPath := path.Join(path.Dir(d.path), target)
 	if strings.HasPrefix(target, "/") {
 		relPath = strings.TrimPrefix(target, "/")
@@ -253,8 +254,8 @@ func (a *App) imageFor(d *document, address string) ui.ImageSource {
 // so that a file cannot show pictures from elsewhere on the machine.
 func isWorkspaceImage(documentPath string, address string) bool {
 	parsed, err := url.Parse(address)
-	if err != nil || parsed.Scheme != "" || parsed.Host != "" || address == "" || strings.HasPrefix(address, "/") {
+	if err != nil || parsed.Scheme != "" || parsed.Host != "" || address == "" || address[0] == '/' || address[0] == filepath.Separator {
 		return false
 	}
-	return filepath.IsLocal(filepath.FromSlash(path.Join(path.Dir(documentPath), address)))
+	return filepath.IsLocal(filepath.Join(filepath.Dir(documentPath), address))
 }
