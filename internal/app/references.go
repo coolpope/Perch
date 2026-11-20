@@ -150,6 +150,8 @@ func (a *App) referencesAnswered(server lsp.Server, results []reference, found i
 			detail = locales.ServerInstall(server.Install)
 		}
 		s.notice = outlineNotice{message: locales.ServerMissing(server.Name), detail: detail}
+	case errors.Is(err, lsp.ErrUnsupported):
+		s.notice = outlineNotice{message: locales.ReferencesServerUnsupported(server.Name)}
 	case err != nil:
 		slog.Warn("find references", "server", server.Name, "root", a.root, "error", err)
 		s.notice = outlineNotice{message: locales.ReferencesFailed(), detail: err.Error()}

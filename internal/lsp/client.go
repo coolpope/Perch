@@ -28,6 +28,9 @@ const (
 // ErrServerStopped reports a server that ended before it answered.
 var ErrServerStopped = errors.New("language server stopped")
 
+// ErrUnsupported reports a request the server did not declare support for.
+var ErrUnsupported = errors.New("language server does not support this request")
+
 // Document is a version of an open file.
 type Document struct {
 	// Path is absolute.
@@ -144,6 +147,9 @@ type Client struct {
 	stdin   io.WriteCloser
 	done    chan struct{}
 
+	// Capabilities are set before Start returns and never change, so no lock is needed.
+	capabilities Capabilities
+
 	writeMu sync.Mutex
 
 	mu      sync.Mutex
@@ -221,9 +227,15 @@ func (c *Client) initialize(ctx context.Context, root string, options json.RawMe
 	if err != nil {
 		return err
 	}
-	if _, err := c.call(ctx, "initialize", params); err != nil {
+	result, err := c.call(ctx, "initialize", params)
+	if err != nil {
 		return err
 	}
+	capabilities, err := parseCapabilities(result)
+	if err != nil {
+		return err
+	}
+	c.capabilities = capabilities
 	return c.notify("initialized", json.RawMessage(`{}`))
 }
 
@@ -237,10 +249,14 @@ func mustRaw[T any](value T) json.RawMessage {
 
 // Definition returns where the symbol at a position of a document is defined.
 func (c *Client) Definition(ctx context.Context, document Document, position Position) ([]Location, error) {
+	const method = "textDocument/definition"
+	if !c.capabilities.Definition {
+		return nil, fmt.Errorf("%s: %w", method, ErrUnsupported)
+	}
 	if err := c.sync(document); err != nil {
 		return nil, err
 	}
-	result, err := c.call(ctx, "textDocument/definition", positionParams(document, position))
+	result, err := c.call(ctx, method, positionParams(document, position))
 	if err != nil {
 		return nil, err
 	}

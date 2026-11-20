@@ -178,6 +178,8 @@ func (a *App) outlineAnswered(server lsp.Server, symbols []lsp.Symbol, err error
 			detail = locales.ServerInstall(server.Install)
 		}
 		a.outline.notice = outlineNotice{message: locales.ServerMissing(server.Name), detail: detail}
+	case errors.Is(err, lsp.ErrUnsupported):
+		a.outline.notice = outlineNotice{message: locales.SymbolsServerUnsupported(server.Name)}
 	case err != nil:
 		slog.Warn("document symbols", "server", server.Name, "root", a.root, "error", err)
 		a.outline.notice = outlineNotice{message: locales.SymbolsFailed()}

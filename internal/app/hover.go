@@ -100,7 +100,8 @@ func (a *App) languageHover(d *document, request editor.HoverRequest) {
 func (a *App) hoverAnswered(d *document, request editor.HoverRequest, server lsp.Server, hover lsp.Hover, err error) {
 	a.hover.cancel = nil
 	switch {
-	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
+	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded),
+		errors.Is(err, lsp.ErrUnsupported):
 		return
 	case err != nil:
 		slog.Warn("hover", "server", server.Name, "path", d.path, "error", err)

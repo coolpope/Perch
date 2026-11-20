@@ -32,10 +32,14 @@ type wireMarked struct {
 // Hover returns what the server says about the symbol at a position, empty
 // when it says nothing.
 func (c *Client) Hover(ctx context.Context, document Document, position Position) (Hover, error) {
+	const method = "textDocument/hover"
+	if !c.capabilities.Hover {
+		return Hover{}, fmt.Errorf("%s: %w", method, ErrUnsupported)
+	}
 	if err := c.sync(document); err != nil {
 		return Hover{}, err
 	}
-	result, err := c.call(ctx, "textDocument/hover", positionParams(document, position))
+	result, err := c.call(ctx, method, positionParams(document, position))
 	if err != nil {
 		return Hover{}, err
 	}
@@ -45,6 +49,10 @@ func (c *Client) Hover(ctx context.Context, document Document, position Position
 // References returns every place the symbol at a position is used, its
 // declaration included.
 func (c *Client) References(ctx context.Context, document Document, position Position) ([]Location, error) {
+	const method = "textDocument/references"
+	if !c.capabilities.References {
+		return nil, fmt.Errorf("%s: %w", method, ErrUnsupported)
+	}
 	if err := c.sync(document); err != nil {
 		return nil, err
 	}
@@ -53,7 +61,7 @@ func (c *Client) References(ctx context.Context, document Document, position Pos
 		"position":     mustRaw(position),
 		"context":      json.RawMessage(`{"includeDeclaration":true}`),
 	})
-	result, err := c.call(ctx, "textDocument/references", params)
+	result, err := c.call(ctx, method, params)
 	if err != nil {
 		return nil, err
 	}

@@ -62,13 +62,17 @@ type wireSymbolLocation struct {
 // DocumentSymbols returns the symbols of a document. It sends the text of
 // document, so that unsaved edits count.
 func (c *Client) DocumentSymbols(ctx context.Context, document Document) ([]Symbol, error) {
+	const method = "textDocument/documentSymbol"
+	if !c.capabilities.DocumentSymbol {
+		return nil, fmt.Errorf("%s: %w", method, ErrUnsupported)
+	}
 	if err := c.sync(document); err != nil {
 		return nil, err
 	}
 	params := mustRaw(map[string]json.RawMessage{
 		"textDocument": mustRaw(map[string]string{"uri": pathToURI(document.Path)}),
 	})
-	result, err := c.call(ctx, "textDocument/documentSymbol", params)
+	result, err := c.call(ctx, method, params)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +105,11 @@ type wireProjectSymbol struct {
 // WorkspaceSymbols asks the server for the symbols of its workspace that
 // match query.
 func (c *Client) WorkspaceSymbols(ctx context.Context, query string) ([]ProjectSymbol, error) {
-	result, err := c.call(ctx, "workspace/symbol", mustRaw(map[string]string{"query": query}))
+	const method = "workspace/symbol"
+	if !c.capabilities.WorkspaceSymbol {
+		return nil, fmt.Errorf("%s: %w", method, ErrUnsupported)
+	}
+	result, err := c.call(ctx, method, mustRaw(map[string]string{"query": query}))
 	if err != nil {
 		return nil, err
 	}

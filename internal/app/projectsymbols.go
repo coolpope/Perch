@@ -150,6 +150,8 @@ func (a *App) projectSymbolsAnswered(query string, symbols []lsp.ProjectSymbol, 
 			detail = locales.ServerInstall(s.server.Install)
 		}
 		s.notice = outlineNotice{message: locales.ServerMissing(s.server.Name), detail: detail}
+	case errors.Is(err, lsp.ErrUnsupported):
+		s.notice = outlineNotice{message: locales.ProjectSymbolsServerUnsupported(s.server.Name)}
 	case err != nil:
 		slog.Warn("project symbols", "server", s.server.Name, "root", a.root, "error", err)
 		s.notice = outlineNotice{message: locales.SymbolsFailed()}

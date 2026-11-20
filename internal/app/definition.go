@@ -158,6 +158,8 @@ func (a *App) definitionAnswered(origin place, server lsp.Server, word string, f
 	case errors.Is(err, context.Canceled):
 	case errors.Is(err, lsp.ErrServerMissing):
 		a.tell(toast{title: locales.ServerMissing(server.Name), detail: locales.ServerInstall(server.Install)})
+	case errors.Is(err, lsp.ErrUnsupported):
+		a.tell(toast{title: locales.DefinitionServerUnsupported(server.Name)})
 	case err != nil:
 		slog.Warn("go to definition", "server", server.Name, "error", err)
 		a.tell(toast{title: locales.DefinitionFailed(), detail: err.Error()})

@@ -137,7 +137,7 @@ func (a *App) refreshBreadcrumb(d *document, pool *lsp.Pool) {
 			b.cancel = nil
 			b.waiting = !running
 			if err != nil {
-				if !errors.Is(err, context.Canceled) {
+				if !errors.Is(err, context.Canceled) && !errors.Is(err, lsp.ErrUnsupported) {
 					slog.Debug("read breadcrumb symbols", "server", known.Server.Name, "path", d.path, "error", err)
 				}
 				return

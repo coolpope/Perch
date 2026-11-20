@@ -188,6 +188,7 @@
   "openFileForSymbols": "Open a file to see its symbols",
   "symbolsFailed": "Could not read the symbols",
   "symbolsUnsupported": "Symbols are not available for {name}",
+  "symbolsServerUnsupported": "{server} doesn't list the symbols of a file",
   "symbolsTurnedOff": "Symbols are turned off for {language}",
   "symbolFunction": "func",
   "symbolMethod": "method",
@@ -200,6 +201,7 @@
   "findingDefinition": "Finding definition…",
   "noDefinition": "No definition found for {word}",
   "definitionUnsupported": "Go to definition is not available for {name}",
+  "definitionServerUnsupported": "{server} doesn't offer go to definition",
   "serverMissing": "Go to definition needs {server}",
   "serverInstall": "Install it with: {command}",
   "definitionFailed": "Could not find the definition",
@@ -284,6 +286,7 @@
   "projectSymbolsPlaceholder": "Search symbols in the project",
   "projectSymbolsHint": "Type a name to find it anywhere in the project",
   "projectSymbolsNeedFile": "Open a file in the language you want to search",
+  "projectSymbolsServerUnsupported": "{server} doesn't search the project's symbols",
   "menuNextChange": "Next Change",
   "menuPreviousChange": "Previous Change",
   "noChangesInFile": "This file has no changes to read",
@@ -352,6 +355,7 @@
   "readingReferences": "Finding references…",
   "noReferences": "No references found for {word}",
   "referencesFailed": "Could not find the references",
+  "referencesServerUnsupported": "{server} doesn't offer find references",
   "referencesCount": "{count, plural, one {# use} other {# uses}} in {files, plural, one {# file} other {# files}}",
   "@referencesCount": {
     "placeholders": {

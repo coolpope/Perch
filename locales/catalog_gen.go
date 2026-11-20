@@ -1408,6 +1408,18 @@ func (msgs Messages) SymbolsUnsupported(name string) string {
 	return Catalog.Format(msgs.locale, "symbolsUnsupported", map[string]any{"name": name})
 }
 
+// SymbolsServerUnsupported says "{server} doesn't list the symbols of a file"
+// in the language the app shows.
+func SymbolsServerUnsupported(server string) string {
+	return In(i18n.Locale()).SymbolsServerUnsupported(server)
+}
+
+// SymbolsServerUnsupported says "{server} doesn't list the symbols of a file"
+// in the language of msgs.
+func (msgs Messages) SymbolsServerUnsupported(server string) string {
+	return Catalog.Format(msgs.locale, "symbolsServerUnsupported", map[string]any{"server": server})
+}
+
 // SymbolsTurnedOff says "Symbols are turned off for {language}"
 // in the language the app shows.
 func SymbolsTurnedOff(language string) string { return In(i18n.Locale()).SymbolsTurnedOff(language) }
@@ -1526,6 +1538,18 @@ func DefinitionUnsupported(name string) string { return In(i18n.Locale()).Defini
 // in the language of msgs.
 func (msgs Messages) DefinitionUnsupported(name string) string {
 	return Catalog.Format(msgs.locale, "definitionUnsupported", map[string]any{"name": name})
+}
+
+// DefinitionServerUnsupported says "{server} doesn't offer go to definition"
+// in the language the app shows.
+func DefinitionServerUnsupported(server string) string {
+	return In(i18n.Locale()).DefinitionServerUnsupported(server)
+}
+
+// DefinitionServerUnsupported says "{server} doesn't offer go to definition"
+// in the language of msgs.
+func (msgs Messages) DefinitionServerUnsupported(server string) string {
+	return Catalog.Format(msgs.locale, "definitionServerUnsupported", map[string]any{"server": server})
 }
 
 // ServerMissing says "Go to definition needs {server}"
@@ -2174,6 +2198,18 @@ func (msgs Messages) ProjectSymbolsNeedFile() string {
 	return Catalog.Format(msgs.locale, "projectSymbolsNeedFile", nil)
 }
 
+// ProjectSymbolsServerUnsupported says "{server} doesn't search the project's symbols"
+// in the language the app shows.
+func ProjectSymbolsServerUnsupported(server string) string {
+	return In(i18n.Locale()).ProjectSymbolsServerUnsupported(server)
+}
+
+// ProjectSymbolsServerUnsupported says "{server} doesn't search the project's symbols"
+// in the language of msgs.
+func (msgs Messages) ProjectSymbolsServerUnsupported(server string) string {
+	return Catalog.Format(msgs.locale, "projectSymbolsServerUnsupported", map[string]any{"server": server})
+}
+
 // MenuNextChange says "Next Change"
 // in the language the app shows.
 func MenuNextChange() string { return In(i18n.Locale()).MenuNextChange() }
@@ -2574,6 +2610,18 @@ func ReferencesFailed() string { return In(i18n.Locale()).ReferencesFailed() }
 // in the language of msgs.
 func (msgs Messages) ReferencesFailed() string {
 	return Catalog.Format(msgs.locale, "referencesFailed", nil)
+}
+
+// ReferencesServerUnsupported says "{server} doesn't offer find references"
+// in the language the app shows.
+func ReferencesServerUnsupported(server string) string {
+	return In(i18n.Locale()).ReferencesServerUnsupported(server)
+}
+
+// ReferencesServerUnsupported says "{server} doesn't offer find references"
+// in the language of msgs.
+func (msgs Messages) ReferencesServerUnsupported(server string) string {
+	return Catalog.Format(msgs.locale, "referencesServerUnsupported", map[string]any{"server": server})
 }
 
 // ReferencesCount says "{count, plural, one {# use} other {# uses}} in {files, plural, one {# file} other {# files}}"

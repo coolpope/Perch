@@ -44,6 +44,36 @@ func TestLocationsOfEveryShape(t *testing.T) {
 	}
 }
 
+func TestCapabilitiesOfEveryShape(t *testing.T) {
+	cases := []struct {
+		result  string
+		want    Capabilities
+		invalid bool
+	}{
+		{
+			result: `{"capabilities":{"definitionProvider":true,"referencesProvider":false,"hoverProvider":null,"documentSymbolProvider":{}}}`,
+			want:   Capabilities{Definition: true, DocumentSymbol: true},
+		},
+		{
+			result: `{"capabilities":{"referencesProvider":{"workDoneProgress":true},"hoverProvider":true,"documentSymbolProvider":false,"workspaceSymbolProvider":null}}`,
+			want:   Capabilities{References: true, Hover: true},
+		},
+		{
+			result: `{"capabilities":{"referencesProvider":true,"documentSymbolProvider":true,"workspaceSymbolProvider":{}}}`,
+			want:   Capabilities{References: true, DocumentSymbol: true, WorkspaceSymbol: true},
+		},
+		{result: `{"capabilities":{}}`},
+		{result: `{"capabilities":{"hoverProvider":{"workDoneProgress":tru}}}`, invalid: true},
+		{result: `{"capabilities":{"referencesProvider":[]}}`, invalid: true},
+	}
+	for _, tc := range cases {
+		got, err := parseCapabilities([]byte(tc.result))
+		if got != tc.want || (err != nil) != tc.invalid {
+			t.Errorf("%s: got %+v, %v; want %+v, error %t", tc.result, got, err, tc.want, tc.invalid)
+		}
+	}
+}
+
 func TestMissingServerIsNamed(t *testing.T) {
 	_, err := Start(context.Background(), Server{Name: "absent", Program: "perch-no-such-server"}, t.TempDir())
 	if !errors.Is(err, ErrServerMissing) {
@@ -151,6 +181,14 @@ func TestDefinitionThroughARealServer(t *testing.T) {
 	}
 	if len(found) != 1 || filepath.Base(found[0].Path) != "util.go" || found[0].Range.Start.Line != 3 {
 		t.Fatalf("found %+v", found)
+	}
+	client, running := pool.runningClient(goServer, root)
+	if !running {
+		t.Fatal("gopls is not running after the definition request")
+	}
+	want := Capabilities{Definition: true, References: true, Hover: true, DocumentSymbol: true, WorkspaceSymbol: true}
+	if client.capabilities != want {
+		t.Errorf("gopls capabilities = %+v, want %+v", client.capabilities, want)
 	}
 
 	document.Version = 2
