@@ -1112,7 +1112,7 @@ func reviewedRepository(t *testing.T) string {
 
 func settleChanges(t *testing.T, a *App, tester *ui.Tester, posted <-chan func()) {
 	t.Helper()
-	followPosts(t, posted, tester, func() bool { return a.review.loaded && !a.review.running })
+	followPosts(t, posted, tester, func() bool { return a.review.loaded && !a.review.busy() })
 	tester.Frame()
 }
 
@@ -1146,7 +1146,7 @@ func TestReviewFollowsAgentWorkToTheEnd(t *testing.T) {
 	}
 	followPosts(t, posted, tester, func() bool {
 		change, _ := a.review.change("a.go")
-		return change.Reviewed && a.review.diff != nil && !a.review.running
+		return change.Reviewed && a.review.diff != nil && !a.review.busy()
 	})
 
 	a.setReviewed("b.go", true)
@@ -1155,27 +1155,28 @@ func TestReviewFollowsAgentWorkToTheEnd(t *testing.T) {
 	a.refreshChanges()
 	followPosts(t, posted, tester, func() bool {
 		change, _ := a.review.change("a.go")
-		return !change.Reviewed && !a.review.running
+		return !change.Reviewed && !a.review.busy()
 	})
 	if change, _ := a.review.change("a.go"); change.Added != 2 {
 		t.Errorf("a new edit shows %+v", change)
 	}
 
+	// Leave a listing in flight while making both review actions.
+	a.refreshChanges()
 	a.markAllReviewed()
-	followPosts(t, posted, tester, func() bool { return unreadCount(a.review.listing.Changes) == 0 && !a.review.running })
 	tester.Frame()
 	if err := tester.Click("Finish Review"); err != nil {
 		t.Fatalf("%v; texts %q", err, tester.Texts())
 	}
 	followPosts(t, posted, tester, func() bool {
-		return tester.HasText("No changes since your last review.") && tester.HasText("Undo Finish Review")
+		return !a.review.busy() && tester.HasText("No changes since your last review.") && tester.HasText("Undo Finish Review")
 	})
 
 	if err := tester.Click("Undo Finish Review"); err != nil {
 		t.Fatalf("%v; texts %q", err, tester.Texts())
 	}
 	followPosts(t, posted, tester, func() bool {
-		return tester.HasText("2 of 2 files reviewed") && !tester.HasText("Undo Finish Review")
+		return !a.review.busy() && tester.HasText("2 of 2 files reviewed") && !tester.HasText("Undo Finish Review")
 	})
 }
 
@@ -1200,7 +1201,7 @@ func TestEditorMarksTheLinesLeftToRead(t *testing.T) {
 
 	a.setReviewed("a.go", true)
 	followPosts(t, posted, tester, func() bool {
-		return d.editor.DiffBase != nil && d.editor.DiffBase.String() == d.editor.Buffer.String()
+		return !a.review.busy() && d.editor.DiffBase != nil && d.editor.DiffBase.String() == d.editor.Buffer.String()
 	})
 
 	a.openFile("b.go")

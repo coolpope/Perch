@@ -9,6 +9,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -66,6 +67,9 @@ type lineRange struct {
 	end   int
 }
 
+// reviewAction changes the review's marks, off the main thread.
+type reviewAction func(context.Context, *review.Store) error
+
 // changesPanel is the state of the review of the window's project.
 type changesPanel struct {
 	store *review.Store
@@ -84,11 +88,14 @@ type changesPanel struct {
 	// split is the share of the page the changes take above the history.
 	split float32
 
-	running bool
+	running bool // a listing or review action is in flight
 	again   bool
 	queued  bool
 	ctx     context.Context
 	cancel  context.CancelFunc
+
+	actions      []reviewAction
+	actionWorker sync.WaitGroup
 
 	selected string
 	// shownVersion is the version whose texts the diff shows, which is the
@@ -155,10 +162,12 @@ func (a *App) reviewBegun(ctx context.Context, store *review.Store) {
 
 // stopChanges ends the review's background work and lets go of its store.
 func (a *App) stopChanges() {
-	if a.review.cancel != nil {
-		a.review.cancel()
+	r := &a.review
+	if r.cancel != nil {
+		r.cancel()
 	}
-	closeStore(a.review.store)
+	r.actionWorker.Wait()
+	closeStore(r.store)
 	a.review = changesPanel{}
 	a.stopHistory()
 }
@@ -175,25 +184,31 @@ func closeStore(store *review.Store) {
 	}()
 }
 
-// refreshChanges lists the changes again. One listing runs at a time, and a
-// request meanwhile runs once it ends. The goroutine ends with the listing, or
-// when stopChanges cancels its context.
+// refreshChanges lists the changes again. Listings and review actions take
+// turns. If an action was queued during a listing, discard that listing so it
+// cannot overwrite optimistic marks. List again after the last action.
+// stopChanges cancels the listing's goroutine.
 func (a *App) refreshChanges() {
 	r := &a.review
-	if r.running {
+	if r.busy() {
 		r.again = true
 		return
 	}
 	if r.ctx == nil {
 		r.ctx, r.cancel = context.WithCancel(context.Background())
 	}
-	r.running = true
+	r.running, r.again = true, false
 	ctx, store, root := r.ctx, r.store, a.root
 	request := r.request()
 	go func() {
 		reading := readGitPage(ctx, store, root, request)
 		a.post(func() { a.changesListed(ctx, request, reading) })
 	}()
+}
+
+// busy reports whether a listing or a review action runs or waits its turn.
+func (r *changesPanel) busy() bool {
+	return r.running || len(r.actions) != 0
 }
 
 func (r *changesPanel) request() compareRequest {
@@ -252,6 +267,9 @@ func (a *App) changesListed(ctx context.Context, request compareRequest, reading
 		closeStore(store)
 	}
 	r.running = false
+	if a.startQueuedReviewAction() {
+		return
+	}
 	if request != r.request() {
 		// The person chose something else to compare with meanwhile.
 		a.refreshChanges()
@@ -274,7 +292,6 @@ func (a *App) changesListed(ctx context.Context, request compareRequest, reading
 		a.refreshTreeStatus()
 	}
 	if r.again {
-		r.again = false
 		a.refreshChanges()
 	}
 }
@@ -506,25 +523,60 @@ func (a *App) showsRenderedChange() bool {
 	return a.review.preview != nil && a.review.view == changeRendered
 }
 
-// runReviewAction changes the review off the main thread and lists it again.
-func (a *App) runReviewAction(action func(context.Context, *review.Store) error) {
-	ctx, store := a.review.ctx, a.review.store
-	if store == nil {
+// runReviewAction starts an action or queues it in the order requested.
+func (a *App) runReviewAction(action reviewAction) {
+	r := &a.review
+	if r.store == nil {
 		return
 	}
-	go func() {
+	if r.busy() {
+		r.actions = append(r.actions, action)
+		return
+	}
+	a.startReviewAction(action)
+}
+
+// startQueuedReviewAction gives the oldest action its turn after other work ends.
+func (a *App) startQueuedReviewAction() bool {
+	r := &a.review
+	if len(r.actions) == 0 {
+		return false
+	}
+	action := r.actions[0]
+	r.actions[0] = nil
+	r.actions = r.actions[1:]
+	a.startReviewAction(action)
+	return true
+}
+
+// startReviewAction starts a worker owned by this window's review.
+// stopChanges cancels and waits for it before discarding the rest of the queue.
+func (a *App) startReviewAction(action reviewAction) {
+	r := &a.review
+	ctx, store := r.ctx, r.store
+	r.running = true
+	r.actionWorker.Go(func() {
+		if ctx.Err() != nil {
+			return
+		}
 		err := action(ctx, store)
+		if ctx.Err() != nil {
+			return
+		}
 		a.post(func() {
 			if ctx.Err() != nil {
 				return
 			}
+			r.running = false
 			if err != nil {
 				a.notice = toast{title: locales.ReviewUpdateFailed(), detail: err.Error()}
 			}
-			a.review.readGeneration++
-			a.refreshChanges()
+			r.readGeneration++
+			if !a.startQueuedReviewAction() {
+				a.refreshChanges()
+			}
 		})
-	}()
+	})
 }
 
 // setReviewed marks a file, showing the mark at once.
