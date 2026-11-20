@@ -29,13 +29,23 @@ Perch is built in Go with [MyGo](https://github.com/egoist/mygo).
 
 ## Install
 
-Download the `.dmg` from [Releases](https://github.com/marukolibro/Perch/releases) and drag Perch to Applications. It runs on macOS 12 or later, on Apple silicon and Intel.
+Download Perch from [Releases](https://github.com/marukolibro/Perch/releases).
 
-Perch is signed ad hoc, not notarized by Apple, so macOS blocks it the first time. Open it once, then go to **System Settings → Privacy & Security** and choose **Open Anyway**. Or clear the quarantine flag in a terminal:
+**macOS 12 or later**, Apple silicon or Intel: open the `.dmg` and drag Perch to Applications. Perch is signed ad hoc, not notarized by Apple, so macOS blocks it the first time. Open it once, then go to **System Settings → Privacy & Security** and choose **Open Anyway**. Or clear the quarantine flag in a terminal:
 
 ```sh
 xattr -dr com.apple.quarantine /Applications/Perch.app
 ```
+
+**Windows**, x64 or ARM64: unzip `perch-<version>-windows-<arch>.zip` and run `Perch.exe`. It is not signed, so SmartScreen may warn you first: choose **More info → Run anyway**.
+
+**Linux**, x86_64 or arm64, with GTK 3:
+
+- Debian or Ubuntu: `sudo apt install ./perch_<version>_<arch>.deb`
+- Fedora or openSUSE: `sudo dnf install ./perch-<version>-1.<arch>.rpm`
+- Any distribution, without root: put `install.sh` next to `perch-<version>-linux-<arch>.tar.gz` and run `sh install.sh`. It installs Perch in `~/.local` and adds it to the applications menu. `sh install.sh --uninstall` removes it.
+
+Perch is developed and tested on macOS. The Windows and Linux builds compile and pass the tests, but have not been tried on those systems yet. Reports from either are welcome.
 
 ## Review what changed
 
@@ -128,9 +138,7 @@ go tool mygo build
 open build/darwin-arm64/Perch.app
 ```
 
-Run the checks with `go test ./...` and `golangci-lint run`.
-
-Perch is developed and tested on macOS. The Windows and Linux builds compile and pass the tests, but have not been tried on those systems yet. Reports from either are welcome.
+Run the checks with `go test ./...` and `golangci-lint run`. Build for other systems with `-platform`, such as `go tool mygo build -platform windows/amd64,linux/amd64`.
 
 ## License
 

@@ -29,13 +29,23 @@ Perch 使用 Go 和 [MyGo](https://github.com/egoist/mygo) 构建。
 
 ## 安装
 
-从 [Releases](https://github.com/marukolibro/Perch/releases) 下载 `.dmg`，把 Perch 拖进“应用程序”。支持 macOS 12 及以上，Apple 芯片和 Intel 都可以。
+从 [Releases](https://github.com/marukolibro/Perch/releases) 下载 Perch。
 
-Perch 使用临时签名，没有经过 Apple 公证，所以第一次打开时 macOS 会拦截。先打开一次，然后到 **系统设置 → 隐私与安全性** 里点 **仍要打开**。也可以在终端里清除隔离标记：
+**macOS 12 及以上**，Apple 芯片和 Intel 都可以：打开 `.dmg`，把 Perch 拖进“应用程序”。Perch 使用临时签名，没有经过 Apple 公证，所以第一次打开时 macOS 会拦截。先打开一次，然后到 **系统设置 → 隐私与安全性** 里点 **仍要打开**。也可以在终端里清除隔离标记：
 
 ```sh
 xattr -dr com.apple.quarantine /Applications/Perch.app
 ```
+
+**Windows**，x64 或 ARM64：解压 `perch-<版本>-windows-<架构>.zip`，运行 `Perch.exe`。它没有签名，SmartScreen 可能会先提示，点 **更多信息 → 仍要运行**。
+
+**Linux**，x86_64 或 arm64，需要 GTK 3：
+
+- Debian 或 Ubuntu：`sudo apt install ./perch_<版本>_<架构>.deb`
+- Fedora 或 openSUSE：`sudo dnf install ./perch-<版本>-1.<架构>.rpm`
+- 任意发行版，不需要 root：把 `install.sh` 和 `perch-<版本>-linux-<架构>.tar.gz` 放在一起，运行 `sh install.sh`。它会把 Perch 装到 `~/.local`，并加入应用菜单。`sh install.sh --uninstall` 可以卸载。
+
+Perch 在 macOS 上开发和测试。Windows 和 Linux 版本能编译、测试也能通过，但还没有在这两个系统上实际用过，欢迎反馈。
 
 ## 审阅改动
 
@@ -128,9 +138,7 @@ go tool mygo build
 open build/darwin-arm64/Perch.app
 ```
 
-运行 `go test ./...` 和 `golangci-lint run` 做检查。
-
-Perch 在 macOS 上开发和测试。Windows 和 Linux 版本能编译、测试也能通过，但还没有在这两个系统上实际用过，欢迎反馈。
+运行 `go test ./...` 和 `golangci-lint run` 做检查。用 `-platform` 构建其他系统的版本，例如 `go tool mygo build -platform windows/amd64,linux/amd64`。
 
 ## 许可证
 
