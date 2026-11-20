@@ -49,6 +49,7 @@ func (a *App) release() {
 	a.stopSearch()
 	a.hideQuickOpen()
 	a.closeOutline()
+	a.clearBreadcrumb()
 	a.closeProjectSymbols()
 	a.stopChanges()
 	a.stopDefinitions()

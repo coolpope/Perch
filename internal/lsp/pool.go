@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -14,6 +15,8 @@ type Pool struct {
 	mu      sync.Mutex
 	clients map[string]*poolEntry
 	closed  bool
+
+	starts atomic.Uint64
 }
 
 type poolEntry struct {
@@ -43,7 +46,27 @@ func (p *Pool) DocumentSymbols(ctx context.Context, server Server, document Docu
 	if err != nil {
 		return nil, err
 	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	return client.DocumentSymbols(ctx, document)
+}
+
+// DocumentSymbolsIfRunning asks for the file's symbols without starting a
+// server. It reports whether it found a running server, even if the request fails.
+func (p *Pool) DocumentSymbolsIfRunning(ctx context.Context, server Server, document Document) ([]Symbol, bool, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, false, err
+	}
+	client, running := p.runningClient(server, serverRoot(p.root, document.Path, server.RootMarkers))
+	if err := ctx.Err(); err != nil {
+		return nil, running, err
+	}
+	if !running {
+		return nil, false, nil
+	}
+	symbols, err := client.DocumentSymbols(ctx, document)
+	return symbols, true, err
 }
 
 // WorkspaceSymbols asks the server of file for the project's symbols that
@@ -56,6 +79,28 @@ func (p *Pool) WorkspaceSymbols(ctx context.Context, server Server, file string,
 	return client.WorkspaceSymbols(ctx, query)
 }
 
+// References asks the file's server where the symbol at a position is used,
+// starting the server when it is not running.
+func (p *Pool) References(ctx context.Context, server Server, document Document, position Position) ([]Location, error) {
+	client, err := p.client(ctx, server, serverRoot(p.root, document.Path, server.RootMarkers))
+	if err != nil {
+		return nil, err
+	}
+	return client.References(ctx, document, position)
+}
+
+// HoverIfRunning asks the file's server about the symbol at a position only
+// when the server already runs, as resting the pointer is no reason to start
+// one, and reports whether it asked.
+func (p *Pool) HoverIfRunning(ctx context.Context, server Server, document Document, position Position) (Hover, bool, error) {
+	client, running := p.runningClient(server, serverRoot(p.root, document.Path, server.RootMarkers))
+	if !running {
+		return Hover{}, false, nil
+	}
+	hover, err := client.Hover(ctx, document, position)
+	return hover, true, err
+}
+
 // clientKey tells apart servers by what runs and where it works from.
 func clientKey(server Server, root string) string {
 	return strings.Join(append([]string{root, server.Program}, server.Args...), "\x00")
@@ -65,6 +110,9 @@ func clientKey(server Server, root string) string {
 func (p *Pool) client(ctx context.Context, server Server, root string) (*Client, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if p.closed {
 		return nil, ErrServerStopped
 	}
@@ -78,7 +126,20 @@ func (p *Pool) client(ctx context.Context, server Server, root string) (*Client,
 		return nil, err
 	}
 	p.clients[key] = &poolEntry{client: client, lastUsed: time.Now()}
+	p.starts.Add(1)
 	return client, nil
+}
+
+// runningClient returns a server that already runs, marking it used.
+func (p *Pool) runningClient(server Server, root string) (*Client, bool) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	entry := p.clients[clientKey(server, root)]
+	if p.closed || entry == nil || !entry.client.Alive() {
+		return nil, false
+	}
+	entry.lastUsed = time.Now()
+	return entry.client, true
 }
 
 // CloseIdle ends the servers unused for at least idle.
@@ -102,6 +163,11 @@ func (p *Pool) Running() int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return len(p.clients)
+}
+
+// StartCount reports how many servers this pool has started, including restarts.
+func (p *Pool) StartCount() uint64 {
+	return p.starts.Load()
 }
 
 // Close ends every server. The pool starts no more.

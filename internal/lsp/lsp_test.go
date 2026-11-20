@@ -141,6 +141,10 @@ func TestDefinitionThroughARealServer(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
+	if _, running, err := pool.DocumentSymbolsIfRunning(ctx, goServer, document); err != nil || running || pool.Running() != 0 {
+		t.Fatalf("passive lookup without a running server: running %t, error %v", running, err)
+	}
+
 	found, err := pool.Definition(ctx, goServer, document, position)
 	if err != nil {
 		t.Fatal(err)
@@ -166,6 +170,53 @@ func TestDefinitionThroughARealServer(t *testing.T) {
 	pool.CloseIdle(0)
 	if pool.Running() != 0 {
 		t.Error("an idle server stayed")
+	}
+}
+
+func TestHoverAndReferencesThroughARealServer(t *testing.T) {
+	root, document, position := goProject(t)
+	pool := NewPool(root)
+	defer pool.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	if _, asked, err := pool.HoverIfRunning(ctx, goServer, document, position); asked || err != nil {
+		t.Fatalf("a hover asked a server that was not running: asked %v, error %v", asked, err)
+	}
+	found, err := pool.References(ctx, goServer, document, position)
+	if err != nil {
+		t.Fatal(err)
+	}
+	files := map[string]bool{}
+	for _, location := range found {
+		files[filepath.Base(location.Path)] = true
+	}
+	if len(found) != 2 || !files["util.go"] || !files["main.go"] {
+		t.Errorf("references %+v", found)
+	}
+
+	hover, asked, err := pool.HoverIfRunning(ctx, goServer, document, position)
+	if err != nil || !asked {
+		t.Fatalf("hover: asked %v, error %v", asked, err)
+	}
+	if !strings.Contains(hover.Markdown, "func Helper() int") || !strings.Contains(hover.Markdown, "Helper is defined here.") {
+		t.Errorf("hover %q", hover.Markdown)
+	}
+}
+
+func TestHoverOfEveryShape(t *testing.T) {
+	cases := map[string]string{
+		`null`: "",
+		`{"contents":{"kind":"markdown","value":"**x**"}}`:            "**x**",
+		`{"contents":{"kind":"plaintext","value":"a < b"}}`:           "```text\na < b\n```",
+		`{"contents":"plain"}`:                                        "plain",
+		`{"contents":[{"language":"go","value":"var x int"},"Doc."]}`: "```go\nvar x int\n```\n\nDoc.",
+	}
+	for answer, want := range cases {
+		hover, err := parseHover([]byte(answer))
+		if err != nil || hover.Markdown != want {
+			t.Errorf("%s: got %q, %v; want %q", answer, hover.Markdown, err, want)
+		}
 	}
 }
 

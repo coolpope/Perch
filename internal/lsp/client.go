@@ -205,6 +205,8 @@ func (c *Client) initialize(ctx context.Context, root string, options json.RawMe
 			"textDocument": {
 				"synchronization": {},
 				"definition": {"linkSupport": true},
+				"references": {},
+				"hover": {"contentFormat": ["markdown", "plaintext"]},
 				"documentSymbol": {"hierarchicalDocumentSymbolSupport": true}
 			},
 			"workspace": {"configuration": true, "workspaceFolders": true, "symbol": {}}
@@ -236,11 +238,7 @@ func (c *Client) Definition(ctx context.Context, document Document, position Pos
 	if err := c.sync(document); err != nil {
 		return nil, err
 	}
-	params := mustRaw(map[string]json.RawMessage{
-		"textDocument": mustRaw(map[string]string{"uri": pathToURI(document.Path)}),
-		"position":     mustRaw(position),
-	})
-	result, err := c.call(ctx, "textDocument/definition", params)
+	result, err := c.call(ctx, "textDocument/definition", positionParams(document, position))
 	if err != nil {
 		return nil, err
 	}
@@ -294,10 +292,10 @@ func parseLocations(result json.RawMessage) ([]Location, error) {
 	if trimmed[0] == '{' {
 		wire = make([]wireLocation, 1)
 		if err := json.Unmarshal(trimmed, &wire[0]); err != nil {
-			return nil, fmt.Errorf("read definition: %w", err)
+			return nil, fmt.Errorf("read locations: %w", err)
 		}
 	} else if err := json.Unmarshal(trimmed, &wire); err != nil {
-		return nil, fmt.Errorf("read definition: %w", err)
+		return nil, fmt.Errorf("read locations: %w", err)
 	}
 	locations := make([]Location, 0, len(wire))
 	for _, item := range wire {

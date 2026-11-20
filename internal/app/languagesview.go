@@ -36,15 +36,22 @@ type languagesPage struct {
 // each time, so that an edit counts without restarting Perch. A file with a
 // mistake is reported, and the built-in languages keep working.
 func (a *App) languageRegistry() lsp.Registry {
-	if a.languageFile == "" {
-		return lsp.NewRegistry(nil, a.settings.DisabledLanguages)
-	}
-	custom, err := lsp.LoadCustom(a.languageFile)
+	registry, err := a.readLanguageRegistry()
 	if err != nil {
 		slog.Warn("read language servers", "file", a.languageFile, "error", err)
 		a.notice = toast{title: locales.LanguageConfigInvalid(), detail: err.Error()}
 	}
-	return lsp.NewRegistry(custom, a.settings.DisabledLanguages)
+	return registry
+}
+
+// readLanguageRegistry combines the catalog and the current user configuration
+// without changing the UI.
+func (a *App) readLanguageRegistry() (lsp.Registry, error) {
+	if a.languageFile == "" {
+		return lsp.NewRegistry(nil, a.settings.DisabledLanguages), nil
+	}
+	custom, err := lsp.LoadCustom(a.languageFile)
+	return lsp.NewRegistry(custom, a.settings.DisabledLanguages), err
 }
 
 // showLanguages opens the page and finds out which servers are installed. The

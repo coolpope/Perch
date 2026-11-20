@@ -1,6 +1,7 @@
 package app
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"log/slog"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/editor"
 	"github.com/egoist/mygo/ui/markdown/parser"
 
 	"perch/internal/lsp"
@@ -16,7 +18,7 @@ import (
 	"perch/locales"
 )
 
-const outlineTimeout time.Duration = time.Minute
+const documentSymbolsTimeout time.Duration = time.Minute
 
 // outlineKind is the kind of a symbol as the outline groups it.
 type outlineKind uint8
@@ -32,14 +34,14 @@ const (
 	outlineHeading
 )
 
-// outlineSymbol is one symbol of a document. Its positions are fresh from
-// the language server or the Markdown parser, and are clamped to the current
-// buffer when they are used.
+// outlineSymbol is one symbol of a document. Its extent covers the whole
+// symbol, while its selection span locates its name for navigation.
 type outlineSymbol struct {
 	name      string
 	container string
 	kind      outlineKind
 	span      lsp.Range
+	extent    lsp.Range
 }
 
 // outlineMatch is a symbol that matches the query, with the byte offsets of
@@ -130,37 +132,43 @@ func (a *App) showOutline() {
 			a.outline.notice = outlineNotice{message: locales.SymbolsTurnedOff(known.Name), detail: locales.DefinitionTurnOnHint()}
 			return
 		}
-		a.requestOutlineSymbols(d, known.Server, language, request)
+		a.outline.loading = true
+		a.outline.cancel = a.requestDocumentSymbols(d, known.Server, language, func(symbols []lsp.Symbol, err error) {
+			if request == a.outlineRequest && a.outline.open {
+				a.outlineAnswered(known.Server, symbols, err)
+			}
+		})
 	}
 }
 
-// requestOutlineSymbols asks the file's language server for its symbols off
+// requestDocumentSymbols asks the file's language server for its symbols off
 // the main thread. The goroutine ends with the answer, or when its context is
 // canceled.
-func (a *App) requestOutlineSymbols(d *document, server lsp.Server, language string, request uint64) {
-	buffer := d.editor.Buffer
-	document := lsp.Document{
-		Path: d.absolutePath(a.root), Language: language,
-		Version: buffer.Version(), Text: buffer.String(),
-	}
+func (a *App) requestDocumentSymbols(d *document, server lsp.Server, language string, answered func([]lsp.Symbol, error)) context.CancelFunc {
+	file := d.absolutePath(a.root)
+	buffer := d.editor.Buffer.Snapshot()
 	pool := a.languagePool()
-	ctx, cancel := context.WithTimeout(context.Background(), outlineTimeout)
-	a.outline.cancel = cancel
-	a.outline.loading = true
+	ctx, cancel := context.WithTimeout(context.Background(), documentSymbolsTimeout)
 	go func() {
 		defer cancel()
-		symbols, err := pool.DocumentSymbols(ctx, server, document)
+		symbols, err := pool.DocumentSymbols(ctx, server, symbolDocument(file, language, buffer))
 		a.post(func() {
-			if request == a.outlineRequest && a.outline.open {
-				a.outlineAnswered(server, symbols, err)
+			if a.definition.pool == pool && !errors.Is(err, lsp.ErrServerMissing) {
+				a.closeIdleServersLater()
 			}
+			answered(symbols, err)
 		})
 	}()
+	return cancel
+}
+
+// symbolDocument gives the server the exact buffer version, including edits.
+func symbolDocument(file string, language string, buffer editor.Snapshot) lsp.Document {
+	return lsp.Document{Path: file, Language: language, Version: buffer.Version(), Text: buffer.String()}
 }
 
 func (a *App) outlineAnswered(server lsp.Server, symbols []lsp.Symbol, err error) {
 	a.outline.loading = false
-	a.closeIdleServersLater()
 	switch {
 	case errors.Is(err, context.Canceled):
 		return
@@ -180,6 +188,7 @@ func (a *App) outlineAnswered(server lsp.Server, symbols []lsp.Symbol, err error
 	}
 }
 
+// outlineSymbolsOf prepares the language server's symbols for display.
 func outlineSymbolsOf(symbols []lsp.Symbol) []outlineSymbol {
 	out := make([]outlineSymbol, 0, len(symbols))
 	for _, symbol := range symbols {
@@ -189,7 +198,7 @@ func outlineSymbolsOf(symbols []lsp.Symbol) []outlineSymbol {
 		}
 		out = append(out, outlineSymbol{
 			name: name, container: container,
-			kind: outlineKindOf(symbol.Kind), span: symbol.SelectionRange,
+			kind: outlineKindOf(symbol.Kind), span: symbol.SelectionRange, extent: symbol.Range,
 		})
 	}
 	return out
@@ -237,33 +246,35 @@ func outlineKindOf(kind lsp.SymbolKind) outlineKind {
 	}
 }
 
+// sortOutlineSymbols orders symbols by their selection start.
 func sortOutlineSymbols(symbols []outlineSymbol) {
 	slices.SortStableFunc(symbols, func(a, b outlineSymbol) int {
-		switch {
-		case a.span.Start.Line < b.span.Start.Line:
-			return -1
-		case a.span.Start.Line > b.span.Start.Line:
-			return 1
-		case a.span.Start.Character < b.span.Start.Character:
-			return -1
-		case a.span.Start.Character > b.span.Start.Character:
-			return 1
-		default:
-			return 0
-		}
+		return compareSymbolPositions(a.span.Start, b.span.Start)
 	})
 }
 
+// compareSymbolPositions orders positions by line and UTF-16 column.
+func compareSymbolPositions(a lsp.Position, b lsp.Position) int {
+	if line := cmp.Compare(a.Line, b.Line); line != 0 {
+		return line
+	}
+	return cmp.Compare(a.Character, b.Character)
+}
+
 // markdownOutlineSymbols reads the headings of the buffer without a language
-// server, nesting each level under the heading before it.
+// server, nesting each level under the heading before it. A section ends at
+// the next peer or ancestor heading, or at the end of the buffer.
 func markdownOutlineSymbols(d *document) []outlineSymbol {
-	full := d.editor.Buffer.String()
+	buffer := d.editor.Buffer
+	full := buffer.String()
 	skipped := splitFrontMatter(full).size
 	source := full[skipped:]
 	doc := parser.Parse(source)
+	endOfDocument := lsp.Position{Line: buffer.LineCount()}
+	// level tracks a heading until its section ends.
 	type level struct {
 		value int
-		name  string
+		index int
 	}
 	var stack []level
 	symbols := make([]outlineSymbol, 0)
@@ -279,20 +290,21 @@ func markdownOutlineSymbols(d *document) []outlineSymbol {
 		if name == "" {
 			continue
 		}
+		start := lsp.Position{Line: buffer.Pos(block.Start + skipped).Line}
 		for len(stack) > 0 && stack[len(stack)-1].value >= block.Level {
+			symbols[stack[len(stack)-1].index].extent.End = start
 			stack = stack[:len(stack)-1]
 		}
 		container := ""
 		if len(stack) > 0 {
-			container = stack[len(stack)-1].name
+			container = symbols[stack[len(stack)-1].index].name
 		}
-		line := d.editor.Buffer.Pos(block.Start + skipped).Line
-		span := lsp.Range{
-			Start: lsp.Position{Line: line, Character: 0},
-			End:   lsp.Position{Line: line, Character: 0},
-		}
-		symbols = append(symbols, outlineSymbol{name: name, container: container, kind: outlineHeading, span: span})
-		stack = append(stack, level{value: block.Level, name: name})
+		symbols = append(symbols, outlineSymbol{
+			name: name, container: container, kind: outlineHeading,
+			span:   lsp.Range{Start: start, End: start},
+			extent: lsp.Range{Start: start, End: endOfDocument},
+		})
+		stack = append(stack, level{value: block.Level, index: len(symbols) - 1})
 	}
 	return symbols
 }

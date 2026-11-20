@@ -344,5 +344,36 @@
   "noFileHistory": "No commit has changed this file yet.",
   "kindRenamed": "Renamed from {path}",
   "fileMenuRevealExplorer": "Show in Explorer",
-  "fileMenuRevealFolder": "Open Containing Folder"
+  "fileMenuRevealFolder": "Open Containing Folder",
+  "menuFindReferences": "Find References",
+  "referencesTitle": "References to",
+  "referencesNeedFile": "Open a code file to find references",
+  "referencesNeedWord": "Put the caret on a name to find where it is used",
+  "readingReferences": "Finding references…",
+  "noReferences": "No references found for {word}",
+  "referencesFailed": "Could not find the references",
+  "referencesCount": "{count, plural, one {# use} other {# uses}} in {files, plural, one {# file} other {# files}}",
+  "@referencesCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "files": {
+        "type": "int"
+      }
+    }
+  },
+  "referencesCountMore": "First {count} uses in {files, plural, one {# file} other {# files}}",
+  "@referencesCountMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "files": {
+        "type": "int"
+      }
+    }
+  },
+  "parentFolder": "Parent Folder",
+  "emptyFolder": "This folder is empty"
 }

@@ -56,11 +56,9 @@ func (a *App) inGit() bool {
 func (a *App) toggleBlame(d *document) {
 	if d.blame != nil {
 		d.blame = nil
-		d.editor.OnHover = nil
 		return
 	}
 	d.blame = &blameState{}
-	d.editor.OnHover = func(request editor.HoverRequest) { a.blameHover(d, request) }
 	a.readBlame(d)
 }
 

@@ -63,6 +63,7 @@ func (a *App) showProjectSymbols() {
 	}
 	a.hideQuickOpen()
 	a.closeOutline()
+	a.closeReferences()
 	a.closeProjectSymbols()
 	s := &a.projectSymbols
 	s.open = true

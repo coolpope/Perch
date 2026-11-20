@@ -52,6 +52,8 @@ type App struct {
 	// outlineRequest invalidates answers of a closed finder or an older
 	// request.
 	outlineRequest uint64
+	breadcrumb     breadcrumbState
+	folderList     folderListState
 	find           findInFiles
 	files          fileTreeState
 	session        sessionState
@@ -65,6 +67,8 @@ type App struct {
 	fileHistory   fileHistory
 	fileIcons     fileIconCache
 	definition    definitionState
+	hover         hoverState
+	references    referencesState
 	// projectSymbols is the finder of symbols across the project.
 	projectSymbols projectSymbolsState
 
@@ -141,6 +145,8 @@ func (a *App) loadFolder(root string) error {
 	a.prepareSessionForFolder()
 	a.hideQuickOpen()
 	a.closeOutline()
+	a.clearBreadcrumb()
+	a.folderList = folderListState{}
 	a.closeProjectSymbols()
 	a.stopSearch()
 	a.stopChanges()

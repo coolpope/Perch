@@ -42,13 +42,17 @@ type definitionState struct {
 	forward []place
 }
 
-// attachDefinitions makes Cmd+click and F12 in a document go to definitions.
+// attachDefinitions makes Cmd+click and F12 in a document go to definitions,
+// and resting the pointer on a word show what its language server says.
 func (a *App) attachDefinitions(d *document) {
 	d.editor.OnDefinition = func(offset int) { a.goToDefinition(d, offset) }
+	d.editor.OnHover = func(request editor.HoverRequest) { a.answerHover(d, request) }
 }
 
 // stopDefinitions ends the running request and the project's language servers.
 func (a *App) stopDefinitions() {
+	a.stopHover()
+	a.closeReferences()
 	if a.definition.cancel != nil {
 		a.definition.cancel()
 	}
@@ -130,13 +134,20 @@ func (a *App) goToDefinition(d *document, offset int) {
 
 // wordAt returns the identifier at a byte column of a line.
 func wordAt(line string, column int) string {
+	start, end := wordBounds(line, column)
+	return line[start:end]
+}
+
+// wordBounds returns where the identifier at a byte column of a line starts
+// and ends, both at column when there is none.
+func wordBounds(line string, column int) (int, int) {
 	isWord := func(char rune) bool { return char == '_' || unicode.IsLetter(char) || unicode.IsDigit(char) }
 	start := strings.LastIndexFunc(line[:column], func(char rune) bool { return !isWord(char) }) + 1
 	end := strings.IndexFunc(line[column:], func(char rune) bool { return !isWord(char) })
 	if end < 0 {
-		return line[start:]
+		return start, len(line)
 	}
-	return line[start : column+end]
+	return start, column + end
 }
 
 func (a *App) definitionAnswered(origin place, server lsp.Server, word string, found []lsp.Location, err error) {

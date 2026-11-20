@@ -29,7 +29,7 @@ It is built in Go with [MyGo](https://github.com/egoist/mygo). The interface is 
 - **See the Git history.** Compare the work tree with your last review, with `HEAD` or with another branch. Browse the history and open any commit's changes. The file tree marks changed files, and each file has its history and shows who last changed the line under the pointer.
 - **Read comfortably.** Syntax highlighting, rendered Markdown including the HTML in READMEs, and previews of PNG, JPEG, GIF, WebP and SVG.
 - **Edit safely.** If an agent rewrites a file you are editing, Perch asks which version to keep instead of overwriting either one.
-- **Find your way.** Quick open, project search, find and replace, plus go to definition and a symbol list for the current file through language servers.
+- **Find your way.** Quick open, project search, find and replace, plus go to definition, find references and a symbol list for the current file through language servers. Resting the pointer on a name shows its type and documentation once the language server is running. The path bar shows Markdown headings around the caret, or code symbols when the language server is already running. Choose one to jump to it.
 - **Manage files.** Create, rename and move files to the Trash from the file tree. Open tabs follow a rename and keep their unsaved edits, and files Git ignores are dimmed.
 - **Pick up where you left off.** Each project reopens with its tabs, caret, scroll position and layout, and each project gets its own window.
 - **Stay light.** Language servers start only when needed and exit when idle. Perch idles at about 52 MB on macOS.
@@ -64,6 +64,7 @@ On Windows and Linux, `⌘` is `Ctrl`, `⌥` is `Alt` and `⌃` is `Ctrl`.
 | Go to symbol in file | `⇧⌘O` |
 | Go to symbol in project | `⌘T` |
 | Go to definition | `F12` or `⌘`-click |
+| Find references | `⇧F12` |
 | Go back / forward | `⌃-` / `⌃⇧-` |
 | Next / previous tab | `⌃Tab` or `⇧⌘]` / `⌃⇧Tab` or `⇧⌘[` |
 | Tab 1 to 8 / last tab | `⌘1` to `⌘8` / `⌘9` |

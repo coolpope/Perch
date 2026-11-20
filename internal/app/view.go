@@ -72,6 +72,7 @@ func (a *App) view(c *ui.Context) {
 	a.quickOpenView(c)
 	a.outlineView(c)
 	a.projectSymbolsView(c)
+	a.referencesView(c)
 	a.settingsView(c)
 	a.fileDialogView(c)
 	a.trackSession()
@@ -280,6 +281,8 @@ func (a *App) mainView(c *ui.Context) {
 
 // panelContentView shows the review, the open file, or an invitation to open one.
 func (a *App) panelContentView(c *ui.Context) {
+	d := a.activeDocument()
+	a.syncBreadcrumb(c, d)
 	if a.showsChange() {
 		a.changeView(c)
 		return
@@ -288,7 +291,6 @@ func (a *App) panelContentView(c *ui.Context) {
 		a.commitView(c)
 		return
 	}
-	d := a.activeDocument()
 	if d == nil {
 		ui.Column(c).Grow(1).FillWidth().Center().Gap(8).Children(func() {
 			ui.Icon(c, iconPerch).FontSize(32).TextColor(a.look.palette.border)
@@ -376,33 +378,44 @@ func (a *App) tabCloseView(c *ui.Context, d *document, showClose bool) bool {
 // pathCrumbsView shows a file's path, its folders quieter than its name.
 func (a *App) pathCrumbsView(c *ui.Context, relPath string) {
 	colors := a.look.palette
-	parts := strings.Split(relPath, "/")
-	for i, part := range parts {
-		if i > 0 {
-			ui.Text(c, "›").FontSize(smallFontSize).TextColor(colors.muted)
-		}
-		text := ui.Text(c, part).FontSize(smallFontSize).MaxLines(1)
-		if i < len(parts)-1 {
+	ui.Row(c).MinWidth(0).ClipX().Gap(5).AlignItems(ui.Center).Children(func() {
+		for {
+			part, rest, folder := strings.Cut(relPath, "/")
+			text := ui.Text(c, part).FontSize(smallFontSize).MinWidth(0).MaxLines(1)
+			if !folder {
+				break
+			}
 			text.TextColor(colors.muted)
+			ui.Text(c, "›").FontSize(smallFontSize).TextColor(colors.muted)
+			relPath = rest
 		}
-	}
+	})
 }
 
+// pathBarView lets the path shrink without squeezing the controls on its right.
 func (a *App) pathBarView(c *ui.Context, d *document) {
 	colors := a.look.palette
 	ui.Row(c).FillWidth().Height(pathBarHeight).Shrink(0).Gap(5).Padding(0, 14).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(colors.border).Children(func() {
-		a.pathCrumbsView(c, d.displayPath())
-		if d.external {
-			ui.Text(c, locales.ReadOnly()).FontSize(smallFontSize-1).TextColor(colors.muted).Padding(0, 0, 0, 6)
-		}
-		ui.Spacer(c)
-		switch {
-		case d.isMarkdown():
-			ui.Segmented(c, &d.markdownView, locales.MarkdownPreview(), locales.MarkdownEdit())
-		case d.isSVG():
-			ui.Segmented(c, &d.markdownView, locales.MarkdownPreview(), locales.MarkdownSource())
-		}
-		a.gitButtonsView(c, d)
+		ui.Row(c).Grow(1).MinWidth(0).AlignItems(ui.Center).Children(func() {
+			if d.external {
+				a.pathCrumbsView(c, d.displayPath())
+			} else {
+				a.pathLinksView(c, d.path)
+			}
+			a.symbolCrumbsView(c, d)
+		})
+		ui.Row(c).Shrink(0).Gap(5).AlignItems(ui.Center).Children(func() {
+			if d.external {
+				ui.Text(c, locales.ReadOnly()).FontSize(smallFontSize - 1).TextColor(colors.muted)
+			}
+			switch {
+			case d.isMarkdown():
+				ui.Segmented(c, &d.markdownView, locales.MarkdownPreview(), locales.MarkdownEdit())
+			case d.isSVG():
+				ui.Segmented(c, &d.markdownView, locales.MarkdownPreview(), locales.MarkdownSource())
+			}
+			a.gitButtonsView(c, d)
+		})
 	})
 }
 

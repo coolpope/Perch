@@ -307,6 +307,7 @@ func (d *Desktop) menu() *mygo.Menu {
 			d.menuItem(locales.MenuGoToSymbol(), "CmdOrCtrl+Shift+O", (*App).showOutline),
 			d.menuItem(locales.MenuGoToProjectSymbol(), "CmdOrCtrl+T", (*App).showProjectSymbols),
 			d.menuItem(locales.MenuGoToDefinition(), "F12", (*App).definitionAtCaret),
+			d.menuItem(locales.MenuFindReferences(), "Shift+F12", (*App).referencesAtCaret),
 			mygo.Separator(),
 			d.menuItem(locales.MenuGoBack(), "Ctrl+-", (*App).goBack),
 			d.menuItem(locales.MenuGoForward(), "Ctrl+Shift+-", (*App).goForward),

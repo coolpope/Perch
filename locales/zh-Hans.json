@@ -245,5 +245,16 @@
   "noFileHistory": "还没有提交改动过这个文件。",
   "kindRenamed": "由 {path} 改名",
   "fileMenuRevealExplorer": "在资源管理器中显示",
-  "fileMenuRevealFolder": "打开所在文件夹"
+  "fileMenuRevealFolder": "打开所在文件夹",
+  "menuFindReferences": "查找引用",
+  "referencesTitle": "引用",
+  "referencesNeedFile": "打开一个代码文件再查找引用",
+  "referencesNeedWord": "把光标放在一个名字上，查找它在哪里被用到",
+  "readingReferences": "正在查找引用…",
+  "noReferences": "没有找到 {word} 的引用",
+  "referencesFailed": "无法查找引用",
+  "referencesCount": "{files} 个文件中共 {count} 处",
+  "referencesCountMore": "{files} 个文件中的前 {count} 处",
+  "parentFolder": "上一级文件夹",
+  "emptyFolder": "这个文件夹是空的"
 }

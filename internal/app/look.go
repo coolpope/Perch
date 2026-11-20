@@ -72,6 +72,9 @@ type look struct {
 	// markdown is how rendered Markdown reads: a document's typography
 	// rather than a chat's, in the theme's colors.
 	markdown *markdown.Theme
+	// hover is how a language server's notes read in the editor's hover:
+	// the same colors in smaller, closer text.
+	hover *markdown.Theme
 	// grain is the tile of the theme's paper grain, nil for a smooth theme.
 	grain *ui.Bitmap
 }
@@ -107,7 +110,8 @@ func newLook(base *ui.Theme, colors palette) *look {
 	shell := theme
 	shell.Border = colors.sidebar
 	code := newCodeTheme(&theme, colors)
-	made := &look{palette: colors, theme: &theme, tree: &tree, shell: &shell, code: code, markdown: newMarkdownTheme(colors, code)}
+	reading := newMarkdownTheme(colors, code)
+	made := &look{palette: colors, theme: &theme, tree: &tree, shell: &shell, code: code, markdown: reading, hover: newHoverMarkdownTheme(reading)}
 	if colors.grain > 0 {
 		made.grain = ui.NewBitmap(grainImage(colors.grain, base.Dark))
 	}
@@ -209,6 +213,28 @@ func newMarkdownTheme(colors palette, code *editor.Theme) *markdown.Theme {
 	}
 	theme.Headings[5].Color = colors.muted
 	return theme
+}
+
+// The typography of a hover's Markdown.
+const (
+	hoverFontSize   float32 = 13
+	hoverLineHeight float32 = 1.5
+	hoverBlockSpace float32 = 0.6
+)
+
+// newHoverMarkdownTheme reads like a tooltip: the reading theme in smaller,
+// closer text, with headings barely larger than the text and no rules.
+func newHoverMarkdownTheme(reading *markdown.Theme) *markdown.Theme {
+	theme := *reading
+	theme.FontSize = hoverFontSize
+	theme.LineHeight = hoverLineHeight
+	theme.BlockSpacing = hoverBlockSpace
+	for level := range theme.Headings {
+		heading := theme.Headings[level]
+		heading.Size, heading.Top, heading.Bottom, heading.Rule = 1, 0.6, 0.3, false
+		theme.Headings[level] = heading
+	}
+	return &theme
 }
 
 // lookFor returns the look of the chosen theme in the window's appearance,

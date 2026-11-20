@@ -2505,3 +2505,117 @@ func FileMenuRevealFolder() string { return In(i18n.Locale()).FileMenuRevealFold
 func (msgs Messages) FileMenuRevealFolder() string {
 	return Catalog.Format(msgs.locale, "fileMenuRevealFolder", nil)
 }
+
+// MenuFindReferences says "Find References"
+// in the language the app shows.
+func MenuFindReferences() string { return In(i18n.Locale()).MenuFindReferences() }
+
+// MenuFindReferences says "Find References"
+// in the language of msgs.
+func (msgs Messages) MenuFindReferences() string {
+	return Catalog.Format(msgs.locale, "menuFindReferences", nil)
+}
+
+// ReferencesTitle says "References to"
+// in the language the app shows.
+func ReferencesTitle() string { return In(i18n.Locale()).ReferencesTitle() }
+
+// ReferencesTitle says "References to"
+// in the language of msgs.
+func (msgs Messages) ReferencesTitle() string {
+	return Catalog.Format(msgs.locale, "referencesTitle", nil)
+}
+
+// ReferencesNeedFile says "Open a code file to find references"
+// in the language the app shows.
+func ReferencesNeedFile() string { return In(i18n.Locale()).ReferencesNeedFile() }
+
+// ReferencesNeedFile says "Open a code file to find references"
+// in the language of msgs.
+func (msgs Messages) ReferencesNeedFile() string {
+	return Catalog.Format(msgs.locale, "referencesNeedFile", nil)
+}
+
+// ReferencesNeedWord says "Put the caret on a name to find where it is used"
+// in the language the app shows.
+func ReferencesNeedWord() string { return In(i18n.Locale()).ReferencesNeedWord() }
+
+// ReferencesNeedWord says "Put the caret on a name to find where it is used"
+// in the language of msgs.
+func (msgs Messages) ReferencesNeedWord() string {
+	return Catalog.Format(msgs.locale, "referencesNeedWord", nil)
+}
+
+// ReadingReferences says "Finding references…"
+// in the language the app shows.
+func ReadingReferences() string { return In(i18n.Locale()).ReadingReferences() }
+
+// ReadingReferences says "Finding references…"
+// in the language of msgs.
+func (msgs Messages) ReadingReferences() string {
+	return Catalog.Format(msgs.locale, "readingReferences", nil)
+}
+
+// NoReferences says "No references found for {word}"
+// in the language the app shows.
+func NoReferences(word string) string { return In(i18n.Locale()).NoReferences(word) }
+
+// NoReferences says "No references found for {word}"
+// in the language of msgs.
+func (msgs Messages) NoReferences(word string) string {
+	return Catalog.Format(msgs.locale, "noReferences", map[string]any{"word": word})
+}
+
+// ReferencesFailed says "Could not find the references"
+// in the language the app shows.
+func ReferencesFailed() string { return In(i18n.Locale()).ReferencesFailed() }
+
+// ReferencesFailed says "Could not find the references"
+// in the language of msgs.
+func (msgs Messages) ReferencesFailed() string {
+	return Catalog.Format(msgs.locale, "referencesFailed", nil)
+}
+
+// ReferencesCount says "{count, plural, one {# use} other {# uses}} in {files, plural, one {# file} other {# files}}"
+// in the language the app shows.
+func ReferencesCount(count int, files int) string {
+	return In(i18n.Locale()).ReferencesCount(count, files)
+}
+
+// ReferencesCount says "{count, plural, one {# use} other {# uses}} in {files, plural, one {# file} other {# files}}"
+// in the language of msgs.
+func (msgs Messages) ReferencesCount(count int, files int) string {
+	return Catalog.Format(msgs.locale, "referencesCount", map[string]any{"count": count, "files": files})
+}
+
+// ReferencesCountMore says "First {count} uses in {files, plural, one {# file} other {# files}}"
+// in the language the app shows.
+func ReferencesCountMore(count int, files int) string {
+	return In(i18n.Locale()).ReferencesCountMore(count, files)
+}
+
+// ReferencesCountMore says "First {count} uses in {files, plural, one {# file} other {# files}}"
+// in the language of msgs.
+func (msgs Messages) ReferencesCountMore(count int, files int) string {
+	return Catalog.Format(msgs.locale, "referencesCountMore", map[string]any{"count": count, "files": files})
+}
+
+// ParentFolder says "Parent Folder"
+// in the language the app shows.
+func ParentFolder() string { return In(i18n.Locale()).ParentFolder() }
+
+// ParentFolder says "Parent Folder"
+// in the language of msgs.
+func (msgs Messages) ParentFolder() string {
+	return Catalog.Format(msgs.locale, "parentFolder", nil)
+}
+
+// EmptyFolder says "This folder is empty"
+// in the language the app shows.
+func EmptyFolder() string { return In(i18n.Locale()).EmptyFolder() }
+
+// EmptyFolder says "This folder is empty"
+// in the language of msgs.
+func (msgs Messages) EmptyFolder() string {
+	return Catalog.Format(msgs.locale, "emptyFolder", nil)
+}
