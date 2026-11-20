@@ -12,7 +12,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
-	"perch/internal/review"
+	"github.com/marukolibro/Perch/internal/review"
 )
 
 const (

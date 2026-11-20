@@ -11,8 +11,8 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/egoist/mygo/ui/markdown"
 
-	"perch/internal/htmlblock"
-	"perch/internal/workspace"
+	"github.com/marukolibro/Perch/internal/htmlblock"
+	"github.com/marukolibro/Perch/internal/workspace"
 )
 
 // conflict says how the file on disk disagrees with an open document.

@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 
-	"perch/internal/review"
+	"github.com/marukolibro/Perch/internal/review"
 )
 
 // ignoredRowAlpha is how strongly a row that Git ignores shows against the

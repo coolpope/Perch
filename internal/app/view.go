@@ -8,7 +8,7 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/egoist/mygo/ui/markdown"
 
-	"perch/locales"
+	"github.com/marukolibro/Perch/locales"
 )
 
 const (

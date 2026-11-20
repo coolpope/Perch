@@ -5,7 +5,7 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/egoist/mygo/ui/markdown"
 
-	"perch/internal/settings"
+	"github.com/marukolibro/Perch/internal/settings"
 )
 
 // The corner radii of the interface, from its smallest parts to its panels.

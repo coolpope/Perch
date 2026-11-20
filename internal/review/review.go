@@ -21,7 +21,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"perch/internal/workspace"
+	"github.com/marukolibro/Perch/internal/workspace"
 )
 
 const (

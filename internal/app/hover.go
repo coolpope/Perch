@@ -12,7 +12,7 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/egoist/mygo/ui/markdown"
 
-	"perch/internal/lsp"
+	"github.com/marukolibro/Perch/internal/lsp"
 )
 
 const (

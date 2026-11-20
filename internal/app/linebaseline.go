@@ -5,7 +5,7 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"perch/internal/review"
+	"github.com/marukolibro/Perch/internal/review"
 )
 
 // lineBaselineKey names what the bars beside the line numbers compare: a

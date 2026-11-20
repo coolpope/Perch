@@ -6,8 +6,8 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"perch/internal/settings"
-	"perch/locales"
+	"github.com/marukolibro/Perch/internal/settings"
+	"github.com/marukolibro/Perch/locales"
 )
 
 const (

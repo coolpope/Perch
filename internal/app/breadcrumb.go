@@ -9,7 +9,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"perch/internal/lsp"
+	"github.com/marukolibro/Perch/internal/lsp"
 )
 
 // breadcrumbDelay waits for typing to pause before asking for symbols again.

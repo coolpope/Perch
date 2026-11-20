@@ -13,8 +13,8 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"perch/internal/session"
-	"perch/internal/workspace"
+	"github.com/marukolibro/Perch/internal/session"
+	"github.com/marukolibro/Perch/internal/workspace"
 )
 
 const (

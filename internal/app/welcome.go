@@ -7,7 +7,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"perch/locales"
+	"github.com/marukolibro/Perch/locales"
 )
 
 // shortcut is a key with the modifiers it is pressed with, which

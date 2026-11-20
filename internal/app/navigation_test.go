@@ -8,7 +8,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"perch/locales"
+	"github.com/marukolibro/Perch/locales"
 )
 
 // changedRepository has a.go changed in two places and b.go in one, since the

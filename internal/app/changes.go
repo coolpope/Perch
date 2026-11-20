@@ -16,9 +16,9 @@ import (
 	"github.com/egoist/mygo/ui/markdown"
 	"github.com/egoist/mygo/ui/markdown/parser"
 
-	"perch/internal/review"
-	"perch/internal/workspace"
-	"perch/locales"
+	"github.com/marukolibro/Perch/internal/review"
+	"github.com/marukolibro/Perch/internal/workspace"
+	"github.com/marukolibro/Perch/locales"
 )
 
 const (

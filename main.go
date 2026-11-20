@@ -8,7 +8,7 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"perch/internal/app"
+	"github.com/marukolibro/Perch/internal/app"
 )
 
 func main() {

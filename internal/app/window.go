@@ -10,7 +10,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"perch/locales"
+	"github.com/marukolibro/Perch/locales"
 )
 
 // show opens the window, with the project at root when root is not empty.

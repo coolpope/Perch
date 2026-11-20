@@ -10,8 +10,8 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"perch/internal/review"
-	"perch/locales"
+	"github.com/marukolibro/Perch/internal/review"
+	"github.com/marukolibro/Perch/locales"
 )
 
 // gitTabLabel names the Git page, the same in every language.

@@ -9,8 +9,8 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
-	"perch/internal/htmlblock"
-	"perch/locales"
+	"github.com/marukolibro/Perch/internal/htmlblock"
+	"github.com/marukolibro/Perch/locales"
 )
 
 const (

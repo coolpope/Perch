@@ -12,9 +12,9 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"perch/internal/lsp"
-	"perch/internal/workspace"
-	"perch/locales"
+	"github.com/marukolibro/Perch/internal/lsp"
+	"github.com/marukolibro/Perch/internal/workspace"
+	"github.com/marukolibro/Perch/locales"
 )
 
 const (

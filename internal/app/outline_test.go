@@ -11,7 +11,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"perch/locales"
+	"github.com/marukolibro/Perch/locales"
 )
 
 // outlineGoProject writes a Go module with a type, its method, and enough

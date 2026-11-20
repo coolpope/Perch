@@ -1,4 +1,4 @@
-module perch
+module github.com/marukolibro/Perch
 
 go 1.27.4
 

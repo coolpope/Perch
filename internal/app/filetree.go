@@ -16,8 +16,8 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/egoist/mygo/ui/markdown"
 
-	"perch/internal/workspace"
-	"perch/locales"
+	"github.com/marukolibro/Perch/internal/workspace"
+	"github.com/marukolibro/Perch/locales"
 )
 
 const fileDialogWidth float32 = 380

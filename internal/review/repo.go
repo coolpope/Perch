@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"perch/internal/workspace"
+	"github.com/marukolibro/Perch/internal/workspace"
 )
 
 // readOnlyEnv keeps Git from refreshing the person's index while it only

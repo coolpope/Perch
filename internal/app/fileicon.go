@@ -6,7 +6,7 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"perch/internal/fileicons"
+	"github.com/marukolibro/Perch/internal/fileicons"
 )
 
 // fileIconCache keeps what file icons cost to find and draw: the icon of each

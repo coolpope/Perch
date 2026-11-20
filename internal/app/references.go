@@ -15,8 +15,8 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"perch/internal/lsp"
-	"perch/locales"
+	"github.com/marukolibro/Perch/internal/lsp"
+	"github.com/marukolibro/Perch/locales"
 )
 
 const (

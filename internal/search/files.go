@@ -15,7 +15,7 @@ import (
 	"slices"
 	"strings"
 
-	"perch/internal/workspace"
+	"github.com/marukolibro/Perch/internal/workspace"
 )
 
 // MaxFiles is the most files a listing holds.
