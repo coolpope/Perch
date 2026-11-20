@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 	"unicode/utf8"
 
 	"perch/internal/workspace"
@@ -431,13 +432,11 @@ func (s *Store) seedIndex(ctx context.Context, top string) error {
 	if err != nil {
 		return fmt.Errorf("find the index of %q: %w", s.root, err)
 	}
-	data, err := os.ReadFile(strings.TrimRight(string(output), "\n"))
+	source := strings.TrimRight(string(output), "\n")
+	info, err := os.Stat(source)
 	switch {
 	case err == nil:
-		if err := os.WriteFile(s.index, data, 0o600); err != nil {
-			return fmt.Errorf("prepare snapshot of %q: %w", s.root, err)
-		}
-		return nil
+		return s.copyIndex(source, info.ModTime())
 	case !errors.Is(err, fs.ErrNotExist):
 		return fmt.Errorf("read the index of %q: %w", s.root, err)
 	}
@@ -445,6 +444,26 @@ func (s *Store) seedIndex(ctx context.Context, top string) error {
 		return nil
 	}
 	if _, err := gitInput(ctx, top, s.indexEnv(), nil, "read-tree", "--empty"); err != nil {
+		return fmt.Errorf("prepare snapshot of %q: %w", s.root, err)
+	}
+	return nil
+}
+
+// copyIndex copies the work tree's index, last written at written, into the
+// store's. The copy keeps that time: Git reads the content of a file changed
+// in the same second as the index was written, as its size and time alone
+// cannot tell an edit then, and a copy written later would hide such edits.
+// The time is read before the index, so an index rewritten in between only
+// makes Git read more files.
+func (s *Store) copyIndex(source string, written time.Time) error {
+	data, err := os.ReadFile(source)
+	if err != nil {
+		return fmt.Errorf("read the index of %q: %w", s.root, err)
+	}
+	if err := os.WriteFile(s.index, data, 0o600); err != nil {
+		return fmt.Errorf("prepare snapshot of %q: %w", s.root, err)
+	}
+	if err := os.Chtimes(s.index, written, written); err != nil {
 		return fmt.Errorf("prepare snapshot of %q: %w", s.root, err)
 	}
 	return nil
