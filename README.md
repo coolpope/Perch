@@ -81,6 +81,8 @@ Perch stays small on purpose. It has no plugin system, terminal, AI chat, debugg
 
 ## Keyboard shortcuts
 
+These are the default shortcuts. In **Settings → Shortcuts**, select a shortcut to change it, clear it, or restore its default.
+
 On Windows and Linux, `⌘` is `Ctrl`, `⌥` is `Alt` and `⌃` is `Ctrl`.
 
 | Action | Shortcut |

@@ -2,47 +2,18 @@ package app
 
 import (
 	"os"
-	"runtime"
-	"strings"
+	"slices"
 
 	"github.com/egoist/mygo/ui"
 
 	"github.com/marukolibro/Perch/locales"
 )
 
-// shortcut is a key with the modifiers it is pressed with, which
-// shortcutLabel writes as the platform shows it.
-type shortcut struct {
-	command bool
-	shift   bool
-	key     string
-}
-
-// shortcutLabel writes a shortcut as its platform shows it: ⇧⌘F on macOS,
-// Ctrl+Shift+F elsewhere.
-func shortcutLabel(goos string, keys shortcut) string {
-	if goos == "darwin" {
-		label := ""
-		if keys.shift {
-			label += "⇧"
-		}
-		if keys.command {
-			label += "⌘"
-		}
-		return label + keys.key
-	}
-	parts := make([]string, 0, 3)
-	if keys.command {
-		parts = append(parts, "Ctrl")
-	}
-	if keys.shift {
-		parts = append(parts, "Shift")
-	}
-	return strings.Join(append(parts, keys.key), "+")
-}
-
 // keycapView shows a shortcut as a key cap.
 func (a *App) keycapView(c *ui.Context, label string) {
+	if label == "" {
+		return
+	}
 	colors := a.look.palette
 	ui.Box(c).Shrink(0).Padding(1, 5, 2, 5).Radius(5).Background(colors.background).
 		Border(1, colors.border).BorderWidth(1, 1, 2, 1).Children(func() {
@@ -70,7 +41,7 @@ func (a *App) welcomeView(c *ui.Context) {
 				if ui.PrimaryButton(c, locales.OpenFolder()).Clicked() {
 					a.chooseFolder()
 				}
-				a.keycapView(c, shortcutLabel(runtime.GOOS, shortcut{command: true, key: "O"}))
+				a.keycapView(c, openFolderKeys.binding(a.settings).label())
 			})
 			a.recentProjectsView(c)
 			a.dropHintView(c, dragging)
@@ -110,7 +81,7 @@ func (a *App) openDroppedFolder(path string) {
 // noFileHint is a shortcut the empty editor teaches.
 type noFileHint struct {
 	label string
-	keys  shortcut
+	keys  shortcutAction
 }
 
 // noFileView fills the editor while no file is open with the shortcuts that
@@ -118,12 +89,13 @@ type noFileHint struct {
 func (a *App) noFileView(c *ui.Context) {
 	colors := a.look.palette
 	hints := []noFileHint{
-		{locales.HintOpenFile(), shortcut{command: true, key: "P"}},
-		{locales.HintSearchProject(), shortcut{command: true, shift: true, key: "F"}},
-		{locales.HintProjectSymbols(), shortcut{command: true, key: "T"}},
-		{locales.HintShowChanges(), shortcut{command: true, shift: true, key: "R"}},
-		{locales.HintFindReferences(), shortcut{shift: true, key: "F12"}},
+		{locales.HintOpenFile(), goToFileKeys},
+		{locales.HintSearchProject(), findInFilesKeys},
+		{locales.HintProjectSymbols(), goToProjectSymbolKeys},
+		{locales.HintShowChanges(), showChangesKeys},
+		{locales.HintFindReferences(), findReferencesKeys},
 	}
+	hints = slices.DeleteFunc(hints, func(hint noFileHint) bool { return hint.keys.binding(a.settings).key == "" })
 	ui.Column(c).Grow(1).FillWidth().Center().Gap(8).Children(func() {
 		ui.Icon(c, iconPerch).FontSize(32).TextColor(colors.border)
 		ui.Text(c, locales.ChooseFileToRead()).TextColor(colors.muted)
@@ -139,7 +111,7 @@ func (a *App) noFileView(c *ui.Context) {
 			ui.Column(c).Gap(7).AlignItems(ui.Start).Children(func() {
 				for _, hint := range hints {
 					ui.Box(c).Height(noFileHintHeight).Center().Children(func() {
-						a.keycapView(c, shortcutLabel(runtime.GOOS, hint.keys))
+						a.keycapView(c, hint.keys.binding(a.settings).label())
 					})
 				}
 			})

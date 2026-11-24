@@ -8,9 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
-	"runtime"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -310,7 +308,7 @@ func (a *App) recentProjectsView(c *ui.Context) {
 		return
 	}
 	for place, project := range projects[:min(len(projects), recentNumbered)] {
-		if c.Shortcut(ui.Cmd, tabNumberKeys[place]) {
+		if numberedTabKeys[place].pressed(c, a.settings) {
 			a.openRecentProject(project.root)
 		}
 	}
@@ -354,7 +352,7 @@ func (a *App) recentProjectRow(c *ui.Context, project recentProject, place int, 
 			ui.Text(c, about).FontSize(smallFontSize - 1).TextColor(colors.muted).MaxLines(1).Shrink(0)
 		}
 		if place < recentNumbered {
-			a.keycapView(c, shortcutLabel(runtime.GOOS, shortcut{command: true, key: strconv.Itoa(place + 1)}))
+			a.keycapView(c, numberedTabKeys[place].binding(a.settings).label())
 		}
 	})
 	if clicked {

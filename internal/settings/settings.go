@@ -68,6 +68,8 @@ type Settings struct {
 	WordWrap     bool         `json:"wordWrap"`
 	MarkdownView MarkdownView `json:"markdownView"`
 	DiffLayout   DiffLayout   `json:"diffLayout"`
+	// Shortcuts holds only overrides, keyed by command ID. An empty value unbinds it.
+	Shortcuts map[string]string `json:"shortcuts,omitempty"`
 	// DisabledLanguages are the IDs of the language servers turned off.
 	DisabledLanguages []string `json:"disabledLanguages,omitempty"`
 }

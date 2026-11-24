@@ -271,5 +271,21 @@
   "searchEmptyHint": "搜索整个项目的文本文件，跳过 Git 忽略的文件；Aa 区分大小写，.* 使用正则表达式。",
   "recentSearches": "最近搜索",
   "refreshFileTree": "刷新",
-  "collapseAll": "全部折叠"
+  "collapseAll": "全部折叠",
+  "sectionShortcuts": "快捷键",
+  "cycleNextTab": "下一个标签页（备用）",
+  "cyclePreviousTab": "上一个标签页（备用）",
+  "shortcutTabs": "标签页",
+  "shortcutTabNumber": "切换到第 {number} 个标签页",
+  "shortcutLastTab": "切换到最后一个标签页",
+  "changeShortcut": "修改“{action}”的快捷键",
+  "shortcutUnassigned": "未设置",
+  "shortcutModifiers": "修饰键",
+  "chooseShortcutKey": "选择按键",
+  "shortcutKey": "按键",
+  "shortcutRecentHint": "在欢迎页，此快捷键也会打开相同位置的最近项目。",
+  "shortcutNeedsModifier": "请选择按键，并搭配 Shift 以外的修饰键，或直接使用 F1–F12。",
+  "shortcutConflict": "“{action}”已使用此快捷键。",
+  "shortcutDefault": "恢复默认",
+  "shortcutClear": "清除"
 }
