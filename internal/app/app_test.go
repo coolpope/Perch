@@ -1571,6 +1571,42 @@ func TestBeginReviewRemembersAFolderOutsideGit(t *testing.T) {
 	}
 }
 
+func TestGitButtonDefersBackgroundRefreshWhileWindowHidden(t *testing.T) {
+	root := reviewedRepository(t)
+	a, tester, posted := openWithPosts(t, root)
+	t.Cleanup(a.stopChanges)
+	a.after = func(_ time.Duration, action func()) { go a.post(action) }
+	tester.Frame()
+	a.beginReview()
+	followPosts(t, posted, tester, func() bool {
+		return a.review.loaded && !a.review.opening && !a.review.busy()
+	})
+	accent := a.look.palette.accent
+	wantDot := uint32(accent.R)<<16 | uint32(accent.G)<<8 | uint32(accent.B)
+
+	// While nothing of the window is on screen, file events must not schedule
+	// timers or run Git refreshes.
+	tester.SetWindowHidden(true)
+	writeFile(t, root, "a.go", "package a\n\nfunc First() {}\n")
+	a.applyFileEvents([]mygo.FileEvent{{Op: mygo.FileWrite, Path: "a.go"}})
+	writeFile(t, root, "b.go", "package b\n\nfunc Second() {}\n")
+	a.applyFileEvents([]mygo.FileEvent{{Op: mygo.FileWrite, Path: "b.go"}})
+	if a.review.queued || a.review.busy() || !a.review.staleWhileHidden || a.review.unread != 0 {
+		t.Fatalf("while hidden: queued=%v busy=%v stale=%v unread=%d",
+			a.review.queued, a.review.busy(), a.review.staleWhileHidden, a.review.unread)
+	}
+
+	// Returning to screen runs one refresh immediately and lights the dot.
+	tester.SetWindowHidden(false)
+	waitForUnread(t, a, tester, posted, 2)
+	if a.review.staleWhileHidden {
+		t.Error("staleWhileHidden stayed true after returning to screen")
+	}
+	if got := gitMarkPixel(t, tester); got != wantDot {
+		t.Errorf("returning to screen did not light the dot: %06x, want %06x", got, wantDot)
+	}
+}
+
 func TestLinesMapAcrossADiff(t *testing.T) {
 	hunks := []editor.DiffHunk{{OldStart: 2, OldEnd: 4, NewStart: 2, NewEnd: 7}}
 	cases := []struct {

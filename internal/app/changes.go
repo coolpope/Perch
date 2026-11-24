@@ -79,12 +79,13 @@ type changesPanel struct {
 	store *review.Store
 	// listing is the changes compared with what compare names. Its Version
 	// is the review's snapshot, or the commit the work tree is compared with.
-	listing       review.Listing
-	unread        int
-	loaded        bool
-	notRepository bool
-	opening       bool
-	failure       string
+	listing          review.Listing
+	unread           int
+	loaded           bool
+	notRepository    bool
+	opening          bool
+	staleWhileHidden bool
+	failure          string
 
 	compare int
 	// branch is the branch compareBranch compares with.
@@ -122,6 +123,22 @@ type changesPanel struct {
 	baselineKey    lineBaselineKey
 	// landing is where the next file shown by moving between changes lands.
 	landing changeLanding
+}
+
+// setWindowHidden pauses automatic review refreshes while nothing of the window
+// shows on screen, and runs one refresh as soon as the window returns if files
+// changed meanwhile.
+func (a *App) setWindowHidden(hidden bool) {
+	if a.windowHidden == hidden {
+		return
+	}
+	a.windowHidden = hidden
+	if !hidden && a.review.staleWhileHidden {
+		a.review.staleWhileHidden = false
+		if !a.review.notRepository && a.root != "" {
+			a.refreshChanges()
+		}
+	}
 }
 
 // showsChangesPanel reports whether the Git page is currently visible in the
@@ -198,6 +215,10 @@ func (a *App) reviewBegun(ctx context.Context, store *review.Store, outside bool
 		return
 	}
 	a.review.store = store
+	if a.windowHidden {
+		a.review.staleWhileHidden = true
+		return
+	}
 	a.refreshChanges()
 }
 
@@ -238,7 +259,7 @@ func (a *App) refreshChanges() {
 	if r.ctx == nil {
 		r.ctx, r.cancel = context.WithCancel(context.Background())
 	}
-	r.running, r.again = true, false
+	r.running, r.again, r.staleWhileHidden = true, false, false
 	ctx, store, root := r.ctx, r.store, a.root
 	request := a.changesRequest()
 	go func() {
@@ -350,7 +371,12 @@ func (a *App) changesListed(ctx context.Context, request compareRequest, reading
 			}
 		}
 		if r.again {
-			a.refreshChanges()
+			r.again = false
+			if a.windowHidden {
+				r.staleWhileHidden = true
+			} else {
+				a.refreshChanges()
+			}
 		}
 		return
 	}
@@ -374,7 +400,12 @@ func (a *App) changesListed(ctx context.Context, request compareRequest, reading
 		a.refreshTreeStatus()
 	}
 	if r.again {
-		a.refreshChanges()
+		r.again = false
+		if a.windowHidden {
+			r.staleWhileHidden = true
+		} else {
+			a.refreshChanges()
+		}
 	}
 }
 
@@ -402,13 +433,20 @@ func (r *changesPanel) change(relPath string) (review.Change, bool) {
 }
 
 // scheduleChangesRefresh follows the disk wherever the sidebar stands, waiting
-// for a burst of writes to pass. When the Git page is hidden or behind another
-// sidebar view, the refresh reads only the review for the Git button's mark.
+// for a burst of writes to pass. While nothing of the window shows on screen,
+// changes are remembered and refreshed once the window returns.
 func (a *App) scheduleChangesRefresh() {
 	r := &a.review
 	// Outside Git there is nothing to list; while beginReview is still opening
 	// the store, reviewBegun starts the first refresh.
-	if r.queued || r.notRepository || (r.opening && r.store == nil) || a.root == "" {
+	if r.notRepository || (r.opening && r.store == nil) || a.root == "" {
+		return
+	}
+	if a.windowHidden {
+		r.staleWhileHidden = true
+		return
+	}
+	if r.queued {
 		return
 	}
 	ctx := r.ctx
@@ -419,6 +457,10 @@ func (a *App) scheduleChangesRefresh() {
 		}
 		a.review.queued = false
 		if a.review.notRepository || a.root == "" {
+			return
+		}
+		if a.windowHidden {
+			a.review.staleWhileHidden = true
 			return
 		}
 		a.refreshChanges()

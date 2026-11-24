@@ -63,6 +63,7 @@ func (a *App) view(c *ui.Context) {
 		a.settingsView(c)
 		return
 	}
+	a.setWindowHidden(c.WindowHidden())
 	a.sidebarWidth = max(a.sidebarWidth, minSidebarWidth)
 	if a.sidebarHidden {
 		a.mainView(c)
