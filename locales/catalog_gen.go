@@ -2917,3 +2917,163 @@ func TabCloseAll() string { return In(i18n.Locale()).TabCloseAll() }
 func (msgs Messages) TabCloseAll() string {
 	return Catalog.Format(msgs.locale, "tabCloseAll", nil)
 }
+
+// SectionShortcuts says "Shortcuts"
+// in the language the app shows.
+func SectionShortcuts() string { return In(i18n.Locale()).SectionShortcuts() }
+
+// SectionShortcuts says "Shortcuts"
+// in the language of msgs.
+func (msgs Messages) SectionShortcuts() string {
+	return Catalog.Format(msgs.locale, "sectionShortcuts", nil)
+}
+
+// CycleNextTab says "Next Tab (alternate)"
+// in the language the app shows.
+func CycleNextTab() string { return In(i18n.Locale()).CycleNextTab() }
+
+// CycleNextTab says "Next Tab (alternate)"
+// in the language of msgs.
+func (msgs Messages) CycleNextTab() string {
+	return Catalog.Format(msgs.locale, "cycleNextTab", nil)
+}
+
+// CyclePreviousTab says "Previous Tab (alternate)"
+// in the language the app shows.
+func CyclePreviousTab() string { return In(i18n.Locale()).CyclePreviousTab() }
+
+// CyclePreviousTab says "Previous Tab (alternate)"
+// in the language of msgs.
+func (msgs Messages) CyclePreviousTab() string {
+	return Catalog.Format(msgs.locale, "cyclePreviousTab", nil)
+}
+
+// ShortcutTabs says "Tabs"
+// in the language the app shows.
+func ShortcutTabs() string { return In(i18n.Locale()).ShortcutTabs() }
+
+// ShortcutTabs says "Tabs"
+// in the language of msgs.
+func (msgs Messages) ShortcutTabs() string {
+	return Catalog.Format(msgs.locale, "shortcutTabs", nil)
+}
+
+// ShortcutTabNumber says "Switch to Tab {number}"
+// in the language the app shows.
+func ShortcutTabNumber(number int) string { return In(i18n.Locale()).ShortcutTabNumber(number) }
+
+// ShortcutTabNumber says "Switch to Tab {number}"
+// in the language of msgs.
+func (msgs Messages) ShortcutTabNumber(number int) string {
+	return Catalog.Format(msgs.locale, "shortcutTabNumber", map[string]any{"number": number})
+}
+
+// ShortcutLastTab says "Switch to Last Tab"
+// in the language the app shows.
+func ShortcutLastTab() string { return In(i18n.Locale()).ShortcutLastTab() }
+
+// ShortcutLastTab says "Switch to Last Tab"
+// in the language of msgs.
+func (msgs Messages) ShortcutLastTab() string {
+	return Catalog.Format(msgs.locale, "shortcutLastTab", nil)
+}
+
+// ChangeShortcut says "Change shortcut for {action}"
+// in the language the app shows.
+func ChangeShortcut(action string) string { return In(i18n.Locale()).ChangeShortcut(action) }
+
+// ChangeShortcut says "Change shortcut for {action}"
+// in the language of msgs.
+func (msgs Messages) ChangeShortcut(action string) string {
+	return Catalog.Format(msgs.locale, "changeShortcut", map[string]any{"action": action})
+}
+
+// ShortcutUnassigned says "Unassigned"
+// in the language the app shows.
+func ShortcutUnassigned() string { return In(i18n.Locale()).ShortcutUnassigned() }
+
+// ShortcutUnassigned says "Unassigned"
+// in the language of msgs.
+func (msgs Messages) ShortcutUnassigned() string {
+	return Catalog.Format(msgs.locale, "shortcutUnassigned", nil)
+}
+
+// ShortcutModifiers says "Modifier keys"
+// in the language the app shows.
+func ShortcutModifiers() string { return In(i18n.Locale()).ShortcutModifiers() }
+
+// ShortcutModifiers says "Modifier keys"
+// in the language of msgs.
+func (msgs Messages) ShortcutModifiers() string {
+	return Catalog.Format(msgs.locale, "shortcutModifiers", nil)
+}
+
+// ChooseShortcutKey says "Choose a key"
+// in the language the app shows.
+func ChooseShortcutKey() string { return In(i18n.Locale()).ChooseShortcutKey() }
+
+// ChooseShortcutKey says "Choose a key"
+// in the language of msgs.
+func (msgs Messages) ChooseShortcutKey() string {
+	return Catalog.Format(msgs.locale, "chooseShortcutKey", nil)
+}
+
+// ShortcutKey says "Key"
+// in the language the app shows.
+func ShortcutKey() string { return In(i18n.Locale()).ShortcutKey() }
+
+// ShortcutKey says "Key"
+// in the language of msgs.
+func (msgs Messages) ShortcutKey() string {
+	return Catalog.Format(msgs.locale, "shortcutKey", nil)
+}
+
+// ShortcutRecentHint says "On the welcome screen, this also opens the recent project in the same position."
+// in the language the app shows.
+func ShortcutRecentHint() string { return In(i18n.Locale()).ShortcutRecentHint() }
+
+// ShortcutRecentHint says "On the welcome screen, this also opens the recent project in the same position."
+// in the language of msgs.
+func (msgs Messages) ShortcutRecentHint() string {
+	return Catalog.Format(msgs.locale, "shortcutRecentHint", nil)
+}
+
+// ShortcutNeedsModifier says "Choose a key and add a modifier other than Shift, or use F1–F12."
+// in the language the app shows.
+func ShortcutNeedsModifier() string { return In(i18n.Locale()).ShortcutNeedsModifier() }
+
+// ShortcutNeedsModifier says "Choose a key and add a modifier other than Shift, or use F1–F12."
+// in the language of msgs.
+func (msgs Messages) ShortcutNeedsModifier() string {
+	return Catalog.Format(msgs.locale, "shortcutNeedsModifier", nil)
+}
+
+// ShortcutConflict says "Already used by “{action}”."
+// in the language the app shows.
+func ShortcutConflict(action string) string { return In(i18n.Locale()).ShortcutConflict(action) }
+
+// ShortcutConflict says "Already used by “{action}”."
+// in the language of msgs.
+func (msgs Messages) ShortcutConflict(action string) string {
+	return Catalog.Format(msgs.locale, "shortcutConflict", map[string]any{"action": action})
+}
+
+// ShortcutDefault says "Restore Default"
+// in the language the app shows.
+func ShortcutDefault() string { return In(i18n.Locale()).ShortcutDefault() }
+
+// ShortcutDefault says "Restore Default"
+// in the language of msgs.
+func (msgs Messages) ShortcutDefault() string {
+	return Catalog.Format(msgs.locale, "shortcutDefault", nil)
+}
+
+// ShortcutClear says "Clear"
+// in the language the app shows.
+func ShortcutClear() string { return In(i18n.Locale()).ShortcutClear() }
+
+// ShortcutClear says "Clear"
+// in the language of msgs.
+func (msgs Messages) ShortcutClear() string {
+	return Catalog.Format(msgs.locale, "shortcutClear", nil)
+}

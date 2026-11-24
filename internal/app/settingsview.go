@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/egoist/mygo/ui"
@@ -37,6 +38,7 @@ const (
 	settingsEditor
 	settingsReading
 	settingsLanguages
+	settingsShortcuts
 )
 
 // settingsNavItem is a page in the list beside the settings.
@@ -60,18 +62,21 @@ func settingsNavItems() []settingsNavItem {
 		{settingsEditor, iconCode, locales.SectionEditor()},
 		{settingsReading, iconBook, locales.SectionReading()},
 		{settingsLanguages, iconBraces, locales.SettingLanguageServers()},
+		{settingsShortcuts, iconKeyboard, locales.SectionShortcuts()},
 	}
 }
 
 // showSettings opens the settings over the window, on their first page.
 func (a *App) showSettings() {
 	a.languages = languagesPage{}
+	a.shortcutEdit = shortcutEdit{}
 	a.settingsPage = settingsAppearance
 	a.settingsOpen = true
 }
 
 // chooseSettingsPage shows a page, finding out what it lists the first time.
 func (a *App) chooseSettingsPage(page settingsPage) {
+	a.shortcutEdit = shortcutEdit{}
 	a.settingsPage = page
 	if page == settingsLanguages && !a.languages.open {
 		a.showLanguages()
@@ -80,9 +85,10 @@ func (a *App) chooseSettingsPage(page settingsPage) {
 
 // updateSettings applies new settings to every window.
 func (a *App) updateSettings(next settings.Settings) {
-	a.settings = next
 	if a.desktop != nil {
 		a.desktop.settingsChanged(next)
+	} else {
+		a.setWindowSettings(next)
 	}
 }
 
@@ -113,6 +119,13 @@ func (a *App) resetFontSize() {
 	a.updateSettings(next)
 }
 
+func (a *App) setWindowSettings(next settings.Settings) {
+	if !maps.Equal(a.settings.Shortcuts, next.Shortcuts) {
+		a.editorBindings = editorShortcutBindings(next)
+	}
+	a.settings = next
+}
+
 // codeFont returns the font of code in the current settings.
 func (a *App) codeFont() ui.Font {
 	return ui.Font{Size: float32(a.settings.FontSize)}
@@ -120,6 +133,7 @@ func (a *App) codeFont() ui.Font {
 
 // applyEditorSettings gives an editor the current settings.
 func (a *App) applyEditorSettings(state *editor.State) {
+	state.Bindings = a.editorBindings
 	state.Font = a.codeFont()
 	state.TabSize = a.settings.TabSize
 	state.SoftWrap = a.settings.WordWrap
@@ -127,6 +141,7 @@ func (a *App) applyEditorSettings(state *editor.State) {
 
 // applyDiffSettings gives a change's diff the current settings.
 func (a *App) applyDiffSettings(diff *editor.DiffState) {
+	diff.Bindings = a.editorBindings
 	diff.Font = a.codeFont()
 	diff.TabSize = a.settings.TabSize
 	diff.Wrap = a.settings.WordWrap
@@ -203,7 +218,7 @@ func (a *App) settingsPageView(c *ui.Context) {
 			}
 			button.Children(func() { ui.Icon(c, iconClose).FontSize(14).TextColor(colors.muted) })
 		})
-		c.Key(title)
+		c.Key(title + a.shortcutEdit.action.id)
 		ui.Scroll(c).FillWidth().Grow(1).Basis(0).MinHeight(0).Children(func() {
 			ui.Column(c).FillWidth().Gap(20).Padding(2, settingsPagePad, settingsPagePad, settingsPagePad).Children(func() {
 				a.settingsPageContent(c)
@@ -225,6 +240,8 @@ func (a *App) settingsPageContent(c *ui.Context) {
 			settingLine{label: locales.SettingMarkdown(), control: func() { a.markdownViewControl(c) }},
 			settingLine{label: locales.SettingDiff(), control: func() { a.diffLayoutControl(c) }},
 		)
+	case settingsShortcuts:
+		a.shortcutSettingsView(c)
 	case settingsLanguages:
 		a.languagesContent(c)
 	default:

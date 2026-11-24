@@ -418,5 +418,28 @@
   "menuRevealInTree": "Reveal in File Tree",
   "tabCloseOthers": "Close Other Tabs",
   "tabCloseRight": "Close Tabs to the Right",
-  "tabCloseAll": "Close All Tabs"
+  "tabCloseAll": "Close All Tabs",
+  "sectionShortcuts": "Shortcuts",
+  "cycleNextTab": "Next Tab (alternate)",
+  "cyclePreviousTab": "Previous Tab (alternate)",
+  "shortcutTabs": "Tabs",
+  "shortcutTabNumber": "Switch to Tab {number}",
+  "@shortcutTabNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "shortcutLastTab": "Switch to Last Tab",
+  "changeShortcut": "Change shortcut for {action}",
+  "shortcutUnassigned": "Unassigned",
+  "shortcutModifiers": "Modifier keys",
+  "chooseShortcutKey": "Choose a key",
+  "shortcutKey": "Key",
+  "shortcutRecentHint": "On the welcome screen, this also opens the recent project in the same position.",
+  "shortcutNeedsModifier": "Choose a key and add a modifier other than Shift, or use F1–F12.",
+  "shortcutConflict": "Already used by “{action}”.",
+  "shortcutDefault": "Restore Default",
+  "shortcutClear": "Clear"
 }

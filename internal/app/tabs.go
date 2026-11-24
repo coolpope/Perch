@@ -30,11 +30,6 @@ type closedTab struct {
 	source   bool
 }
 
-// tabNumberKeys are the keys that choose a tab by its place, from the first.
-var tabNumberKeys = []ui.Key{
-	ui.Key1, ui.Key2, ui.Key3, ui.Key4, ui.Key5, ui.Key6, ui.Key7, ui.Key8, ui.Key9,
-}
-
 // tabAfter returns the tab step places from active, going round the ends.
 func tabAfter(active int, count int, step int) int {
 	return (active + step + count) % count
@@ -71,16 +66,16 @@ func (a *App) showTab(index int) {
 	}
 }
 
-// tabShortcuts switches tabs with Control+Tab and Command+number.
+// tabShortcuts switches tabs with the configured cycle and position keys.
 func (a *App) tabShortcuts(c *ui.Context) {
-	if c.Shortcut(ui.Ctrl, ui.KeyTab) {
+	if cycleNextKeys.pressed(c, a.settings) {
 		a.nextTab()
 	}
-	if c.Shortcut(ui.Ctrl|ui.Shift, ui.KeyTab) {
+	if cyclePreviousKeys.pressed(c, a.settings) {
 		a.previousTab()
 	}
-	for place, key := range tabNumberKeys {
-		if !c.Shortcut(ui.Cmd, key) {
+	for place, key := range numberedTabKeys {
+		if !key.pressed(c, a.settings) {
 			continue
 		}
 		if index, found := tabAtNumber(place+1, len(a.documents)); found {

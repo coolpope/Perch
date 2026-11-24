@@ -5,7 +5,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"maps"
 	"path/filepath"
+	"runtime"
 	"slices"
 
 	"github.com/egoist/mygo"
@@ -78,6 +80,9 @@ func (d *Desktop) loadSettings() error {
 	d.recent = loadRecent(d.recentFile)
 	d.sessionDir = filepath.Join(dir, sessionsDirName)
 	loaded, err := settings.Load(d.settingsFile)
+	if len(loaded.Shortcuts) > 0 {
+		loaded.Shortcuts = cleanShortcutOverrides(loaded.Shortcuts, d.menu())
+	}
 	d.settings = loaded
 	applyAppearance(loaded.Appearance)
 	return err
@@ -96,11 +101,15 @@ func applyAppearance(appearance settings.Appearance) {
 
 // settingsChanged applies new settings to every window and saves them.
 func (d *Desktop) settingsChanged(next settings.Settings) {
+	shortcutsChanged := !maps.Equal(next.Shortcuts, d.settings.Shortcuts)
 	appearanceChanged := next.Appearance != d.settings.Appearance
 	d.settings = next
 	for _, a := range d.windows {
-		a.settings = next
+		a.setWindowSettings(next)
 		a.window.Update(func() {})
+	}
+	if shortcutsChanged {
+		mygo.App.SetMenu(d.menu())
 	}
 	if appearanceChanged {
 		applyAppearance(next.Appearance)
@@ -149,7 +158,7 @@ func (d *Desktop) openLaunch(args []string, workingDir string) {
 func (d *Desktop) openWindow(root string) {
 	a := New()
 	a.desktop = d
-	a.settings = d.settings
+	a.setWindowSettings(d.settings)
 	a.languageFile = d.languageFile
 	a.session.dir = d.sessionDir
 	a.chosenLanguage = mygo.App.ChosenLocale
@@ -272,11 +281,16 @@ func (d *Desktop) appOf(window *mygo.Window) *App {
 }
 
 func (d *Desktop) menu() *mygo.Menu {
+	windowMenu := &mygo.MenuItem{Role: mygo.RoleWindowMenu}
+	if runtime.GOOS != "darwin" {
+		// The framework also binds Close Window to Ctrl+W in this menu.
+		windowMenu.Submenu = []*mygo.MenuItem{{Role: mygo.RoleMinimize}, d.menuItem(closeWindowKeys, func(a *App) { a.window.Close() })}
+	}
 	return mygo.NewMenu([]*mygo.MenuItem{
 		{Label: "Perch", Submenu: []*mygo.MenuItem{
 			{Role: mygo.RoleAbout},
 			mygo.Separator(),
-			d.menuItem(locales.MenuSettings(), "CmdOrCtrl+,", (*App).showSettings),
+			d.menuItem(settingsKeys, (*App).showSettings),
 			mygo.Separator(),
 			{Role: mygo.RoleServices},
 			mygo.Separator(),
@@ -287,64 +301,64 @@ func (d *Desktop) menu() *mygo.Menu {
 			{Role: mygo.RoleQuit},
 		}},
 		{Label: locales.MenuFile(), Submenu: []*mygo.MenuItem{
-			{Label: locales.MenuNewWindow(), Accelerator: "CmdOrCtrl+Shift+N", Click: func(*mygo.MenuItem, *mygo.Window) { d.newWindow() }},
-			d.menuItem(locales.MenuOpenFolder(), "CmdOrCtrl+O", (*App).chooseFolder),
+			{Label: newWindowKeys.label(), Accelerator: newWindowKeys.binding(d.settings).accelerator(), Click: func(*mygo.MenuItem, *mygo.Window) { d.newWindow() }},
+			d.menuItem(openFolderKeys, (*App).chooseFolder),
 			{Label: locales.MenuOpenRecent(), Submenu: d.recentMenuItems()},
-			d.menuItem(locales.MenuGoToFile(), "CmdOrCtrl+P", (*App).showQuickOpen),
+			d.menuItem(goToFileKeys, (*App).showQuickOpen),
 			mygo.Separator(),
-			d.menuItem(locales.Save(), "CmdOrCtrl+S", (*App).saveActive),
-			d.menuItem(locales.MenuCopyLineRef(), "CmdOrCtrl+Shift+C", (*App).copyLineReference),
+			d.menuItem(saveKeys, (*App).saveActive),
+			d.menuItem(copyLineRefKeys, (*App).copyLineReference),
 			mygo.Separator(),
-			d.menuItem(locales.CloseTab(), "CmdOrCtrl+W", (*App).closeActiveTab),
-			d.menuItem(locales.MenuReopenClosedTab(), "CmdOrCtrl+Shift+T", (*App).reopenClosedTab),
-			d.menuItem(locales.MenuCloseWindow(), "CmdOrCtrl+Shift+W", func(a *App) { a.window.Close() }),
+			d.menuItem(closeTabKeys, (*App).closeActiveTab),
+			d.menuItem(reopenClosedTabKeys, (*App).reopenClosedTab),
+			d.menuItem(closeWindowKeys, func(a *App) { a.window.Close() }),
 		}},
 		{Role: mygo.RoleEditMenu},
 		{Label: locales.MenuFind(), Submenu: []*mygo.MenuItem{
-			d.menuItem(locales.MenuFindInFile(), "CmdOrCtrl+F", func(a *App) { a.runFind(editor.Find) }),
-			d.menuItem(locales.MenuFindReplace(), "CmdOrCtrl+Alt+F", func(a *App) { a.runFind(editor.FindReplace) }),
+			d.menuItem(findInFileKeys, func(a *App) { a.runFind(editor.Find) }),
+			d.menuItem(findReplaceKeys, func(a *App) { a.runFind(editor.FindReplace) }),
 			mygo.Separator(),
-			d.menuItem(locales.MenuFindInFiles(), "CmdOrCtrl+Shift+F", (*App).showFindInFiles),
+			d.menuItem(findInFilesKeys, (*App).showFindInFiles),
 		}},
 		{Label: locales.MenuGo(), Submenu: []*mygo.MenuItem{
-			d.menuItem(locales.MenuGoToLine(), "Ctrl+G", (*App).showGoToLine),
-			d.menuItem(locales.MenuGoToSymbol(), "CmdOrCtrl+Shift+O", (*App).showOutline),
-			d.menuItem(locales.MenuGoToProjectSymbol(), "CmdOrCtrl+T", (*App).showProjectSymbols),
-			d.menuItem(locales.MenuGoToDefinition(), "F12", (*App).definitionAtCaret),
-			d.menuItem(locales.MenuFindReferences(), "Shift+F12", (*App).referencesAtCaret),
+			d.menuItem(goToLineKeys, (*App).showGoToLine),
+			d.menuItem(goToSymbolKeys, (*App).showOutline),
+			d.menuItem(goToProjectSymbolKeys, (*App).showProjectSymbols),
+			d.menuItem(goToDefinitionKeys, (*App).definitionAtCaret),
+			d.menuItem(findReferencesKeys, (*App).referencesAtCaret),
 			mygo.Separator(),
-			d.menuItem(locales.MenuGoBack(), "Ctrl+-", (*App).goBack),
-			d.menuItem(locales.MenuGoForward(), "Ctrl+Shift+-", (*App).goForward),
+			d.menuItem(goBackKeys, (*App).goBack),
+			d.menuItem(goForwardKeys, (*App).goForward),
 			mygo.Separator(),
-			d.menuItem(locales.MenuNextTab(), "CmdOrCtrl+Shift+]", (*App).nextTab),
-			d.menuItem(locales.MenuPreviousTab(), "CmdOrCtrl+Shift+[", (*App).previousTab),
+			d.menuItem(nextTabKeys, (*App).nextTab),
+			d.menuItem(previousTabKeys, (*App).previousTab),
 		}},
 		{Label: locales.MenuView(), Submenu: []*mygo.MenuItem{
-			d.menuItem(locales.MenuToggleSidebar(), "CmdOrCtrl+B", (*App).toggleSidebar),
-			d.menuItem(locales.MenuRevealInTree(), "CmdOrCtrl+Shift+E", (*App).revealActiveFile),
-			d.menuItem(locales.MenuToggleMarkdown(), "CmdOrCtrl+Shift+V", (*App).toggleMarkdownView),
-			d.menuItem(locales.CollapseAll(), "", (*App).collapseFileTree),
+			d.menuItem(toggleSidebarKeys, (*App).toggleSidebar),
+			d.menuItem(revealInTreeKeys, (*App).revealActiveFile),
+			d.menuItem(toggleMarkdownKeys, (*App).toggleMarkdownView),
+			d.menuItem(collapseAllKeys, (*App).collapseFileTree),
 			mygo.Separator(),
-			d.menuItem(locales.MenuZoomIn(), "CmdOrCtrl+=", func(a *App) { a.changeFontSize(1) }),
-			d.menuItem(locales.MenuZoomOut(), "CmdOrCtrl+-", func(a *App) { a.changeFontSize(-1) }),
-			d.menuItem(locales.MenuResetZoom(), "CmdOrCtrl+0", (*App).resetFontSize),
+			d.menuItem(zoomInKeys, func(a *App) { a.changeFontSize(1) }),
+			d.menuItem(zoomOutKeys, func(a *App) { a.changeFontSize(-1) }),
+			d.menuItem(resetZoomKeys, (*App).resetFontSize),
 			mygo.Separator(),
-			d.menuItem(locales.MenuShowChanges(), "CmdOrCtrl+Shift+R", (*App).showChanges),
-			d.menuItem(locales.MenuMarkReviewed(), "CmdOrCtrl+Enter", (*App).markSelectedReviewed),
+			d.menuItem(showChangesKeys, (*App).showChanges),
+			d.menuItem(markReviewedKeys, (*App).markSelectedReviewed),
 			mygo.Separator(),
-			d.menuItem(locales.MenuNextChange(), "Alt+F5", func(a *App) { a.moveToChange(1) }),
-			d.menuItem(locales.MenuPreviousChange(), "Alt+Shift+F5", func(a *App) { a.moveToChange(-1) }),
+			d.menuItem(nextChangeKeys, func(a *App) { a.moveToChange(1) }),
+			d.menuItem(previousChangeKeys, func(a *App) { a.moveToChange(-1) }),
 		}},
-		{Role: mygo.RoleWindowMenu},
+		windowMenu,
 	})
 }
 
 // menuItem runs action on the chosen window's app, as an update of that window
 // so that it redraws.
-func (d *Desktop) menuItem(label string, accelerator string, action func(*App)) *mygo.MenuItem {
+func (d *Desktop) menuItem(command shortcutAction, action func(*App)) *mygo.MenuItem {
 	return &mygo.MenuItem{
-		Label:       label,
-		Accelerator: accelerator,
+		Label:       command.label(),
+		Accelerator: command.binding(d.settings).accelerator(),
 		Click: func(_ *mygo.MenuItem, window *mygo.Window) {
 			a := d.appOf(window)
 			if a != nil {

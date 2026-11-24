@@ -76,10 +76,12 @@ type App struct {
 	// projectSymbols is the finder of symbols across the project.
 	projectSymbols projectSymbolsState
 
-	settings     settings.Settings
-	settingsOpen bool
-	settingsPage settingsPage
-	languages    languagesPage
+	settings       settings.Settings
+	settingsOpen   bool
+	settingsPage   settingsPage
+	editorBindings []editor.Binding
+	shortcutEdit   shortcutEdit
+	languages      languagesPage
 	// languageFile is the person's configuration of language servers, empty
 	// when there is no place for one.
 	languageFile string
