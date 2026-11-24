@@ -47,6 +47,7 @@ const (
 
 // view builds the window.
 func (a *App) view(c *ui.Context) {
+	a.pathPopover = nil
 	a.look = a.lookFor(c.Theme())
 	c.SetTheme(a.look.theme)
 	c.SetMenuPresentation(ui.PopoverMenus)
@@ -70,14 +71,14 @@ func (a *App) view(c *ui.Context) {
 			}).Fill()
 		})
 	}
-	a.closeTabAlert(c)
-	a.closeWindowAlert(c)
 	a.quickOpenView(c)
 	a.outlineView(c)
 	a.projectSymbolsView(c)
 	a.referencesView(c)
 	a.settingsView(c)
 	a.fileDialogView(c)
+	a.closeTabAlert(c)
+	a.closeWindowAlert(c)
 	a.trackSession()
 }
 

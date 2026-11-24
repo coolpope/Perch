@@ -62,7 +62,10 @@ func (a *App) pathLinkView(c *ui.Context, partPath string, isFile bool) {
 	if !s.open || s.anchor != partPath {
 		return
 	}
-	ui.Popover(c, button, &s.open, func() { a.folderListView(c) })
+	ui.Popover(c, button, &s.open, func() {
+		a.pathPopover = &s.open
+		a.folderListView(c)
+	})
 }
 
 // openFolderList lists the folder a part of the path is in.

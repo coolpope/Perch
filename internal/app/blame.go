@@ -208,6 +208,7 @@ func (a *App) gitButtonsView(c *ui.Context, d *document) {
 		return
 	}
 	ui.Popover(c, button, &h.open, func() {
+		a.pathPopover = &h.open
 		a.fileHistoryView(c)
 	})
 }
