@@ -39,13 +39,15 @@ type App struct {
 	window  *mygo.Window
 	root    string
 
-	entries      map[string]workspace.Entry
-	children     map[string][]string
-	ignored      ignoreMarks
-	tree         ui.OutlineState[string]
-	treeRow      int
-	sidebarWidth float32
-	sidebarTab   int
+	entries       map[string]workspace.Entry
+	children      map[string][]string
+	ignored       ignoreMarks
+	tree          ui.OutlineState[string]
+	treeRow       int
+	pendingReveal string
+	sidebarWidth  float32
+	sidebarTab    int
+	sidebarHidden bool
 
 	quick   quickOpen
 	outline outlineState
@@ -98,14 +100,20 @@ type App struct {
 	looks map[lookKey]*look
 
 	closingDocument *document
+	pendingClose    []*document
 	askCloseTab     bool
 	askCloseWindow  bool
 	closeConfirmed  bool
+
+	closedTabs  []closedTab
+	recentFiles []string
 
 	stopWatch context.CancelFunc
 
 	// trashItem moves a path to the system Trash. Tests replace it.
 	trashItem func(string) error
+	// copyText writes text to the system clipboard. Tests replace it.
+	copyText func(string)
 	// post runs a function on the main thread and redraws.
 	post func(func())
 	// after runs a function on the main thread once a delay has passed.
@@ -123,6 +131,7 @@ func New() *App {
 		looks:        map[lookKey]*look{},
 		settings:     settings.Default(),
 		trashItem:    mygo.Shell.TrashItem,
+		copyText:     mygo.Clipboard.WriteText,
 	}
 	a.post = func(action func()) { a.window.Update(action) }
 	a.after = func(time.Duration, func()) {}
@@ -158,16 +167,21 @@ func (a *App) loadFolder(root string) error {
 	a.files = fileTreeState{input: a.files.input}
 	a.sidebarWidth = initialSidebarWidth
 	a.sidebarTab = sidebarFiles
+	a.sidebarHidden = false
 	a.root = absolute
 	a.entries = map[string]workspace.Entry{}
 	a.children = map[string][]string{}
 	a.fileIcons = fileIconCache{}
 	a.tree = ui.OutlineState[string]{}
 	a.treeRow = noRow
+	a.pendingReveal = ""
 	a.closingDocument = nil
+	a.pendingClose = nil
 	a.askCloseTab = false
 	a.askCloseWindow = false
 	a.closeConfirmed = false
+	a.closedTabs = nil
+	a.recentFiles = nil
 	a.documents = nil
 	a.active = noDocument
 	a.notice = toast{}
@@ -204,6 +218,7 @@ func (a *App) openFile(relPath string) {
 	index := slices.IndexFunc(a.documents, func(d *document) bool { return d.path == relPath })
 	if index != noDocument {
 		a.active = index
+		a.recordRecentFile(relPath)
 		a.brief = toast{}
 		return
 	}
@@ -224,11 +239,13 @@ func (a *App) openFile(relPath string) {
 	d := newDocument(a.root, relPath, file)
 	a.attachMarkdownActions(d)
 	a.attachDefinitions(d)
+	a.attachEditorMenu(d)
 	if a.settings.MarkdownView == settings.MarkdownSource {
 		d.markdownView = markdownSource
 	}
 	a.documents = append(a.documents, d)
 	a.active = len(a.documents) - 1
+	a.recordRecentFile(relPath)
 }
 
 // openAt shows a file with the range from start to end selected.
@@ -327,6 +344,11 @@ func (a *App) closeActiveTab() {
 }
 
 func (a *App) closeTab(d *document) {
+	a.recordClosedTab(d)
+	a.closeTabUnrecorded(d)
+}
+
+func (a *App) closeTabUnrecorded(d *document) {
 	a.closeOutline()
 	index := slices.Index(a.documents, d)
 	if index == noDocument {

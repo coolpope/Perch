@@ -4,6 +4,9 @@ import (
 	"context"
 	"log/slog"
 	"path"
+	"slices"
+	"strconv"
+	"strings"
 
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
@@ -20,16 +23,29 @@ const (
 // quickOpen is the state of the file finder. It holds the file list only
 // while it shows, so that a closed finder costs no memory.
 type quickOpen struct {
-	open    bool
-	query   string
-	loaded  bool
-	listing search.Listing
-	matches []search.PathMatch
-	chosen  int
-	failure string
-	list    ui.ListState
-	input   ui.Handle
-	cancel  context.CancelFunc
+	open     bool
+	lineOnly bool
+	query    string
+	loaded   bool
+	listing  search.Listing
+	matches  []search.PathMatch
+	chosen   int
+	failure  string
+	list     ui.ListState
+	input    ui.Handle
+	cancel   context.CancelFunc
+}
+
+// showGoToLine opens the finder in line-jump mode for the active text file.
+func (a *App) showGoToLine() {
+	if a.activeTextDocument() == nil {
+		a.tell(toast{title: locales.OpenFileForLine()})
+		return
+	}
+	a.closeOutline()
+	a.hideQuickOpen()
+	a.quick = quickOpen{open: true, lineOnly: true}
+	a.quick.input.Focus()
 }
 
 // showQuickOpen opens the finder and lists the workspace's files. The goroutine
@@ -74,10 +90,76 @@ func (a *App) hideQuickOpen() {
 }
 
 func (a *App) rankQuickOpen() {
+	if a.quick.lineOnly {
+		a.quick.matches = nil
+		a.quick.chosen = 0
+		return
+	}
 	target := search.ParseTarget(a.quick.query)
-	a.quick.matches = search.RankPaths(a.quick.listing.Paths, target.Path, quickOpenLimit)
+	if strings.TrimSpace(target.Path) == "" {
+		activePath := ""
+		if d := a.activeDocument(); d != nil && !d.external {
+			activePath = d.path
+		}
+		a.quick.matches = recentFirstMatches(a.quick.listing.Paths, a.recentFiles, activePath, quickOpenLimit)
+	} else {
+		a.quick.matches = search.RankPaths(a.quick.listing.Paths, target.Path, quickOpenLimit)
+	}
 	a.quick.chosen = 0
 	a.quick.list.ScrollTo(0, ui.Start)
+}
+
+// recentFirstMatches orders recently visited workspace files ahead of the
+// sorted listing, placing other recent files before the active file so that
+// opening Quick Open and pressing Enter jumps back to the previous file.
+func recentFirstMatches(paths []string, recent []string, activePath string, limit int) []search.PathMatch {
+	if limit <= 0 || len(paths) == 0 {
+		return nil
+	}
+	matches := make([]search.PathMatch, 0, min(limit, len(paths)))
+	seen := make(map[string]struct{}, min(limit, len(recent)+1))
+	add := func(p string) {
+		if p == "" || len(matches) >= limit {
+			return
+		}
+		if _, dup := seen[p]; dup {
+			return
+		}
+		if _, found := slices.BinarySearch(paths, p); !found {
+			return
+		}
+		seen[p] = struct{}{}
+		matches = append(matches, search.PathMatch{Path: p})
+	}
+	for _, p := range recent {
+		if p != activePath {
+			add(p)
+		}
+	}
+	add(activePath)
+	for _, p := range paths {
+		if len(matches) >= limit {
+			break
+		}
+		if _, dup := seen[p]; dup {
+			continue
+		}
+		matches = append(matches, search.PathMatch{Path: p})
+	}
+	return matches
+}
+
+// parseLineNumber reads a 1-based line number, tolerating a leading colon.
+func parseLineNumber(query string) (int, bool) {
+	trimmed := strings.TrimPrefix(strings.TrimSpace(query), ":")
+	if trimmed == "" {
+		return 0, false
+	}
+	line, err := strconv.Atoi(trimmed)
+	if err != nil || line < 1 {
+		return 0, false
+	}
+	return line, true
 }
 
 func (a *App) moveQuickOpenChoice(step int) {
@@ -90,8 +172,22 @@ func (a *App) moveQuickOpenChoice(step int) {
 }
 
 // acceptQuickOpen goes to what the query names: a line of the current file
-// for a query such as ":42", and otherwise the chosen file.
+// for line-jump mode or a query such as ":42", and otherwise the chosen file.
 func (a *App) acceptQuickOpen() {
+	if a.quick.lineOnly {
+		d := a.activeTextDocument()
+		if d == nil {
+			a.hideQuickOpen()
+			return
+		}
+		line, ok := parseLineNumber(a.quick.query)
+		if !ok || line > d.editor.Buffer.LineCount() {
+			return
+		}
+		a.hideQuickOpen()
+		d.reveal(lineStart(line), lineStart(line))
+		return
+	}
 	target := search.ParseTarget(a.quick.query)
 	if target.Path == "" && target.Line > 0 {
 		a.hideQuickOpen()
@@ -146,7 +242,7 @@ func (a *App) quickOpenContent(c *ui.Context) {
 	ui.Column(c).FillWidth().Children(func() {
 		ui.Row(c).FillWidth().Padding(13, 16).Children(func() {
 			input := ui.TextInputBase(c, &a.quick.query).Bind(&a.quick.input).Grow(1).FontSize(15).
-				Placeholder(locales.GoToFilePlaceholder()).Label(locales.GoToFile())
+				Placeholder(a.quickOpenPlaceholder()).Label(locales.GoToFile())
 			if input.Changed() {
 				a.rankQuickOpen()
 			}
@@ -178,10 +274,34 @@ func (a *App) quickOpenResults(c *ui.Context) {
 	}
 }
 
+func (a *App) quickOpenPlaceholder() string {
+	if a.quick.lineOnly {
+		if d := a.activeTextDocument(); d != nil {
+			return locales.GoToLinePlaceholder(d.editor.Buffer.LineCount())
+		}
+	}
+	return locales.GoToFilePlaceholder()
+}
+
 // quickOpenMessage says why the finder shows no rows, and is empty when it
 // has rows to show.
 func (a *App) quickOpenMessage() string {
 	q := &a.quick
+	if q.lineOnly {
+		d := a.activeTextDocument()
+		if d == nil {
+			return locales.OpenFileForLine()
+		}
+		count := d.editor.Buffer.LineCount()
+		trimmed := strings.TrimSpace(q.query)
+		if trimmed == "" || trimmed == ":" {
+			return locales.GoToLinePlaceholder(count)
+		}
+		if line, ok := parseLineNumber(trimmed); ok && line <= count {
+			return locales.PressEnterForLine(line)
+		}
+		return locales.GoToLineInvalid(count)
+	}
 	target := search.ParseTarget(q.query)
 	switch {
 	case q.failure != "":

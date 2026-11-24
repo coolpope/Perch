@@ -311,6 +311,7 @@ func (a *App) openRasterImage(relPath string) {
 	a.brief = toast{}
 	a.documents = append(a.documents, d)
 	a.active = len(a.documents) - 1
+	a.recordRecentFile(relPath)
 	a.startImageDecode(d, file)
 }
 
@@ -340,9 +341,11 @@ func (a *App) openSVGFile(relPath string) {
 	}
 	d := a.newSVGDocument(relPath, file)
 	a.attachDefinitions(d)
+	a.attachEditorMenu(d)
 	a.brief = toast{}
 	a.documents = append(a.documents, d)
 	a.active = len(a.documents) - 1
+	a.recordRecentFile(relPath)
 }
 
 // newSVGDocument makes an SVG's document, on its preview or its source when it

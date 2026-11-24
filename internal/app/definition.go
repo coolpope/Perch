@@ -255,6 +255,7 @@ func (a *App) openExternalFile(file string) {
 	}
 	d := newExternalDocument(file, text)
 	a.attachDefinitions(d)
+	a.attachEditorMenu(d)
 	a.documents = append(a.documents, d)
 	a.active = len(a.documents) - 1
 }

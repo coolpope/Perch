@@ -279,4 +279,6 @@ var (
 	iconBook       = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>`))
 	iconBraces     = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>`))
 	iconPerch      = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><path d="M3 20h18"/><path d="M11 20v-3"/><path d="M5 12a7 7 0 0 1 12.5-4.3L21 7l-2.6 3.1A7 7 0 0 1 12 17H9a4 4 0 0 1-4-4Z"/><path d="M15 9h.01"/></svg>`))
+	iconSidebar    = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>`))
+	iconLocate     = ui.MustParseSVG([]byte(`<svg ` + iconAttributes + `><line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/></svg>`))
 )

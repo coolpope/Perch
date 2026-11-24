@@ -390,5 +390,33 @@
   "searchEmptyHint": "Search the project’s text files, skipping files Git ignores; Aa matches case and .* uses regular expressions.",
   "recentSearches": "Recent searches",
   "refreshFileTree": "Refresh",
-  "collapseAll": "Collapse All"
+  "collapseAll": "Collapse All",
+  "menuToggleSidebar": "Toggle Sidebar",
+  "showSidebar": "Show Sidebar",
+  "menuZoomIn": "Zoom In",
+  "menuZoomOut": "Zoom Out",
+  "menuResetZoom": "Reset Zoom",
+  "menuReopenClosedTab": "Reopen Closed Tab",
+  "menuCopyLineRef": "Copy Line Reference",
+  "menuGoToLine": "Go to Line…",
+  "goToLinePlaceholder": "Go to line (1–{count})",
+  "@goToLinePlaceholder": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "goToLineInvalid": "Enter a line number from 1 to {count}",
+  "@goToLineInvalid": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "menuRevealInTree": "Reveal in File Tree",
+  "tabCloseOthers": "Close Other Tabs",
+  "tabCloseRight": "Close Tabs to the Right",
+  "tabCloseAll": "Close All Tabs"
 }

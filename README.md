@@ -86,6 +86,7 @@ On Windows and Linux, `⌘` is `Ctrl`, `⌥` is `Alt` and `⌃` is `Ctrl`.
 | Action | Shortcut |
 | --- | --- |
 | Go to file, or `file:line` | `⌘P` |
+| Go to line | `⌃G` |
 | Find in file | `⌘F` |
 | Find and replace | `⌥⌘F` |
 | Search the project | `⇧⌘F` |
@@ -96,11 +97,14 @@ On Windows and Linux, `⌘` is `Ctrl`, `⌥` is `Alt` and `⌃` is `Ctrl`.
 | Go back / forward | `⌃-` / `⌃⇧-` |
 | Next / previous tab | `⌃Tab` or `⇧⌘]` / `⌃⇧Tab` or `⇧⌘[` |
 | Tab 1 to 8 / last tab | `⌘1` to `⌘8` / `⌘9` |
+| Toggle sidebar / reveal in file tree | `⌘B` / `⇧⌘E` |
+| Zoom in / out / reset | `⌘=` / `⌘-` / `⌘0` |
+| Copy line reference | `⇧⌘C` |
 | Toggle Markdown preview | `⇧⌘V` |
 | Show changes | `⇧⌘R` |
 | Mark file reviewed | `⌘↩` |
 | Next / previous change | `⌥F5` / `⌥⇧F5` |
-| Save / close tab | `⌘S` / `⌘W` |
+| Save / close / reopen tab | `⌘S` / `⌘W` / `⇧⌘T` |
 | New window / open folder | `⇧⌘N` / `⌘O` |
 | Settings | `⌘,` |
 

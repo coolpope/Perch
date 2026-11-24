@@ -434,7 +434,7 @@ func (a *App) commitChangesView(c *ui.Context) {
 			default:
 				h.diff.Theme = a.look.code
 				a.applyDiffSettings(h.diff)
-				editor.DiffView(c, h.diff).Grow(1).FillWidth()
+				editor.DiffView(c, h.diff).Grow(1).FillWidth().ContextMenu(a.diffMenu)
 			}
 		})
 	})

@@ -47,6 +47,7 @@ type Session struct {
 	Active         int            `json:"active"`
 	SidebarWidth   float32        `json:"sidebarWidth"`
 	SidebarTab     string         `json:"sidebarTab"`
+	SidebarHidden  bool           `json:"sidebarHidden,omitempty"`
 	OpenFolders    []string       `json:"openFolders,omitempty"`
 	RecentSearches []RecentSearch `json:"recentSearches,omitempty"`
 }

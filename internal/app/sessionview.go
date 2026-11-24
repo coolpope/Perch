@@ -173,6 +173,7 @@ func (a *App) restoreSessionLayout(s session.Session) {
 		a.sidebarWidth = min(s.SidebarWidth, maxWidth)
 	}
 	a.sidebarTab = sessionSidebarTab(s.SidebarTab)
+	a.sidebarHidden = s.SidebarHidden
 	a.find.recent = s.RecentSearches[:min(len(s.RecentSearches), maxRecentSearches)]
 	a.tree.Open.Clear()
 	for _, dir := range s.OpenFolders {
@@ -269,6 +270,7 @@ func (a *App) addRestoredText(id uint64, tab session.Tab, file workspace.TextFil
 		a.attachMarkdownActions(d)
 	}
 	a.attachDefinitions(d)
+	a.attachEditorMenu(d)
 	a.applyRestoredView(d, tab)
 	a.restoreTabState(d, tab)
 	a.documents = append(a.documents, d)
@@ -397,6 +399,11 @@ func (a *App) sessionFingerprint() uint64 {
 	}
 	mix(uint64(a.sidebarTab))
 	mix(uint64(math.Float32bits(a.sidebarWidth)))
+	if a.sidebarHidden {
+		mix(1)
+	} else {
+		mix(0)
+	}
 	mix(uint64(a.active))
 	var folders uint64
 	for dir := range a.tree.Open.All() {
@@ -429,6 +436,7 @@ func (a *App) sessionSnapshot() session.Session {
 		Active:         noDocument,
 		SidebarWidth:   a.sidebarWidth,
 		SidebarTab:     sessionSidebarName(a.sidebarTab),
+		SidebarHidden:  a.sidebarHidden,
 		OpenFolders:    a.openTreePaths(),
 		RecentSearches: slices.Clone(a.find.recent),
 	}

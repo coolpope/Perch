@@ -123,6 +123,7 @@ func (a *App) showChanges() {
 	if a.root == "" {
 		return
 	}
+	a.sidebarHidden = false
 	a.sidebarTab = sidebarChanges
 	a.refreshChanges()
 }
@@ -911,7 +912,8 @@ func (a *App) changeView(c *ui.Context) {
 	default:
 		r.diff.Theme = a.look.code
 		a.applyDiffSettings(r.diff)
-		editor.DiffView(c, r.diff).Grow(1).FillWidth().OnShortcut(0, ui.KeyEnter, a.openSelectedChange)
+		editor.DiffView(c, r.diff).Grow(1).FillWidth().OnShortcut(0, ui.KeyEnter, a.openSelectedChange).
+			ContextMenu(a.diffMenu)
 	}
 }
 

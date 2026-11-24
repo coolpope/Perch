@@ -2777,3 +2777,143 @@ func CollapseAll() string { return In(i18n.Locale()).CollapseAll() }
 func (msgs Messages) CollapseAll() string {
 	return Catalog.Format(msgs.locale, "collapseAll", nil)
 }
+
+// MenuToggleSidebar says "Toggle Sidebar"
+// in the language the app shows.
+func MenuToggleSidebar() string { return In(i18n.Locale()).MenuToggleSidebar() }
+
+// MenuToggleSidebar says "Toggle Sidebar"
+// in the language of msgs.
+func (msgs Messages) MenuToggleSidebar() string {
+	return Catalog.Format(msgs.locale, "menuToggleSidebar", nil)
+}
+
+// ShowSidebar says "Show Sidebar"
+// in the language the app shows.
+func ShowSidebar() string { return In(i18n.Locale()).ShowSidebar() }
+
+// ShowSidebar says "Show Sidebar"
+// in the language of msgs.
+func (msgs Messages) ShowSidebar() string {
+	return Catalog.Format(msgs.locale, "showSidebar", nil)
+}
+
+// MenuZoomIn says "Zoom In"
+// in the language the app shows.
+func MenuZoomIn() string { return In(i18n.Locale()).MenuZoomIn() }
+
+// MenuZoomIn says "Zoom In"
+// in the language of msgs.
+func (msgs Messages) MenuZoomIn() string {
+	return Catalog.Format(msgs.locale, "menuZoomIn", nil)
+}
+
+// MenuZoomOut says "Zoom Out"
+// in the language the app shows.
+func MenuZoomOut() string { return In(i18n.Locale()).MenuZoomOut() }
+
+// MenuZoomOut says "Zoom Out"
+// in the language of msgs.
+func (msgs Messages) MenuZoomOut() string {
+	return Catalog.Format(msgs.locale, "menuZoomOut", nil)
+}
+
+// MenuResetZoom says "Reset Zoom"
+// in the language the app shows.
+func MenuResetZoom() string { return In(i18n.Locale()).MenuResetZoom() }
+
+// MenuResetZoom says "Reset Zoom"
+// in the language of msgs.
+func (msgs Messages) MenuResetZoom() string {
+	return Catalog.Format(msgs.locale, "menuResetZoom", nil)
+}
+
+// MenuReopenClosedTab says "Reopen Closed Tab"
+// in the language the app shows.
+func MenuReopenClosedTab() string { return In(i18n.Locale()).MenuReopenClosedTab() }
+
+// MenuReopenClosedTab says "Reopen Closed Tab"
+// in the language of msgs.
+func (msgs Messages) MenuReopenClosedTab() string {
+	return Catalog.Format(msgs.locale, "menuReopenClosedTab", nil)
+}
+
+// MenuCopyLineRef says "Copy Line Reference"
+// in the language the app shows.
+func MenuCopyLineRef() string { return In(i18n.Locale()).MenuCopyLineRef() }
+
+// MenuCopyLineRef says "Copy Line Reference"
+// in the language of msgs.
+func (msgs Messages) MenuCopyLineRef() string {
+	return Catalog.Format(msgs.locale, "menuCopyLineRef", nil)
+}
+
+// MenuGoToLine says "Go to Line…"
+// in the language the app shows.
+func MenuGoToLine() string { return In(i18n.Locale()).MenuGoToLine() }
+
+// MenuGoToLine says "Go to Line…"
+// in the language of msgs.
+func (msgs Messages) MenuGoToLine() string {
+	return Catalog.Format(msgs.locale, "menuGoToLine", nil)
+}
+
+// GoToLinePlaceholder says "Go to line (1–{count})"
+// in the language the app shows.
+func GoToLinePlaceholder(count int) string { return In(i18n.Locale()).GoToLinePlaceholder(count) }
+
+// GoToLinePlaceholder says "Go to line (1–{count})"
+// in the language of msgs.
+func (msgs Messages) GoToLinePlaceholder(count int) string {
+	return Catalog.Format(msgs.locale, "goToLinePlaceholder", map[string]any{"count": count})
+}
+
+// GoToLineInvalid says "Enter a line number from 1 to {count}"
+// in the language the app shows.
+func GoToLineInvalid(count int) string { return In(i18n.Locale()).GoToLineInvalid(count) }
+
+// GoToLineInvalid says "Enter a line number from 1 to {count}"
+// in the language of msgs.
+func (msgs Messages) GoToLineInvalid(count int) string {
+	return Catalog.Format(msgs.locale, "goToLineInvalid", map[string]any{"count": count})
+}
+
+// MenuRevealInTree says "Reveal in File Tree"
+// in the language the app shows.
+func MenuRevealInTree() string { return In(i18n.Locale()).MenuRevealInTree() }
+
+// MenuRevealInTree says "Reveal in File Tree"
+// in the language of msgs.
+func (msgs Messages) MenuRevealInTree() string {
+	return Catalog.Format(msgs.locale, "menuRevealInTree", nil)
+}
+
+// TabCloseOthers says "Close Other Tabs"
+// in the language the app shows.
+func TabCloseOthers() string { return In(i18n.Locale()).TabCloseOthers() }
+
+// TabCloseOthers says "Close Other Tabs"
+// in the language of msgs.
+func (msgs Messages) TabCloseOthers() string {
+	return Catalog.Format(msgs.locale, "tabCloseOthers", nil)
+}
+
+// TabCloseRight says "Close Tabs to the Right"
+// in the language the app shows.
+func TabCloseRight() string { return In(i18n.Locale()).TabCloseRight() }
+
+// TabCloseRight says "Close Tabs to the Right"
+// in the language of msgs.
+func (msgs Messages) TabCloseRight() string {
+	return Catalog.Format(msgs.locale, "tabCloseRight", nil)
+}
+
+// TabCloseAll says "Close All Tabs"
+// in the language the app shows.
+func TabCloseAll() string { return In(i18n.Locale()).TabCloseAll() }
+
+// TabCloseAll says "Close All Tabs"
+// in the language of msgs.
+func (msgs Messages) TabCloseAll() string {
+	return Catalog.Format(msgs.locale, "tabCloseAll", nil)
+}

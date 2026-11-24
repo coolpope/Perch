@@ -86,6 +86,33 @@ func (a *App) updateSettings(next settings.Settings) {
 	}
 }
 
+// toggleSidebar hides or shows the sidebar in this window.
+func (a *App) toggleSidebar() {
+	if a.root == "" {
+		return
+	}
+	a.sidebarHidden = !a.sidebarHidden
+}
+
+// changeFontSize steps the code font size within its limits and saves it.
+func (a *App) changeFontSize(delta int) {
+	next := a.settings
+	next.FontSize = max(settings.MinFontSize, min(settings.MaxFontSize, next.FontSize+delta))
+	if next.FontSize != a.settings.FontSize {
+		a.updateSettings(next)
+	}
+}
+
+// resetFontSize returns the code font size to its default and saves it.
+func (a *App) resetFontSize() {
+	if a.settings.FontSize == settings.DefaultFontSize {
+		return
+	}
+	next := a.settings
+	next.FontSize = settings.DefaultFontSize
+	a.updateSettings(next)
+}
+
 // codeFont returns the font of code in the current settings.
 func (a *App) codeFont() ui.Font {
 	return ui.Font{Size: float32(a.settings.FontSize)}

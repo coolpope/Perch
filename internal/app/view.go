@@ -59,13 +59,17 @@ func (a *App) view(c *ui.Context) {
 		return
 	}
 	a.sidebarWidth = max(a.sidebarWidth, minSidebarWidth)
-	ui.Themed(c, a.look.shell).Fill().Children(func() {
-		ui.Split(c, &a.sidebarWidth, func() {
-			ui.Themed(c, a.look.theme).Fill().Children(func() { a.sidebarView(c) })
-		}, func() {
-			ui.Themed(c, a.look.theme).Fill().Children(func() { a.mainView(c) })
-		}).Fill()
-	})
+	if a.sidebarHidden {
+		a.mainView(c)
+	} else {
+		ui.Themed(c, a.look.shell).Fill().Children(func() {
+			ui.Split(c, &a.sidebarWidth, func() {
+				ui.Themed(c, a.look.theme).Fill().Children(func() { a.sidebarView(c) })
+			}, func() {
+				ui.Themed(c, a.look.theme).Fill().Children(func() { a.mainView(c) })
+			}).Fill()
+		})
+	}
 	a.closeTabAlert(c)
 	a.closeWindowAlert(c)
 	a.quickOpenView(c)
@@ -200,6 +204,15 @@ func (a *App) fileTreeView(c *ui.Context) {
 		if !listed {
 			a.pruneOpenTreePaths()
 		}
+		if a.pendingReveal != "" {
+			target := a.pendingReveal
+			a.pendingReveal = ""
+			if row := a.treeRowFor(target); row != noRow {
+				a.tree.List.Choose(row)
+				a.tree.List.ScrollIntoView(row)
+				c.After(0)
+			}
+		}
 		switch {
 		case clicked != "":
 			a.clickTreeItem(clicked)
@@ -298,16 +311,24 @@ func (a *App) chooseTab(index int) {
 	a.closeOutline()
 	a.leaveGitView()
 	a.active = index
-	a.treeRow = a.treeRowFor(a.documents[index].path)
+	d := a.documents[index]
+	if !d.external {
+		a.recordRecentFile(d.path)
+	}
+	a.treeRow = a.treeRowFor(d.path)
 }
 
 // mainView floats the open file on a rounded panel below its tabs.
 func (a *App) mainView(c *ui.Context) {
 	a.tabShortcuts(c)
 	colors := a.look.palette
+	leftPad := panelGap
+	if a.sidebarHidden {
+		leftPad = panelMargin
+	}
 	ui.Column(c).Fill().Background(colors.sidebar).Children(func() {
 		a.tabsView(c)
-		ui.Column(c).Grow(1).FillWidth().Padding(0, panelMargin, panelMargin, panelGap).Children(func() {
+		ui.Column(c).Grow(1).FillWidth().Padding(0, panelMargin, panelMargin, leftPad).Children(func() {
 			a.panelView(c, func() { a.panelContentView(c) })
 		})
 	})
@@ -340,8 +361,15 @@ func (a *App) tabsView(c *ui.Context) {
 	var closing *document
 	// On Windows and Linux the window's controls sit at the end of the tabs.
 	bar := c.TitleBar()
-	ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).PaddingStart(panelGap).PaddingEnd(max(panelMargin, bar.Right+controlsGap)).
-		Background(colors.sidebar).DragWindow().Children(func() {
+	leftPad := panelGap
+	if a.sidebarHidden {
+		leftPad = max(panelMargin, bar.Left+controlsGap)
+	}
+	ui.Row(c).FillWidth().Height(headerHeight).Shrink(0).Gap(4).PaddingStart(leftPad).PaddingEnd(max(panelMargin, bar.Right+controlsGap)).
+		AlignItems(ui.Center).Background(colors.sidebar).DragWindow().Children(func() {
+		if a.sidebarHidden && a.sidebarTabView(c, iconSidebar, locales.ShowSidebar(), false) {
+			a.toggleSidebar()
+		}
 		ui.ScrollHorizontal(c).Shrink(1).FillHeight().Children(func() {
 			ui.Row(c).FillHeight().Gap(4).AlignItems(ui.Center).Children(func() {
 				for i, d := range a.documents {
@@ -362,7 +390,8 @@ func (a *App) tabsView(c *ui.Context) {
 func (a *App) tabView(c *ui.Context, d *document, active bool, index int) bool {
 	colors := a.look.palette
 	closed := false
-	tab := ui.Row(c).Height(tabHeight).Gap(6).PaddingStart(12).PaddingEnd(6).AlignItems(ui.Center).Radius(radiusControl)
+	tab := ui.Row(c).Height(tabHeight).Gap(6).PaddingStart(12).PaddingEnd(6).AlignItems(ui.Center).Radius(radiusControl).
+		ContextMenu(func(m *ui.Menu) { a.tabMenu(m, d, index) })
 	if active {
 		tab.Background(colors.background).Border(1, colors.border)
 	} else if tab.Hovered() {
@@ -569,18 +598,27 @@ func (a *App) closeTabAlert(c *ui.Context) {
 	}
 	d := a.closingDocument
 	title := locales.SaveChangesTo(d.name())
+	proceed := false
 	switch ui.AlertDialog(c, &a.askCloseTab, title, locales.UnsavedDetail(), locales.Cancel(), locales.DontSave(), locales.Save()) {
 	case alertDiscard:
 		a.closeTab(d)
+		proceed = true
 	case alertSave:
 		if err := a.save(d); err != nil {
 			a.notice = saveFailure(d.name(), err)
+			a.pendingClose = nil
 		} else {
 			a.closeTab(d)
+			proceed = true
 		}
 	}
 	if !a.askCloseTab {
 		a.closingDocument = nil
+		if proceed {
+			a.continuePendingClose()
+		} else {
+			a.pendingClose = nil
+		}
 	}
 }
 

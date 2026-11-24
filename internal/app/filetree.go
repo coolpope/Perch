@@ -98,6 +98,7 @@ type fileMenuIcons struct {
 	copyPath  *mygo.MenuIcon
 	copyLink  *mygo.MenuIcon
 	reveal    *mygo.MenuIcon
+	locate    *mygo.MenuIcon
 }
 
 // menuIcons makes the menu's pictures the first time the menu opens.
@@ -105,7 +106,7 @@ var menuIcons = sync.OnceValue(func() fileMenuIcons {
 	return fileMenuIcons{
 		newFile: mustMenuIcon(iconFilePlus), newFolder: mustMenuIcon(iconFolderPlus), rename: mustMenuIcon(iconPencil),
 		trash: mustMenuIcon(iconTrash), copyPath: mustMenuIcon(iconCopy), copyLink: mustMenuIcon(iconLink),
-		reveal: mustMenuIcon(iconReveal),
+		reveal: mustMenuIcon(iconReveal), locate: mustMenuIcon(iconLocate),
 	}
 })
 
@@ -129,10 +130,10 @@ func (a *App) fileMenu(m *ui.Menu, target string) {
 	}
 	m.Separator()
 	if m.Item(locales.FileMenuCopyPath()).Icon(icons.copyPath).Chosen() {
-		mygo.Clipboard.WriteText(a.fullPath(target))
+		a.copyText(a.fullPath(target))
 	}
 	if target != "." && m.Item(locales.FileMenuCopyRelativePath()).Icon(icons.copyLink).Chosen() {
-		mygo.Clipboard.WriteText(target)
+		a.copyText(target)
 	}
 	if m.Item(revealLabel(runtime.GOOS)).Icon(icons.reveal).Chosen() {
 		a.revealInFolder(target)
@@ -201,12 +202,41 @@ func (a *App) fileTreeToolbarView(c *ui.Context) {
 	if a.pathBarButton(c, iconFolderPlus, locales.FileMenuNewFolder(), false).Clicked() {
 		a.startCreate(fileActionNewFolder, cmp.Or(a.selectedTreePath(), "."))
 	}
+	if d := a.activeDocument(); d != nil && !d.external {
+		if a.pathBarButton(c, iconLocate, locales.MenuRevealInTree(), false).Clicked() {
+			a.revealInTree(d.path)
+		}
+	}
 	if a.pathBarButton(c, iconRefresh, locales.RefreshFileTree(), false).Clicked() {
 		a.refreshFileTree()
 	}
 	if a.pathBarButton(c, iconCollapse, locales.CollapseAll(), false).Clicked() {
 		a.collapseFileTree()
 	}
+}
+
+// revealActiveFile shows and selects the active workspace file in the file tree.
+func (a *App) revealActiveFile() {
+	if a.root == "" {
+		return
+	}
+	d := a.activeDocument()
+	if d == nil || d.external {
+		return
+	}
+	a.revealInTree(d.path)
+}
+
+// revealInTree opens the sidebar's file tree, expands every folder above
+// relPath, and schedules selection and scrolling once the outline builds.
+func (a *App) revealInTree(relPath string) {
+	if a.root == "" || relPath == "" || relPath == "." {
+		return
+	}
+	a.sidebarHidden = false
+	a.sidebarTab = sidebarFiles
+	a.expandTreeTo(path.Dir(relPath))
+	a.pendingReveal = relPath
 }
 
 // startRename opens the name dialog with the current name, selected.
@@ -524,6 +554,7 @@ func (a *App) renameDocuments(oldPath string, newPath string) {
 	}
 	a.definition.back = renamedPlaces(a.definition.back, oldPath, newPath)
 	a.definition.forward = renamedPlaces(a.definition.forward, oldPath, newPath)
+	a.renameTrackedPaths(oldPath, newPath)
 }
 
 // followFileKind shows a renamed document as what its new name says it is. A
@@ -538,7 +569,7 @@ func (a *App) followFileKind(d *document, previous string) {
 	switch {
 	case imageKindOf(previous) == kind:
 	case d.editor == nil, kind == imageKindRaster && !d.modified():
-		a.closeTab(d)
+		a.closeTabUnrecorded(d)
 		a.openFile(d.path)
 	case kind == imageKindSVG:
 		d.image = &imageView{kind: imageKindSVG, size: int64(d.editor.Buffer.Len())}
@@ -671,8 +702,9 @@ func (a *App) closeTrashedDocuments(target string) {
 		}
 	}
 	for _, d := range removed {
-		a.closeTab(d)
+		a.closeTabUnrecorded(d)
 	}
+	a.removeTrackedPaths(target)
 }
 
 // removeTreePaths drops a trashed file or folder and its children from the
