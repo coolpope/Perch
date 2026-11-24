@@ -40,10 +40,14 @@ const (
 	compareBranch      int = 2
 )
 
-// compareRequest is what one listing of the changes compares with.
+// compareRequest is what one refresh of the changes reads.
+// full is true when the Git page itself is visible and needs the chosen
+// comparison, branch head and branch list; false reads only the review to keep
+// the Git button's unread mark up to date.
 type compareRequest struct {
 	compare int
 	branch  string
+	full    bool
 }
 
 // gitReading is what one refresh of the Git page reads.
@@ -76,8 +80,10 @@ type changesPanel struct {
 	// listing is the changes compared with what compare names. Its Version
 	// is the review's snapshot, or the commit the work tree is compared with.
 	listing       review.Listing
+	unread        int
 	loaded        bool
 	notRepository bool
+	opening       bool
 	failure       string
 
 	compare int
@@ -118,6 +124,24 @@ type changesPanel struct {
 	landing changeLanding
 }
 
+// showsChangesPanel reports whether the Git page is currently visible in the
+// sidebar.
+func (a *App) showsChangesPanel() bool {
+	return !a.sidebarHidden && a.sidebarTab == sidebarChanges
+}
+
+// switchSidebarTab shows tab in the sidebar, and refreshes the quiet review
+// mark when leaving the Git page from another comparison so the dot stays true
+// to what is left to read.
+func (a *App) switchSidebarTab(tab int) {
+	leavingOtherCompare := a.sidebarTab == sidebarChanges && tab != sidebarChanges && a.review.compare != compareReview
+	a.sidebarHidden = false
+	a.sidebarTab = tab
+	if leavingOtherCompare && !a.review.notRepository {
+		a.refreshChanges()
+	}
+}
+
 // showChanges turns the sidebar to the review and brings it up to date.
 func (a *App) showChanges() {
 	if a.root == "" {
@@ -134,31 +158,47 @@ func (a *App) showChanges() {
 func (a *App) beginReview() {
 	r := &a.review
 	r.ctx, r.cancel = context.WithCancel(context.Background())
+	r.opening = true
 	ctx, root := r.ctx, a.root
 	go func() {
 		store, err := review.Open(ctx, root)
-		if errors.Is(err, review.ErrNotRepository) {
-			return
-		}
-		if err == nil {
-			err = store.Begin(ctx)
-		}
-		if err != nil {
+		// Only a folder outside Git is handed over without a store, so that
+		// the window stops asking for changes it can never list. Any other
+		// failure leaves that to the Git page, which reports it.
+		outside := errors.Is(err, review.ErrNotRepository)
+		if err != nil && !outside {
 			slog.Warn("begin review", "root", root, "error", err)
+		} else if err == nil {
+			if err := store.Begin(ctx); err != nil {
+				slog.Warn("begin review", "root", root, "error", err)
+			}
 		}
-		a.post(func() { a.reviewBegun(ctx, store) })
+		a.post(func() { a.reviewBegun(ctx, store, outside) })
 	}()
 }
 
-func (a *App) reviewBegun(ctx context.Context, store *review.Store) {
-	if ctx.Err() != nil || a.review.store != nil {
+// reviewBegun takes the review's store once it is open, and reads the review
+// for the Git button's mark. A folder outside Git is remembered instead: it
+// lists nothing however its files change.
+func (a *App) reviewBegun(ctx context.Context, store *review.Store, outside bool) {
+	if ctx.Err() != nil {
 		closeStore(store)
 		return
 	}
-	a.review.store = store
-	if a.sidebarTab == sidebarChanges {
-		a.refreshChanges()
+	a.review.opening = false
+	if a.review.store != nil {
+		closeStore(store)
+		return
 	}
+	if outside {
+		a.review.notRepository = true
+		return
+	}
+	if store == nil {
+		return
+	}
+	a.review.store = store
+	a.refreshChanges()
 }
 
 // stopChanges ends the review's background work and lets go of its store.
@@ -200,7 +240,7 @@ func (a *App) refreshChanges() {
 	}
 	r.running, r.again = true, false
 	ctx, store, root := r.ctx, r.store, a.root
-	request := r.request()
+	request := a.changesRequest()
 	go func() {
 		reading := readGitPage(ctx, store, root, request)
 		a.post(func() { a.changesListed(ctx, request, reading) })
@@ -216,7 +256,17 @@ func (r *changesPanel) request() compareRequest {
 	return compareRequest{compare: r.compare, branch: r.branch}
 }
 
-// readGitPage lists the changes and reads the branch the work tree is on.
+func (a *App) changesRequest() compareRequest {
+	if !a.showsChangesPanel() {
+		return compareRequest{compare: compareReview}
+	}
+	request := a.review.request()
+	request.full = true
+	return request
+}
+
+// readGitPage lists the changes and, when the Git page itself is showing,
+// reads the branch the work tree is on and the branches to compare with.
 func readGitPage(ctx context.Context, store *review.Store, root string, request compareRequest) gitReading {
 	reading := gitReading{store: store}
 	if reading.store == nil {
@@ -226,6 +276,9 @@ func readGitPage(ctx context.Context, store *review.Store, root string, request 
 		}
 	}
 	if reading.listing, reading.err = listChanges(ctx, reading.store, root, request); reading.err != nil {
+		return reading
+	}
+	if !request.full {
 		return reading
 	}
 	if reading.head, reading.err = review.ReadHead(ctx, root); reading.err != nil {
@@ -271,14 +324,37 @@ func (a *App) changesListed(ctx context.Context, request compareRequest, reading
 	if a.startQueuedReviewAction() {
 		return
 	}
-	if request != r.request() {
-		// The person chose something else to compare with meanwhile.
+	want := a.changesRequest()
+	if want.full && request != want {
+		// The Git page opened or changed comparison meanwhile.
 		a.refreshChanges()
 		return
 	}
 	err := reading.err
+	if errors.Is(err, review.ErrNotRepository) {
+		r.notRepository = true
+	} else if err == nil {
+		r.notRepository = false
+	}
+	if !request.full {
+		if err != nil {
+			if !r.notRepository {
+				slog.Warn("check unread changes", "root", a.root, "error", err)
+			}
+		} else {
+			r.unread = unreadCount(reading.listing.Changes)
+			if r.compare == compareReview {
+				r.listing = reading.listing
+				r.loaded = true
+				r.failure = ""
+			}
+		}
+		if r.again {
+			a.refreshChanges()
+		}
+		return
+	}
 	r.loaded = true
-	r.notRepository = errors.Is(err, review.ErrNotRepository)
 	r.failure = ""
 	if err != nil {
 		slog.Warn("list changes", "root", a.root, "compare", request.compare, "branch", request.branch, "error", err)
@@ -287,8 +363,13 @@ func (a *App) changesListed(ctx context.Context, request compareRequest, reading
 		r.listing = reading.listing
 		r.head = reading.head
 		r.branches = reading.branches
+		if request.compare == compareReview {
+			r.unread = unreadCount(reading.listing.Changes)
+		}
 		a.followSelectedChange()
-		a.followHead()
+		if a.showsChangesPanel() {
+			a.followHead()
+		}
 		// Commits change what the tree shows without touching its files.
 		a.refreshTreeStatus()
 	}
@@ -320,18 +401,27 @@ func (r *changesPanel) change(relPath string) (review.Change, bool) {
 	return r.listing.Changes[index], true
 }
 
-// scheduleChangesRefresh follows the disk while the review shows, waiting for a
-// burst of writes to pass.
+// scheduleChangesRefresh follows the disk wherever the sidebar stands, waiting
+// for a burst of writes to pass. When the Git page is hidden or behind another
+// sidebar view, the refresh reads only the review for the Git button's mark.
 func (a *App) scheduleChangesRefresh() {
-	if a.sidebarTab != sidebarChanges || a.review.queued {
+	r := &a.review
+	// Outside Git there is nothing to list; while beginReview is still opening
+	// the store, reviewBegun starts the first refresh.
+	if r.queued || r.notRepository || (r.opening && r.store == nil) || a.root == "" {
 		return
 	}
-	a.review.queued = true
+	ctx := r.ctx
+	r.queued = true
 	a.after(changesRefreshDelay, func() {
-		a.review.queued = false
-		if a.sidebarTab == sidebarChanges {
-			a.refreshChanges()
+		if ctx != nil && ctx.Err() != nil {
+			return
 		}
+		a.review.queued = false
+		if a.review.notRepository || a.root == "" {
+			return
+		}
+		a.refreshChanges()
 	})
 }
 
@@ -595,6 +685,9 @@ func (a *App) setReviewed(relPath string, reviewed bool) {
 	marked := []review.Change{changes[index]}
 	changes[index].Reviewed = reviewed
 	r.listing.Changes = changes
+	if r.compare == compareReview {
+		r.unread = unreadCount(changes)
+	}
 	a.runReviewAction(func(ctx context.Context, store *review.Store) error {
 		if reviewed {
 			return store.MarkReviewed(ctx, version, marked)
@@ -642,6 +735,9 @@ func (a *App) markAllReviewed() {
 		}
 	}
 	r.listing.Changes = changes
+	if r.compare == compareReview {
+		r.unread = 0
+	}
 	a.runReviewAction(func(ctx context.Context, store *review.Store) error {
 		return store.MarkReviewed(ctx, version, marked)
 	})
@@ -652,6 +748,7 @@ func (a *App) finishReview() {
 	version := a.review.listing.Version
 	a.closeChange()
 	a.review.listing.Changes = nil
+	a.review.unread = 0
 	a.runReviewAction(func(ctx context.Context, store *review.Store) error {
 		checkpoint, err := store.Finish(ctx, version)
 		if err != nil {
