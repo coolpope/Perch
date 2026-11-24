@@ -57,6 +57,8 @@ type App struct {
 	find           findInFiles
 	files          fileTreeState
 	session        sessionState
+	// pathPopover is the open flag of the popover drawn on the current path bar.
+	pathPopover *bool
 	// recentProjects are the recent projects the welcome screen lists, known
 	// once recentChecked has been answered.
 	recentProjects []recentProject
@@ -320,9 +322,37 @@ func (a *App) requestCloseTab(d *document) {
 	a.closeTab(d)
 }
 
+// closeActiveTab handles the File menu's close command. Dismiss dialogs in
+// reverse drawing order, then the visible panel, before touching a document.
 func (a *App) closeActiveTab() {
-	if d := a.activeDocument(); d != nil {
-		a.requestCloseTab(d)
+	switch {
+	case a.askCloseWindow:
+		a.askCloseWindow = false
+	case a.askCloseTab:
+		a.askCloseTab = false
+		a.closingDocument = nil
+	case a.files.open:
+		a.files.open = false
+	case a.settingsOpen:
+		a.settingsOpen = false
+	case a.root != "" && a.references.open:
+		a.closeReferences()
+	case a.root != "" && a.projectSymbols.open:
+		a.closeProjectSymbols()
+	case a.outline.open:
+		a.dismissOutline()
+	case a.quick.open:
+		a.hideQuickOpen()
+	case a.showsChange():
+		a.closeChange()
+	case a.showsCommit():
+		a.closeCommit()
+	case a.pathPopover != nil && *a.pathPopover:
+		*a.pathPopover = false
+	default:
+		if d := a.activeDocument(); d != nil {
+			a.requestCloseTab(d)
+		}
 	}
 }
 

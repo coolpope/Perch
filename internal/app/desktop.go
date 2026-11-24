@@ -338,7 +338,7 @@ func (d *Desktop) menuItem(label string, accelerator string, action func(*App)) 
 		Click: func(_ *mygo.MenuItem, window *mygo.Window) {
 			a := d.appOf(window)
 			if a != nil {
-				a.window.Update(func() { action(a) })
+				a.post(func() { action(a) })
 			}
 		},
 	}
